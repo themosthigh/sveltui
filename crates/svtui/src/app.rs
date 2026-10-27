@@ -132,17 +132,41 @@ where
                             }
                         }
                         MouseEventKind::ScrollDown => {
-                            if let Some(target) = hit_map.hit_test(mouse.column, mouse.row) {
+                            if let Some(target) = hit_map.scroll_target(mouse.column, mouse.row) {
                                 if let Some(ref on_scroll) = target.on_scroll {
-                                    on_scroll(0, 1);
+                                    if mouse.modifiers.contains(KeyModifiers::SHIFT) {
+                                        on_scroll(2, 0);
+                                    } else {
+                                        on_scroll(0, 1);
+                                    }
                                     Runtime::set_dirty(true);
                                 }
                             }
                         }
                         MouseEventKind::ScrollUp => {
-                            if let Some(target) = hit_map.hit_test(mouse.column, mouse.row) {
+                            if let Some(target) = hit_map.scroll_target(mouse.column, mouse.row) {
                                 if let Some(ref on_scroll) = target.on_scroll {
-                                    on_scroll(0, -1);
+                                    if mouse.modifiers.contains(KeyModifiers::SHIFT) {
+                                        on_scroll(-2, 0);
+                                    } else {
+                                        on_scroll(0, -1);
+                                    }
+                                    Runtime::set_dirty(true);
+                                }
+                            }
+                        }
+                        MouseEventKind::ScrollLeft => {
+                            if let Some(target) = hit_map.scroll_target(mouse.column, mouse.row) {
+                                if let Some(ref on_scroll) = target.on_scroll {
+                                    on_scroll(-2, 0);
+                                    Runtime::set_dirty(true);
+                                }
+                            }
+                        }
+                        MouseEventKind::ScrollRight => {
+                            if let Some(target) = hit_map.scroll_target(mouse.column, mouse.row) {
+                                if let Some(ref on_scroll) = target.on_scroll {
+                                    on_scroll(2, 0);
                                     Runtime::set_dirty(true);
                                 }
                             }
@@ -214,14 +238,64 @@ where
                                     on_key(key);
                                     Runtime::set_dirty(true);
                                     consumed = true;
-                                } else if let Some(ref on_click) = target.on_click {
-                                    if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ')
-                                    {
-                                        on_click();
-                                        Runtime::set_dirty(true);
-                                        consumed = true;
+                                }
+                                if !consumed {
+                                    if let Some(ref on_scroll) = target.on_scroll {
+                                        match key.code {
+                                            KeyCode::Up => {
+                                                on_scroll(0, -1);
+                                                Runtime::set_dirty(true);
+                                                consumed = true;
+                                            }
+                                            KeyCode::Down => {
+                                                on_scroll(0, 1);
+                                                Runtime::set_dirty(true);
+                                                consumed = true;
+                                            }
+                                            KeyCode::PageUp => {
+                                                on_scroll(0, -5);
+                                                Runtime::set_dirty(true);
+                                                consumed = true;
+                                            }
+                                            KeyCode::PageDown => {
+                                                on_scroll(0, 5);
+                                                Runtime::set_dirty(true);
+                                                consumed = true;
+                                            }
+                                            KeyCode::Left => {
+                                                on_scroll(-2, 0);
+                                                Runtime::set_dirty(true);
+                                                consumed = true;
+                                            }
+                                            KeyCode::Right => {
+                                                on_scroll(2, 0);
+                                                Runtime::set_dirty(true);
+                                                consumed = true;
+                                            }
+                                            _ => {}
+                                        }
                                     }
-                                } else if let Some(ref on_scroll) = target.on_scroll {
+                                }
+                                if !consumed {
+                                    if let Some(ref on_click) = target.on_click {
+                                        if key.code == KeyCode::Enter
+                                            || key.code == KeyCode::Char(' ')
+                                        {
+                                            on_click();
+                                            Runtime::set_dirty(true);
+                                            consumed = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Fallback: If no widget consumed the key, route scroll keys to the primary scroll container
+                        if !consumed {
+                            if let Some(target) =
+                                hit_map.targets.iter().find(|t| t.on_scroll.is_some())
+                            {
+                                if let Some(ref on_scroll) = target.on_scroll {
                                     match key.code {
                                         KeyCode::Up => {
                                             on_scroll(0, -1);
