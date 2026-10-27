@@ -320,9 +320,21 @@ version = "0.1.0"
 dependencies = [
  "crossterm",
  "notify",
+ "svtui-components",
  "svtui-element",
  "svtui-layout",
  "svtui-macros",
+ "svtui-reactive",
+ "svtui-terminal",
+]
+
+[[package]]
+name = "svtui-components"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "svtui-element",
+ "svtui-layout",
  "svtui-reactive",
  "svtui-terminal",
 ]

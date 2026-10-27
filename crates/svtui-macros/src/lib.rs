@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
-use syn::{parse_macro_input, Expr, Ident, LitStr, Result, Token};
+use syn::{Expr, Ident, LitStr, Result, Token, parse_macro_input};
 
 enum Node {
     Element(Element),
@@ -267,30 +267,39 @@ fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
             }
         }
         _ => {
-            let mut prop_assignments = Vec::new();
+            // Any custom element or component (Button, Switch, TextInput, Checkbox, Divider, ProgressBar, Badge, etc.)
+            let mut setter_calls = Vec::new();
             for attr in &el.attributes {
                 let attr_name = &attr.name;
                 let attr_val = &attr.value;
-                prop_assignments.push(quote! {
-                    #attr_name: #attr_val.into(),
+                setter_calls.push(quote! {
+                    .#attr_name(#attr_val)
                 });
             }
 
-            let child_nodes: Vec<_> = el.children.iter().map(codegen_node).collect();
+            let mut child_calls = Vec::new();
+            for child in &el.children {
+                match child {
+                    Node::Text(lit) => {
+                        child_calls.push(quote! {
+                            .label(#lit)
+                        });
+                    }
+                    _ => {
+                        let child_stream = codegen_node(child);
+                        child_calls.push(quote! {
+                            .child(#child_stream)
+                        });
+                    }
+                }
+            }
 
-            if el.attributes.is_empty() && el.children.is_empty() {
-                quote! {
-                    ::svtui::element::IntoNode::into_node(#tag())
-                }
-            } else {
-                quote! {
-                    ::svtui::element::IntoNode::into_node(
-                        #tag(
-                            #(#prop_assignments)*
-                            vec![ #(#child_nodes),* ]
-                        )
-                    )
-                }
+            quote! {
+                ::svtui::element::IntoNode::into_node(
+                    #tag::default()
+                        #(#setter_calls)*
+                        #(#child_calls)*
+                )
             }
         }
     }

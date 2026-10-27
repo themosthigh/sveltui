@@ -55,18 +55,13 @@ pub enum Justify {
     SpaceBetween,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum Size {
+    #[default]
     Auto,
     Fixed(u16),
     Percent(f32),
     Fill,
-}
-
-impl Default for Size {
-    fn default() -> Self {
-        Size::Auto
-    }
 }
 
 impl From<u16> for Size {

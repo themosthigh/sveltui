@@ -1,6 +1,7 @@
+use std::any::Any;
 use std::cell::RefCell;
-use std::collections::HashSet;
-use std::rc::Rc;
+use std::collections::{HashMap, HashSet};
+use std::marker::PhantomData;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 static NEXT_SIGNAL_ID: AtomicUsize = AtomicUsize::new(1);
@@ -19,8 +20,9 @@ pub struct ObserverId(usize);
 pub struct Runtime {
     current_observer: Option<ObserverId>,
     dirty: bool,
-    signal_subscribers: std::collections::HashMap<SignalId, HashSet<ObserverId>>,
+    signal_subscribers: HashMap<SignalId, HashSet<ObserverId>>,
     dirty_observers: HashSet<ObserverId>,
+    signal_values: HashMap<SignalId, Box<dyn Any>>,
 }
 
 impl Runtime {
@@ -28,8 +30,9 @@ impl Runtime {
         Self {
             current_observer: None,
             dirty: true,
-            signal_subscribers: std::collections::HashMap::new(),
+            signal_subscribers: HashMap::new(),
             dirty_observers: HashSet::new(),
+            signal_values: HashMap::new(),
         }
     }
 
@@ -86,66 +89,96 @@ impl Runtime {
 
 pub struct ReadSignal<T> {
     id: SignalId,
-    value: Rc<RefCell<T>>,
+    _marker: PhantomData<T>,
 }
 
 impl<T> Clone for ReadSignal<T> {
     fn clone(&self) -> Self {
-        Self {
-            id: self.id,
-            value: Rc::clone(&self.value),
-        }
+        *self
     }
 }
+
+impl<T> Copy for ReadSignal<T> {}
 
 impl<T: Clone + 'static> ReadSignal<T> {
     pub fn get(&self) -> T {
         Runtime::track(self.id);
-        self.value.borrow().clone()
+        RUNTIME.with(|rt| {
+            let rt = rt.borrow();
+            rt.signal_values
+                .get(&self.id)
+                .and_then(|boxed| boxed.downcast_ref::<T>())
+                .cloned()
+                .expect("Signal value not found")
+        })
     }
 
     pub fn with<R>(&self, f: impl FnOnce(&T) -> R) -> R {
         Runtime::track(self.id);
-        f(&self.value.borrow())
+        RUNTIME.with(|rt| {
+            let rt = rt.borrow();
+            let val = rt
+                .signal_values
+                .get(&self.id)
+                .and_then(|boxed| boxed.downcast_ref::<T>())
+                .expect("Signal value not found");
+            f(val)
+        })
     }
 }
 
 pub struct WriteSignal<T> {
     id: SignalId,
-    value: Rc<RefCell<T>>,
+    _marker: PhantomData<T>,
 }
 
 impl<T> Clone for WriteSignal<T> {
     fn clone(&self) -> Self {
-        Self {
-            id: self.id,
-            value: Rc::clone(&self.value),
-        }
+        *self
     }
 }
 
+impl<T> Copy for WriteSignal<T> {}
+
 impl<T: 'static> WriteSignal<T> {
     pub fn set(&self, new_val: T) {
-        *self.value.borrow_mut() = new_val;
+        RUNTIME.with(|rt| {
+            let mut rt = rt.borrow_mut();
+            rt.signal_values.insert(self.id, Box::new(new_val));
+        });
         Runtime::trigger(self.id);
     }
 
     pub fn update(&self, f: impl FnOnce(&mut T)) {
-        f(&mut self.value.borrow_mut());
+        RUNTIME.with(|rt| {
+            let mut rt = rt.borrow_mut();
+            if let Some(val) = rt
+                .signal_values
+                .get_mut(&self.id)
+                .and_then(|b| b.downcast_mut::<T>())
+            {
+                f(val);
+            }
+        });
         Runtime::trigger(self.id);
     }
 }
 
 pub fn create_signal<T: Clone + 'static>(initial: T) -> (ReadSignal<T>, WriteSignal<T>) {
     let id = SignalId(NEXT_SIGNAL_ID.fetch_add(1, Ordering::Relaxed));
-    let value = Rc::new(RefCell::new(initial));
+    RUNTIME.with(|rt| {
+        rt.borrow_mut().signal_values.insert(id, Box::new(initial));
+    });
 
     (
         ReadSignal {
             id,
-            value: Rc::clone(&value),
+            _marker: PhantomData,
         },
-        WriteSignal { id, value },
+        WriteSignal {
+            id,
+            _marker: PhantomData,
+        },
     )
 }
 
@@ -166,6 +199,15 @@ mod tests {
         assert_eq!(count.get(), 42);
         set_count.update(|c| *c += 1);
         assert_eq!(count.get(), 43);
+    }
+
+    #[test]
+    fn test_signal_copy() {
+        let (name, set_name) = create_signal(String::from("Alice"));
+        let n2 = name; // Copy!
+        let s2 = set_name; // Copy!
+        s2.set(String::from("Bob"));
+        assert_eq!(n2.get(), "Bob");
     }
 
     #[test]

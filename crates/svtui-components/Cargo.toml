@@ -1,0 +1,11 @@
+[package]
+name = "svtui-components"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+svtui-layout = { path = "../svtui-layout" }
+svtui-terminal = { path = "../svtui-terminal" }
+svtui-element = { path = "../svtui-element" }
+svtui-reactive = { path = "../svtui-reactive" }
+crossterm = "0.28"

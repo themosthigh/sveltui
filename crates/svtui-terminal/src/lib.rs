@@ -1,7 +1,10 @@
 use crossterm::{
     cursor::{self, MoveTo},
+    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
-    style::{Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor},
+    style::{
+        Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
+    },
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::io::{self, Stdout, Write};
@@ -110,7 +113,15 @@ impl Buffer {
         }
     }
 
-    pub fn set_char(&mut self, x: u16, y: u16, ch: char, fg: Option<Color>, bg: Option<Color>, bold: bool) {
+    pub fn set_char(
+        &mut self,
+        x: u16,
+        y: u16,
+        ch: char,
+        fg: Option<Color>,
+        bg: Option<Color>,
+        bold: bool,
+    ) {
         if let Some(cell) = self.get_mut(x, y) {
             cell.ch = ch;
             cell.fg = fg;
@@ -119,6 +130,7 @@ impl Buffer {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn set_string(
         &mut self,
         x: u16,
@@ -129,13 +141,12 @@ impl Buffer {
         bold: bool,
         max_width: u16,
     ) {
-        let mut curr_x = x;
-        for ch in text.chars() {
+        for (idx, ch) in text.chars().enumerate() {
+            let curr_x = x.saturating_add(idx as u16);
             if curr_x >= x.saturating_add(max_width) || curr_x >= self.width {
                 break;
             }
             self.set_char(curr_x, y, ch, fg, bg, bold);
-            curr_x += 1;
         }
     }
 
@@ -176,7 +187,15 @@ impl Buffer {
         let displayed_title: String = title_text.chars().take(max_len).collect();
 
         let start_x = rect.x + 2;
-        self.set_string(start_x, rect.y, &displayed_title, color, None, true, max_len as u16);
+        self.set_string(
+            start_x,
+            rect.y,
+            &displayed_title,
+            color,
+            None,
+            true,
+            max_len as u16,
+        );
     }
 }
 
@@ -193,11 +212,24 @@ pub struct Terminal {
 
 impl Terminal {
     pub fn new() -> io::Result<Self> {
+        Self::new_with_mouse(true)
+    }
+
+    pub fn new_with_mouse(enable_mouse: bool) -> io::Result<Self> {
         let (width, height) = terminal::size()?;
         let mut stdout = io::stdout();
 
         terminal::enable_raw_mode()?;
-        execute!(stdout, EnterAlternateScreen, cursor::Hide)?;
+        if enable_mouse {
+            execute!(
+                stdout,
+                EnterAlternateScreen,
+                cursor::Hide,
+                EnableMouseCapture
+            )?;
+        } else {
+            execute!(stdout, EnterAlternateScreen, cursor::Hide)?;
+        }
 
         let default_panic_hook = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |info| {
@@ -306,6 +338,7 @@ impl Terminal {
                 ResetColor,
                 SetAttribute(Attribute::Reset),
                 cursor::Show,
+                DisableMouseCapture,
                 LeaveAlternateScreen
             );
             let _ = stdout.flush();

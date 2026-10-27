@@ -8,6 +8,7 @@ svtui-reactive = { path = "../svtui-reactive" }
 svtui-layout = { path = "../svtui-layout" }
 svtui-terminal = { path = "../svtui-terminal" }
 svtui-element = { path = "../svtui-element" }
+svtui-components = { path = "../svtui-components" }
 svtui-macros = { path = "../svtui-macros" }
 crossterm = "0.28"
 notify = "6.1"
@@ -15,3 +16,19 @@ notify = "6.1"
 [[example]]
 name = "hello_world"
 path = "../../examples/hello_world.rs"
+
+[[example]]
+name = "counter"
+path = "../../examples/counter.rs"
+
+[[example]]
+name = "keyboard_listener"
+path = "../../examples/keyboard_listener.rs"
+
+[[example]]
+name = "form"
+path = "../../examples/form.rs"
+
+[[example]]
+name = "interactive_components"
+path = "../../examples/interactive_components.rs"

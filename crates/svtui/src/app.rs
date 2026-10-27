@@ -1,9 +1,11 @@
 use crate::watcher::FileWatcher;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEventKind};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use svtui_element::{render_node, VNode};
+use svtui_element::{
+    FocusId, HitMap, VNode, render_node_interactive, reset_focus_counter, update_focus_context,
+};
 use svtui_layout::Rect;
 use svtui_reactive::Runtime;
 use svtui_terminal::Terminal;
@@ -64,6 +66,7 @@ where
         self
     }
 
+    #[allow(clippy::collapsible_if)]
     pub fn run(mut self) -> io::Result<()> {
         let mut terminal = Terminal::new()?;
         let (mut term_w, mut term_h) = terminal.size();
@@ -74,6 +77,8 @@ where
         }
 
         let mut watcher = FileWatcher::new(&self.watch_paths).ok();
+        let mut hit_map = HitMap::new();
+        let mut focused_id: Option<FocusId> = None;
 
         // Initial render
         Runtime::set_dirty(true);
@@ -93,9 +98,20 @@ where
             // Re-render if dirty
             if Runtime::is_dirty() {
                 terminal.curr_buffer.clear();
+                reset_focus_counter();
+                update_focus_context(focused_id, &hit_map);
+
+                hit_map.clear();
                 let root_node = (self.view)();
                 let screen_rect = Rect::new(0, 0, term_w, term_h);
-                render_node(&root_node, screen_rect, &mut terminal.curr_buffer);
+                render_node_interactive(
+                    &root_node,
+                    screen_rect,
+                    &mut terminal.curr_buffer,
+                    &mut hit_map,
+                );
+                update_focus_context(focused_id, &hit_map);
+
                 terminal.flush()?;
                 Runtime::set_dirty(false);
             }
@@ -103,27 +119,99 @@ where
             // Poll for terminal events with 16ms timeout (~60 FPS)
             if event::poll(Duration::from_millis(16))? {
                 match event::read()? {
+                    Event::Mouse(mouse) => {
+                        if let MouseEventKind::Down(MouseButton::Left) = mouse.kind {
+                            if let Some(target) = hit_map.hit_test(mouse.column, mouse.row) {
+                                if let Some(fid) = target.focus_id {
+                                    focused_id = Some(fid);
+                                }
+                                if let Some(ref on_click) = target.on_click {
+                                    on_click();
+                                }
+                                Runtime::set_dirty(true);
+                            }
+                        }
+                    }
                     Event::Key(key) => {
-                        // Quit condition: Ctrl+C, 'q', or Esc
-                        if (key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL))
-                            || key.code == KeyCode::Char('q')
+                        // Quit condition: Ctrl+C, Esc (if not in input), or 'q' (if no input focused)
+                        if (key.code == KeyCode::Char('c')
+                            && key.modifiers.contains(KeyModifiers::CONTROL))
                             || key.code == KeyCode::Esc
+                            || (key.code == KeyCode::Char('q') && focused_id.is_none())
                         {
                             break;
                         }
 
                         // Save shortcut: Ctrl+S
-                        if key.code == KeyCode::Char('s') && key.modifiers.contains(KeyModifiers::CONTROL) {
+                        if key.code == KeyCode::Char('s')
+                            && key.modifiers.contains(KeyModifiers::CONTROL)
+                        {
                             if let Some(ref mut handler) = self.save_handler {
                                 handler(Path::new("shortcut:Ctrl+S"));
                             }
-                            // Repaint UI on save
                             Runtime::set_dirty(true);
                             continue;
                         }
 
-                        if let Some(ref mut handler) = self.key_handler {
-                            handler(key);
+                        // Tab / BackTab navigation between focusable widgets
+                        if key.code == KeyCode::Tab || key.code == KeyCode::BackTab {
+                            let focusable = hit_map.focusable_ids();
+                            if !focusable.is_empty() {
+                                let is_back = key.code == KeyCode::BackTab
+                                    || key.modifiers.contains(KeyModifiers::SHIFT);
+                                let current_idx = focused_id
+                                    .and_then(|id| focusable.iter().position(|&x| x == id));
+                                let next_idx = match current_idx {
+                                    Some(idx) => {
+                                        if is_back {
+                                            if idx == 0 {
+                                                focusable.len() - 1
+                                            } else {
+                                                idx - 1
+                                            }
+                                        } else {
+                                            (idx + 1) % focusable.len()
+                                        }
+                                    }
+                                    None => {
+                                        if is_back {
+                                            focusable.len() - 1
+                                        } else {
+                                            0
+                                        }
+                                    }
+                                };
+                                focused_id = Some(focusable[next_idx]);
+                                Runtime::set_dirty(true);
+                                continue;
+                            }
+                        }
+
+                        // Route key to focused component if applicable
+                        let mut consumed = false;
+                        if let Some(fid) = focused_id {
+                            if let Some(target) =
+                                hit_map.targets.iter().find(|t| t.focus_id == Some(fid))
+                            {
+                                if let Some(ref on_key) = target.on_key {
+                                    on_key(key);
+                                    Runtime::set_dirty(true);
+                                    consumed = true;
+                                } else if let Some(ref on_click) = target.on_click {
+                                    if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ')
+                                    {
+                                        on_click();
+                                        Runtime::set_dirty(true);
+                                        consumed = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        if !consumed {
+                            if let Some(ref mut handler) = self.key_handler {
+                                handler(key);
+                            }
                         }
                     }
                     Event::Resize(w, h) => {

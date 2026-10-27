@@ -1,6 +1,6 @@
 use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{channel, Receiver};
+use std::sync::mpsc::{Receiver, channel};
 use std::time::{Duration, Instant};
 
 pub struct FileWatcher {
@@ -59,11 +59,11 @@ impl FileWatcher {
             triggered = Some(path);
         }
 
-        if let Some(path) = triggered {
-            if self.last_event.elapsed() >= Duration::from_millis(100) {
-                self.last_event = Instant::now();
-                return Some(path);
-            }
+        if let Some(path) =
+            triggered.filter(|_| self.last_event.elapsed() >= Duration::from_millis(100))
+        {
+            self.last_event = Instant::now();
+            return Some(path);
         }
         None
     }

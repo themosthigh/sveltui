@@ -5,6 +5,7 @@ members = [
     "crates/svtui-layout",
     "crates/svtui-terminal",
     "crates/svtui-element",
+    "crates/svtui-components",
     "crates/svtui-macros",
     "crates/svtui",
 ]
