@@ -351,6 +351,9 @@ dependencies = [
 [[package]]
 name = "svtui-layout"
 version = "0.1.0"
+dependencies = [
+ "crossterm",
+]
 
 [[package]]
 name = "svtui-macros"

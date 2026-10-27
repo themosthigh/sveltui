@@ -1,3 +1,5 @@
+use crossterm::style::Color;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Rect {
     pub x: u16,
@@ -35,6 +37,24 @@ impl Rect {
             && y >= self.y
             && y < self.y.saturating_add(self.height)
     }
+
+    pub fn intersect(&self, other: &Rect) -> Option<Rect> {
+        let left = self.x.max(other.x);
+        let top = self.y.max(other.y);
+        let right = (self.x.saturating_add(self.width)).min(other.x.saturating_add(other.width));
+        let bottom = (self.y.saturating_add(self.height)).min(other.y.saturating_add(other.height));
+
+        if right > left && bottom > top {
+            Some(Rect {
+                x: left,
+                y: top,
+                width: right - left,
+                height: bottom - top,
+            })
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -62,6 +82,79 @@ pub enum Size {
     Fixed(u16),
     Percent(f32),
     Fill,
+}
+
+impl Size {
+    pub fn resolve(&self, parent: u16, content: u16) -> u16 {
+        match self {
+            Size::Fixed(w) => *w,
+            Size::Percent(p) => ((parent as f32 * p / 100.0).round() as u16).min(parent),
+            Size::Fill => parent,
+            Size::Auto => content,
+        }
+    }
+}
+
+pub fn clamp_dimension(val: u16, min: Option<Size>, max: Option<Size>, parent: u16) -> u16 {
+    let mut result = val;
+    if let Some(min_s) = min {
+        let min_v = min_s.resolve(parent, 0);
+        result = result.max(min_v);
+    }
+    if let Some(max_s) = max {
+        let max_v = max_s.resolve(parent, parent);
+        result = result.min(max_v);
+    }
+    result
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum Overflow {
+    #[default]
+    Visible,
+    Hidden,
+    Scroll,
+    Auto,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum ScrollbarVisibility {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScrollbarChars {
+    pub track: char,
+    pub thumb: char,
+}
+
+impl Default for ScrollbarChars {
+    fn default() -> Self {
+        Self {
+            track: '░',
+            thumb: '█',
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScrollbarStyle {
+    pub chars: ScrollbarChars,
+    pub track_color: Option<Color>,
+    pub thumb_color: Option<Color>,
+}
+
+impl Default for ScrollbarStyle {
+    fn default() -> Self {
+        Self {
+            chars: ScrollbarChars::default(),
+            track_color: Some(Color::DarkGrey),
+            thumb_color: Some(Color::White),
+        }
+    }
 }
 
 impl From<u16> for Size {
@@ -217,5 +310,35 @@ mod tests {
         assert_eq!(rounded.bottom_right, '╯');
         assert_eq!(rounded.horizontal, '─');
         assert_eq!(rounded.vertical, '│');
+    }
+
+    #[test]
+    fn test_rect_intersect() {
+        let a = Rect::new(0, 0, 10, 10);
+        let b = Rect::new(5, 5, 10, 10);
+        let inter = a.intersect(&b).unwrap();
+        assert_eq!(inter, Rect::new(5, 5, 5, 5));
+
+        let c = Rect::new(20, 20, 5, 5);
+        assert_eq!(a.intersect(&c), None);
+    }
+
+    #[test]
+    fn test_clamp_dimension() {
+        // Val=10, min=15, max=25 => 15
+        assert_eq!(
+            clamp_dimension(10, Some(Size::Fixed(15)), Some(Size::Fixed(25)), 100),
+            15
+        );
+        // Val=30, min=15, max=25 => 25
+        assert_eq!(
+            clamp_dimension(30, Some(Size::Fixed(15)), Some(Size::Fixed(25)), 100),
+            25
+        );
+        // Val=20, min=15, max=25 => 20
+        assert_eq!(
+            clamp_dimension(20, Some(Size::Fixed(15)), Some(Size::Fixed(25)), 100),
+            20
+        );
     }
 }

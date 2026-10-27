@@ -65,6 +65,7 @@ pub struct Buffer {
     pub width: u16,
     pub height: u16,
     pub cells: Vec<Cell>,
+    clip_stack: Vec<Rect>,
 }
 
 impl Buffer {
@@ -74,6 +75,7 @@ impl Buffer {
             width,
             height,
             cells: vec![Cell::default(); size],
+            clip_stack: Vec::new(),
         }
     }
 
@@ -82,12 +84,31 @@ impl Buffer {
         self.height = height;
         let size = (width as usize) * (height as usize);
         self.cells = vec![Cell::default(); size];
+        self.clip_stack.clear();
     }
 
     pub fn clear(&mut self) {
         for cell in &mut self.cells {
             *cell = Cell::default();
         }
+        self.clip_stack.clear();
+    }
+
+    pub fn push_clip(&mut self, rect: Rect) {
+        let current = self.active_clip();
+        let intersected = current.intersect(&rect).unwrap_or(Rect::new(0, 0, 0, 0));
+        self.clip_stack.push(intersected);
+    }
+
+    pub fn pop_clip(&mut self) {
+        self.clip_stack.pop();
+    }
+
+    pub fn active_clip(&self) -> Rect {
+        self.clip_stack
+            .last()
+            .copied()
+            .unwrap_or(Rect::new(0, 0, self.width, self.height))
     }
 
     #[inline]
@@ -108,7 +129,10 @@ impl Buffer {
     }
 
     pub fn set_cell(&mut self, x: u16, y: u16, cell: Cell) {
-        if let Some(idx) = self.index_of(x, y) {
+        if let Some(idx) = self
+            .index_of(x, y)
+            .filter(|_| self.active_clip().contains(x, y))
+        {
             self.cells[idx] = cell;
         }
     }
@@ -122,6 +146,9 @@ impl Buffer {
         bg: Option<Color>,
         bold: bool,
     ) {
+        if !self.active_clip().contains(x, y) {
+            return;
+        }
         if let Some(cell) = self.get_mut(x, y) {
             cell.ch = ch;
             cell.fg = fg;
@@ -141,6 +168,10 @@ impl Buffer {
         bold: bool,
         max_width: u16,
     ) {
+        let clip = self.active_clip();
+        if y < clip.y || y >= clip.y.saturating_add(clip.height) {
+            return;
+        }
         for (idx, ch) in text.chars().enumerate() {
             let curr_x = x.saturating_add(idx as u16);
             if curr_x >= x.saturating_add(max_width) || curr_x >= self.width {
@@ -368,6 +399,29 @@ mod tests {
         assert_eq!(buf.get(5, 2).unwrap().ch, 'l');
         assert_eq!(buf.get(6, 2).unwrap().ch, 'o');
         assert_eq!(buf.get(7, 2).unwrap().ch, ' ');
+    }
+
+    #[test]
+    fn test_buffer_clipping() {
+        let mut buf = Buffer::new(20, 10);
+        buf.push_clip(Rect::new(2, 2, 4, 3));
+
+        // Drawing inside clip (3, 3) should work
+        buf.set_char(3, 3, 'X', None, None, false);
+        assert_eq!(buf.get(3, 3).unwrap().ch, 'X');
+
+        // Drawing outside clip (1, 1) should be ignored
+        buf.set_char(1, 1, 'Y', None, None, false);
+        assert_eq!(buf.get(1, 1).unwrap().ch, ' ');
+
+        // Drawing outside clip (10, 3) should be ignored
+        buf.set_char(10, 3, 'Z', None, None, false);
+        assert_eq!(buf.get(10, 3).unwrap().ch, ' ');
+
+        buf.pop_clip();
+        // After popping, clip is restored to whole buffer
+        buf.set_char(1, 1, 'Y', None, None, false);
+        assert_eq!(buf.get(1, 1).unwrap().ch, 'Y');
     }
 
     #[test]

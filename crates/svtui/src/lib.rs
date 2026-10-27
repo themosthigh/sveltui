@@ -22,7 +22,10 @@ pub use element::{
     BoxElement, FocusHandle, FocusId, FocusState, HitMap, IntoNode, TextElement, VNode, is_focused,
     set_focused, use_focus,
 };
-pub use layout::{Align, BorderStyle, Justify, Padding, Size};
+pub use layout::{
+    Align, BorderStyle, Justify, Overflow, Padding, ScrollbarChars, ScrollbarStyle,
+    ScrollbarVisibility, Size,
+};
 pub use reactive::{ReadSignal, Runtime, WriteSignal, create_effect, create_signal};
 pub use terminal::{Buffer, Cell, Terminal, TerminalColor as Color};
 
@@ -35,7 +38,10 @@ pub mod prelude {
         BoxElement, FocusHandle, FocusId, FocusState, HitMap, IntoNode, TextElement, VNode,
         is_focused, set_focused, use_focus,
     };
-    pub use crate::layout::{Align, BorderStyle, Justify, Padding, Size};
+    pub use crate::layout::{
+        Align, BorderStyle, Justify, Overflow, Padding, ScrollbarChars, ScrollbarStyle,
+        ScrollbarVisibility, Size,
+    };
     pub use crate::reactive::{ReadSignal, WriteSignal, create_effect, create_signal};
     pub use crate::terminal::TerminalColor as Color;
     pub use crate::view;
@@ -51,7 +57,14 @@ mod tests {
         let (checked, set_checked) = create_signal(true);
 
         let _node: VNode = view! {
-            <Box>
+            <Box
+                min_width=20
+                max_width=80
+                min_height=5
+                max_height=30
+                overflow=Overflow::Scroll
+                scrollbar_visibility=ScrollbarVisibility::Auto
+            >
                 <Button variant=ButtonVariant::Primary>"Click Me"</Button>
                 <Switch checked=checked set_checked=set_checked label="Toggle" />
                 <Checkbox checked=checked set_checked=set_checked label="Accept" />

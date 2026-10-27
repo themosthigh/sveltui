@@ -119,8 +119,8 @@ where
             // Poll for terminal events with 16ms timeout (~60 FPS)
             if event::poll(Duration::from_millis(16))? {
                 match event::read()? {
-                    Event::Mouse(mouse) => {
-                        if let MouseEventKind::Down(MouseButton::Left) = mouse.kind {
+                    Event::Mouse(mouse) => match mouse.kind {
+                        MouseEventKind::Down(MouseButton::Left) => {
                             if let Some(target) = hit_map.hit_test(mouse.column, mouse.row) {
                                 if let Some(fid) = target.focus_id {
                                     focused_id = Some(fid);
@@ -131,7 +131,24 @@ where
                                 Runtime::set_dirty(true);
                             }
                         }
-                    }
+                        MouseEventKind::ScrollDown => {
+                            if let Some(target) = hit_map.hit_test(mouse.column, mouse.row) {
+                                if let Some(ref on_scroll) = target.on_scroll {
+                                    on_scroll(0, 1);
+                                    Runtime::set_dirty(true);
+                                }
+                            }
+                        }
+                        MouseEventKind::ScrollUp => {
+                            if let Some(target) = hit_map.hit_test(mouse.column, mouse.row) {
+                                if let Some(ref on_scroll) = target.on_scroll {
+                                    on_scroll(0, -1);
+                                    Runtime::set_dirty(true);
+                                }
+                            }
+                        }
+                        _ => {}
+                    },
                     Event::Key(key) => {
                         // Quit condition: Ctrl+C, Esc (if not in input), or 'q' (if no input focused)
                         if (key.code == KeyCode::Char('c')
@@ -203,6 +220,40 @@ where
                                         on_click();
                                         Runtime::set_dirty(true);
                                         consumed = true;
+                                    }
+                                } else if let Some(ref on_scroll) = target.on_scroll {
+                                    match key.code {
+                                        KeyCode::Up => {
+                                            on_scroll(0, -1);
+                                            Runtime::set_dirty(true);
+                                            consumed = true;
+                                        }
+                                        KeyCode::Down => {
+                                            on_scroll(0, 1);
+                                            Runtime::set_dirty(true);
+                                            consumed = true;
+                                        }
+                                        KeyCode::PageUp => {
+                                            on_scroll(0, -5);
+                                            Runtime::set_dirty(true);
+                                            consumed = true;
+                                        }
+                                        KeyCode::PageDown => {
+                                            on_scroll(0, 5);
+                                            Runtime::set_dirty(true);
+                                            consumed = true;
+                                        }
+                                        KeyCode::Left => {
+                                            on_scroll(-2, 0);
+                                            Runtime::set_dirty(true);
+                                            consumed = true;
+                                        }
+                                        KeyCode::Right => {
+                                            on_scroll(2, 0);
+                                            Runtime::set_dirty(true);
+                                            consumed = true;
+                                        }
+                                        _ => {}
                                     }
                                 }
                             }

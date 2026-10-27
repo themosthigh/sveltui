@@ -60,7 +60,8 @@ svtui/
     ├── counter.rs              # Reactive signal counter with buttons (`cargo run --example counter`)
     ├── keyboard_listener.rs    # Real-time keypress & modifier inspector (`cargo run --example keyboard_listener`)
     ├── form.rs                 # Comprehensive form with inputs & switches (`cargo run --example form`)
-    └── interactive_components.rs # Components showcase with `:focus-within` (`cargo run --example interactive_components`)
+    ├── interactive_components.rs # Components showcase with `:focus-within` (`cargo run --example interactive_components`)
+    └── scroll_container.rs     # Scrollable box container with scrollbars (`cargo run --example scroll_container`)
 ```
 
 ---
@@ -134,4 +135,5 @@ cargo run --example counter                # Simple Counter example
 cargo run --example keyboard_listener      # Keyboard Event Listener
 cargo run --example form                   # Form with text inputs & toggles
 cargo run --example interactive_components # Full Component Showcase
+cargo run --example scroll_container       # Scroll Container with scrollbars
 ```
