@@ -1,0 +1,17 @@
+[package]
+name = "svtui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+svtui-reactive = { path = "../svtui-reactive" }
+svtui-layout = { path = "../svtui-layout" }
+svtui-terminal = { path = "../svtui-terminal" }
+svtui-element = { path = "../svtui-element" }
+svtui-macros = { path = "../svtui-macros" }
+crossterm = "0.28"
+notify = "6.1"
+
+[[example]]
+name = "hello_world"
+path = "../../examples/hello_world.rs"

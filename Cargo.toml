@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/svtui-reactive",
+    "crates/svtui-layout",
+    "crates/svtui-terminal",
+    "crates/svtui-element",
+    "crates/svtui-macros",
+    "crates/svtui",
+]
+default-members = ["crates/svtui"]
