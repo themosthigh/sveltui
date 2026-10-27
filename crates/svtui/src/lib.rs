@@ -16,7 +16,7 @@ pub use svtui_macros::view;
 // Re-export common types
 pub use app::App;
 pub use components::{
-    Badge, Button, ButtonVariant, Checkbox, Divider, ProgressBar, Switch, TextInput,
+    Badge, Button, ButtonVariant, Checkbox, Divider, ProgressBar, Switch, TextBuffer, TextInput,
 };
 pub use element::{
     BoxElement, FocusHandle, FocusId, FocusState, HitMap, IntoNode, TextElement, VNode, is_focused,
@@ -32,7 +32,7 @@ pub use terminal::{Buffer, Cell, Terminal, TerminalColor as Color};
 pub mod prelude {
     pub use crate::app::App;
     pub use crate::components::{
-        Badge, Button, ButtonVariant, Checkbox, Divider, ProgressBar, Switch, TextInput,
+        Badge, Button, ButtonVariant, Checkbox, Divider, ProgressBar, Switch, TextBuffer, TextInput,
     };
     pub use crate::element::{
         BoxElement, FocusHandle, FocusId, FocusState, HitMap, IntoNode, TextElement, VNode,

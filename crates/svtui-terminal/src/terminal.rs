@@ -149,6 +149,17 @@ impl Terminal {
         }
 
         execute!(self.stdout, ResetColor, SetAttribute(Attribute::Reset))?;
+
+        if let Some((cx, cy)) = self.curr_buffer.cursor {
+            if cx < self.width && cy < self.height {
+                execute!(self.stdout, MoveTo(cx, cy), cursor::Show)?;
+            } else {
+                execute!(self.stdout, cursor::Hide)?;
+            }
+        } else {
+            execute!(self.stdout, cursor::Hide)?;
+        }
+
         self.stdout.flush()?;
 
         self.prev_buffer.cells.clone_from(&self.curr_buffer.cells);

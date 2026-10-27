@@ -36,6 +36,7 @@ mod tests {
         hit_map.register(HitTarget {
             rect: Rect::new(5, 5, 10, 3),
             on_click: Some(Rc::new(|| {})),
+            on_click_at: None,
             focus_id: Some(FocusId(1)),
             on_key: None,
             on_scroll: None,
@@ -292,5 +293,35 @@ mod tests {
         render_node_interactive(&tree, Rect::new(0, 0, 20, 10), &mut buffer2, &mut hit_map2);
 
         assert_eq!(get_scroll(scroll_id), (0, 2));
+    }
+
+    #[test]
+    fn test_render_node_cursor_offset() {
+        let input_id = FocusId::new();
+        let tree = BoxElement::new()
+            .focus_id(input_id)
+            .border(BorderStyle::Single)
+            .padding(1)
+            .width(20)
+            .height(3)
+            .cursor_offset(3, 0)
+            .into_node();
+
+        // When not focused: cursor should not be set
+        let mut buffer = Buffer::new(30, 10);
+        let mut hit_map = HitMap::new();
+        render_node_interactive(&tree, Rect::new(5, 2, 20, 3), &mut buffer, &mut hit_map);
+        assert_eq!(buffer.cursor(), None);
+
+        // When focused: cursor should be positioned at inner_x + 3, inner_y + 0
+        // Rect(5, 2, 20, 3) with border(1) and padding(1) -> inner_x = 5 + 1 + 1 = 7, inner_y = 2 + 1 + 1 = 4
+        set_focused(Some(input_id));
+        let mut buffer2 = Buffer::new(30, 10);
+        let mut hit_map2 = HitMap::new();
+        render_node_interactive(&tree, Rect::new(5, 2, 20, 3), &mut buffer2, &mut hit_map2);
+        assert_eq!(buffer2.cursor(), Some((7 + 3, 4)));
+
+        // Clean up focus state
+        set_focused(None);
     }
 }

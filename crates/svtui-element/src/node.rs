@@ -30,8 +30,10 @@ pub struct BoxElement {
     pub bg: Option<Color>,
     pub fg: Option<Color>,
     pub on_click: Option<Rc<dyn Fn()>>,
+    pub on_click_at: Option<Rc<dyn Fn(u16, u16)>>,
     pub focus_id: Option<FocusId>,
     pub on_key: Option<Rc<dyn Fn(KeyEvent)>>,
+    pub cursor_offset: Option<(u16, u16)>,
     pub children: Vec<VNode>,
 }
 
@@ -188,6 +190,19 @@ impl BoxElement {
 
     pub fn on_click(mut self, handler: impl Fn() + 'static) -> Self {
         self.on_click = Some(Rc::new(handler));
+        self
+    }
+
+    pub fn on_click_at<F>(mut self, handler: F) -> Self
+    where
+        F: Fn(u16, u16) + 'static,
+    {
+        self.on_click_at = Some(Rc::new(handler));
+        self
+    }
+
+    pub fn cursor_offset(mut self, x: u16, y: u16) -> Self {
+        self.cursor_offset = Some((x, y));
         self
     }
 

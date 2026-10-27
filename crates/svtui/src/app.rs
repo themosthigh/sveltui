@@ -128,6 +128,11 @@ where
                                 if let Some(ref on_click) = target.on_click {
                                     on_click();
                                 }
+                                if let Some(ref on_click_at) = target.on_click_at {
+                                    let rel_x = mouse.column.saturating_sub(target.rect.x);
+                                    let rel_y = mouse.row.saturating_sub(target.rect.y);
+                                    on_click_at(rel_x, rel_y);
+                                }
                                 Runtime::set_dirty(true);
                             }
                         }

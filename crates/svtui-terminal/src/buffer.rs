@@ -7,6 +7,7 @@ pub struct Buffer {
     pub width: u16,
     pub height: u16,
     pub cells: Vec<Cell>,
+    pub cursor: Option<(u16, u16)>,
     clip_stack: Vec<Rect>,
 }
 
@@ -17,6 +18,7 @@ impl Buffer {
             width,
             height,
             cells: vec![Cell::default(); size],
+            cursor: None,
             clip_stack: Vec::new(),
         }
     }
@@ -26,6 +28,7 @@ impl Buffer {
         self.height = height;
         let size = (width as usize) * (height as usize);
         self.cells = vec![Cell::default(); size];
+        self.cursor = None;
         self.clip_stack.clear();
     }
 
@@ -33,7 +36,20 @@ impl Buffer {
         for cell in &mut self.cells {
             *cell = Cell::default();
         }
+        self.cursor = None;
         self.clip_stack.clear();
+    }
+
+    pub fn set_cursor(&mut self, x: u16, y: u16) {
+        self.cursor = Some((x, y));
+    }
+
+    pub fn clear_cursor(&mut self) {
+        self.cursor = None;
+    }
+
+    pub fn cursor(&self) -> Option<(u16, u16)> {
+        self.cursor
     }
 
     pub fn push_clip(&mut self, rect: Rect) {

@@ -61,4 +61,20 @@ mod tests {
         assert_eq!(buf.get(1, 0).unwrap().ch, '─');
         assert_eq!(buf.get(0, 1).unwrap().ch, '│');
     }
+
+    #[test]
+    fn test_buffer_cursor() {
+        let mut buf = Buffer::new(10, 5);
+        assert_eq!(buf.cursor(), None);
+
+        buf.set_cursor(4, 2);
+        assert_eq!(buf.cursor(), Some((4, 2)));
+
+        buf.clear_cursor();
+        assert_eq!(buf.cursor(), None);
+
+        buf.set_cursor(7, 3);
+        buf.clear();
+        assert_eq!(buf.cursor(), None);
+    }
 }

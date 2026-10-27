@@ -8,6 +8,7 @@ use svtui_layout::Rect;
 pub struct HitTarget {
     pub rect: Rect,
     pub on_click: Option<Rc<dyn Fn()>>,
+    pub on_click_at: Option<Rc<dyn Fn(u16, u16)>>,
     pub focus_id: Option<FocusId>,
     pub on_key: Option<Rc<dyn Fn(KeyEvent)>>,
     pub on_scroll: Option<Rc<dyn Fn(i16, i16)>>,

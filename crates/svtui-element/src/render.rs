@@ -1,5 +1,5 @@
 use crate::events::{HitMap, HitTarget};
-use crate::focus::next_render_focus_id;
+use crate::focus::{is_focused, next_render_focus_id};
 use crate::measure::measure_node;
 use crate::node::VNode;
 use crate::scroll::{get_scroll, set_scroll};
@@ -163,6 +163,27 @@ pub fn render_node_offset(
             let inner_y = y + border_h as i32 + b.padding.top as i32;
             let inner_w = width.saturating_sub(border_w * 2 + b.padding.left + b.padding.right);
             let inner_h = height.saturating_sub(border_h * 2 + b.padding.top + b.padding.bottom);
+
+            if let Some((cx_off, cy_off)) = b.cursor_offset
+                && b.focus_id.is_some_and(is_focused)
+            {
+                let screen_cx = inner_x + cx_off as i32;
+                let screen_cy = inner_y + cy_off as i32;
+                let clip = buffer.active_clip();
+                let in_clip = clip.width == 0
+                    || (screen_cx >= clip.x as i32
+                        && screen_cx < (clip.x + clip.width) as i32
+                        && screen_cy >= clip.y as i32
+                        && screen_cy < (clip.y + clip.height) as i32);
+                if in_clip
+                    && screen_cx >= 0
+                    && screen_cy >= 0
+                    && screen_cx < buffer.width as i32
+                    && screen_cy < buffer.height as i32
+                {
+                    buffer.set_cursor(screen_cx as u16, screen_cy as u16);
+                }
+            }
 
             if inner_w > 0 && inner_h > 0 {
                 let is_scroll_x =
@@ -379,6 +400,7 @@ pub fn render_node_offset(
                 };
 
                 if b.on_click.is_some()
+                    || b.on_click_at.is_some()
                     || b.focus_id.is_some()
                     || b.on_key.is_some()
                     || on_scroll_handler.is_some()
@@ -387,6 +409,7 @@ pub fn render_node_offset(
                     hit_map.register(HitTarget {
                         rect: target_rect,
                         on_click: b.on_click.clone(),
+                        on_click_at: b.on_click_at.clone(),
                         focus_id: scroll_fid,
                         on_key: b.on_key.clone(),
                         on_scroll: on_scroll_handler,
@@ -431,11 +454,16 @@ pub fn render_node_offset(
                 if needs_clip {
                     buffer.pop_clip();
                 }
-            } else if b.on_click.is_some() || b.focus_id.is_some() || b.on_key.is_some() {
+            } else if b.on_click.is_some()
+                || b.on_click_at.is_some()
+                || b.focus_id.is_some()
+                || b.on_key.is_some()
+            {
                 let target_rect = Rect::new(x.max(0) as u16, y.max(0) as u16, width, height);
                 hit_map.register(HitTarget {
                     rect: target_rect,
                     on_click: b.on_click.clone(),
+                    on_click_at: b.on_click_at.clone(),
                     focus_id: b.focus_id,
                     on_key: b.on_key.clone(),
                     on_scroll: None,

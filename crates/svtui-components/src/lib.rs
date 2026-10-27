@@ -4,6 +4,7 @@ pub mod checkbox;
 pub mod divider;
 pub mod progress_bar;
 pub mod switch;
+pub mod text_buffer;
 pub mod text_input;
 
 pub use badge::Badge;
@@ -12,6 +13,7 @@ pub use checkbox::Checkbox;
 pub use divider::Divider;
 pub use progress_bar::ProgressBar;
 pub use switch::Switch;
+pub use text_buffer::TextBuffer;
 pub use text_input::TextInput;
 
 #[cfg(test)]
