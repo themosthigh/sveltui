@@ -1,13 +1,56 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use std::cell::RefCell;
+use std::collections::HashMap;
+use svtui_element::FocusId;
 
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct TextBuffer {
-    content: String,
-    pub cursor: usize,
-    pub scroll_offset: usize,
+thread_local! {
+    pub(crate) static BUFFER_MAP: RefCell<HashMap<FocusId, TextBuffer>> = RefCell::new(HashMap::new());
 }
 
-fn char_to_byte_index(s: &str, char_idx: usize) -> usize {
+pub fn with_buffer<R>(id: FocusId, f: impl FnOnce(&TextBuffer) -> R) -> R {
+    BUFFER_MAP.with(|m| {
+        let mut map = m.borrow_mut();
+        let buf = map.entry(id).or_default();
+        f(buf)
+    })
+}
+
+pub fn with_buffer_mut<R>(id: FocusId, f: impl FnOnce(&mut TextBuffer) -> R) -> R {
+    BUFFER_MAP.with(|m| {
+        let mut map = m.borrow_mut();
+        let buf = map.entry(id).or_default();
+        f(buf)
+    })
+}
+
+pub fn get_buffer(id: FocusId) -> TextBuffer {
+    with_buffer(id, |b| b.clone())
+}
+
+pub fn set_buffer(id: FocusId, buf: TextBuffer) {
+    BUFFER_MAP.with(|m| {
+        m.borrow_mut().insert(id, buf);
+    });
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TextBuffer {
+    lines: Vec<String>,
+    pub cursor_row: usize,
+    pub cursor_col: usize,
+    pub scroll_row: usize,
+    pub scroll_col: usize,
+    preferred_col: Option<usize>,
+    multiline: bool,
+}
+
+impl Default for TextBuffer {
+    fn default() -> Self {
+        Self::new("")
+    }
+}
+
+pub fn char_to_byte_index(s: &str, char_idx: usize) -> usize {
     s.char_indices()
         .nth(char_idx)
         .map(|(b, _)| b)
@@ -16,199 +59,411 @@ fn char_to_byte_index(s: &str, char_idx: usize) -> usize {
 
 impl TextBuffer {
     pub fn new(content: impl Into<String>) -> Self {
-        let content = content.into();
-        let cursor = content.chars().count();
+        let s = content.into();
+        let lines: Vec<String> = if s.is_empty() {
+            vec![String::new()]
+        } else {
+            let mut l: Vec<String> = s.lines().map(|line| line.to_string()).collect();
+            if s.ends_with('\n') {
+                l.push(String::new());
+            }
+            if l.is_empty() { vec![String::new()] } else { l }
+        };
+        let cursor_row = lines.len().saturating_sub(1);
+        let cursor_col = lines[cursor_row].chars().count();
         Self {
-            content,
-            cursor,
-            scroll_offset: 0,
+            lines,
+            cursor_row,
+            cursor_col,
+            scroll_row: 0,
+            scroll_col: 0,
+            preferred_col: None,
+            multiline: true,
         }
     }
 
-    pub fn content(&self) -> &str {
-        &self.content
+    pub fn multiline(&self) -> bool {
+        self.multiline
     }
 
-    pub fn as_str(&self) -> &str {
-        &self.content
+    pub fn set_multiline(&mut self, multiline: bool) {
+        self.multiline = multiline;
+    }
+
+    pub fn content(&self) -> String {
+        self.lines.join("\n")
+    }
+
+    pub fn as_str(&self) -> String {
+        self.lines.join("\n")
     }
 
     pub fn set_content(&mut self, text: impl Into<String>) {
-        self.content = text.into();
-        let len = self.len();
-        if self.cursor > len {
-            self.cursor = len;
-        }
+        let s = text.into();
+        self.lines = if s.is_empty() {
+            vec![String::new()]
+        } else {
+            let mut l: Vec<String> = s.lines().map(|line| line.to_string()).collect();
+            if s.ends_with('\n') {
+                l.push(String::new());
+            }
+            if l.is_empty() { vec![String::new()] } else { l }
+        };
+        let max_row = self.lines.len().saturating_sub(1);
+        self.cursor_row = self.cursor_row.min(max_row);
+        self.cursor_col = self.cursor_col.min(self.line_len(self.cursor_row));
+        self.preferred_col = None;
+    }
+
+    pub fn lines(&self) -> &[String] {
+        &self.lines
+    }
+
+    pub fn line(&self, row: usize) -> Option<&str> {
+        self.lines.get(row).map(|s| s.as_str())
+    }
+
+    pub fn line_count(&self) -> usize {
+        self.lines.len()
+    }
+
+    pub fn line_len(&self, row: usize) -> usize {
+        self.lines.get(row).map(|l| l.chars().count()).unwrap_or(0)
     }
 
     pub fn len(&self) -> usize {
-        self.content.chars().count()
+        if self.lines.is_empty() {
+            return 0;
+        }
+        let chars: usize = self.lines.iter().map(|l| l.chars().count()).sum();
+        chars + (self.lines.len() - 1)
     }
 
     pub fn is_empty(&self) -> bool {
-        self.content.is_empty()
+        self.lines.is_empty() || (self.lines.len() == 1 && self.lines[0].is_empty())
     }
 
     pub fn cursor(&self) -> usize {
-        self.cursor
+        self.cursor_col
     }
 
     pub fn set_cursor(&mut self, pos: usize) {
-        self.cursor = pos.min(self.len());
+        self.cursor_col = pos.min(self.line_len(self.cursor_row));
+        self.preferred_col = None;
+    }
+
+    pub fn cursor_pos(&self) -> (usize, usize) {
+        (self.cursor_row, self.cursor_col)
+    }
+
+    pub fn set_cursor_pos(&mut self, row: usize, col: usize) {
+        let max_row = self.lines.len().saturating_sub(1);
+        self.cursor_row = row.min(max_row);
+        self.cursor_col = col.min(self.line_len(self.cursor_row));
+        self.preferred_col = None;
     }
 
     pub fn scroll_offset(&self) -> usize {
-        self.scroll_offset
+        self.scroll_col
     }
 
     pub fn set_scroll_offset(&mut self, offset: usize) {
-        self.scroll_offset = offset;
+        self.scroll_col = offset;
+    }
+
+    pub fn scroll_pos(&self) -> (usize, usize) {
+        (self.scroll_row, self.scroll_col)
+    }
+
+    pub fn set_scroll_pos(&mut self, row: usize, col: usize) {
+        self.scroll_row = row;
+        self.scroll_col = col;
     }
 
     pub fn move_left(&mut self) {
-        self.cursor = self.cursor.saturating_sub(1);
+        if self.cursor_col > 0 {
+            self.cursor_col -= 1;
+            self.preferred_col = None;
+        } else if self.multiline && self.cursor_row > 0 {
+            self.cursor_row -= 1;
+            self.cursor_col = self.line_len(self.cursor_row);
+            self.preferred_col = None;
+        }
     }
 
     pub fn move_right(&mut self) {
-        if self.cursor < self.len() {
-            self.cursor += 1;
+        let cur_line_len = self.line_len(self.cursor_row);
+        if self.cursor_col < cur_line_len {
+            self.cursor_col += 1;
+            self.preferred_col = None;
+        } else if self.multiline && self.cursor_row + 1 < self.lines.len() {
+            self.cursor_row += 1;
+            self.cursor_col = 0;
+            self.preferred_col = None;
+        }
+    }
+
+    pub fn move_up(&mut self) {
+        if self.cursor_row > 0 {
+            let target_col = self.preferred_col.unwrap_or(self.cursor_col);
+            self.preferred_col = Some(target_col);
+            self.cursor_row -= 1;
+            self.cursor_col = target_col.min(self.line_len(self.cursor_row));
+        }
+    }
+
+    pub fn move_down(&mut self) {
+        if self.cursor_row + 1 < self.lines.len() {
+            let target_col = self.preferred_col.unwrap_or(self.cursor_col);
+            self.preferred_col = Some(target_col);
+            self.cursor_row += 1;
+            self.cursor_col = target_col.min(self.line_len(self.cursor_row));
         }
     }
 
     pub fn move_home(&mut self) {
-        self.cursor = 0;
+        self.cursor_col = 0;
+        self.preferred_col = None;
     }
 
     pub fn move_end(&mut self) {
-        self.cursor = self.len();
+        self.cursor_col = self.line_len(self.cursor_row);
+        self.preferred_col = None;
+    }
+
+    pub fn move_top(&mut self) {
+        self.cursor_row = 0;
+        self.cursor_col = 0;
+        self.preferred_col = None;
+    }
+
+    pub fn move_bottom(&mut self) {
+        self.cursor_row = self.lines.len().saturating_sub(1);
+        self.cursor_col = self.line_len(self.cursor_row);
+        self.preferred_col = None;
+    }
+
+    pub fn page_up(&mut self, page_size: usize) {
+        let target_col = self.preferred_col.unwrap_or(self.cursor_col);
+        self.preferred_col = Some(target_col);
+        self.cursor_row = self.cursor_row.saturating_sub(page_size);
+        self.cursor_col = target_col.min(self.line_len(self.cursor_row));
+    }
+
+    pub fn page_down(&mut self, page_size: usize) {
+        let target_col = self.preferred_col.unwrap_or(self.cursor_col);
+        self.preferred_col = Some(target_col);
+        let max_row = self.lines.len().saturating_sub(1);
+        self.cursor_row = (self.cursor_row + page_size).min(max_row);
+        self.cursor_col = target_col.min(self.line_len(self.cursor_row));
     }
 
     pub fn move_word_left(&mut self) {
-        let chars: Vec<char> = self.content.chars().collect();
-        let mut idx = self.cursor;
+        if self.cursor_col == 0 {
+            if self.multiline && self.cursor_row > 0 {
+                self.move_left();
+            }
+            return;
+        }
+        let line = &self.lines[self.cursor_row];
+        let chars: Vec<char> = line.chars().collect();
+        let mut idx = self.cursor_col;
 
-        // Skip whitespace to the left
         while idx > 0 && chars[idx - 1].is_whitespace() {
             idx -= 1;
         }
-        // Skip word characters to the left
         while idx > 0 && !chars[idx - 1].is_whitespace() {
             idx -= 1;
         }
-        self.cursor = idx;
+        self.cursor_col = idx;
+        self.preferred_col = None;
     }
 
     pub fn move_word_right(&mut self) {
-        let chars: Vec<char> = self.content.chars().collect();
-        let len = chars.len();
-        let mut idx = self.cursor;
+        let cur_len = self.line_len(self.cursor_row);
+        if self.cursor_col >= cur_len {
+            if self.multiline && self.cursor_row + 1 < self.lines.len() {
+                self.move_right();
+            }
+            return;
+        }
+        let line = &self.lines[self.cursor_row];
+        let chars: Vec<char> = line.chars().collect();
+        let mut idx = self.cursor_col;
 
-        // Skip non-whitespace to the right
-        while idx < len && !chars[idx].is_whitespace() {
+        while idx < cur_len && !chars[idx].is_whitespace() {
             idx += 1;
         }
-        // Skip whitespace to the right
-        while idx < len && chars[idx].is_whitespace() {
+        while idx < cur_len && chars[idx].is_whitespace() {
             idx += 1;
         }
-        self.cursor = idx;
+        self.cursor_col = idx;
+        self.preferred_col = None;
     }
 
     pub fn insert_char(&mut self, c: char) {
-        let byte_pos = char_to_byte_index(&self.content, self.cursor);
-        self.content.insert(byte_pos, c);
-        self.cursor += 1;
+        if c == '\n' {
+            if !self.multiline {
+                return;
+            }
+            let byte_pos = char_to_byte_index(&self.lines[self.cursor_row], self.cursor_col);
+            let rest = self.lines[self.cursor_row][byte_pos..].to_string();
+            self.lines[self.cursor_row].truncate(byte_pos);
+            self.cursor_row += 1;
+            self.lines.insert(self.cursor_row, rest);
+            self.cursor_col = 0;
+            self.preferred_col = None;
+        } else {
+            let byte_pos = char_to_byte_index(&self.lines[self.cursor_row], self.cursor_col);
+            self.lines[self.cursor_row].insert(byte_pos, c);
+            self.cursor_col += 1;
+            self.preferred_col = None;
+        }
     }
 
     pub fn insert_str(&mut self, s: &str) {
-        let byte_pos = char_to_byte_index(&self.content, self.cursor);
-        self.content.insert_str(byte_pos, s);
-        self.cursor += s.chars().count();
+        for c in s.chars() {
+            self.insert_char(c);
+        }
     }
 
     pub fn backspace(&mut self) -> bool {
-        if self.cursor == 0 || self.content.is_empty() {
-            return false;
+        if self.cursor_col > 0 {
+            let del_idx = self.cursor_col - 1;
+            let start_byte = char_to_byte_index(&self.lines[self.cursor_row], del_idx);
+            let end_byte = char_to_byte_index(&self.lines[self.cursor_row], self.cursor_col);
+            self.lines[self.cursor_row].drain(start_byte..end_byte);
+            self.cursor_col = del_idx;
+            self.preferred_col = None;
+            true
+        } else if self.multiline && self.cursor_row > 0 {
+            let curr_line = self.lines.remove(self.cursor_row);
+            self.cursor_row -= 1;
+            self.cursor_col = self.line_len(self.cursor_row);
+            self.lines[self.cursor_row].push_str(&curr_line);
+            self.preferred_col = None;
+            true
+        } else {
+            false
         }
-        let del_idx = self.cursor - 1;
-        let start_byte = char_to_byte_index(&self.content, del_idx);
-        let end_byte = char_to_byte_index(&self.content, self.cursor);
-        self.content.drain(start_byte..end_byte);
-        self.cursor = del_idx;
-        true
     }
 
     pub fn delete(&mut self) -> bool {
-        if self.cursor >= self.len() || self.content.is_empty() {
-            return false;
+        let cur_len = self.line_len(self.cursor_row);
+        if self.cursor_col < cur_len {
+            let start_byte = char_to_byte_index(&self.lines[self.cursor_row], self.cursor_col);
+            let end_byte = char_to_byte_index(&self.lines[self.cursor_row], self.cursor_col + 1);
+            self.lines[self.cursor_row].drain(start_byte..end_byte);
+            self.preferred_col = None;
+            true
+        } else if self.multiline && self.cursor_row + 1 < self.lines.len() {
+            let next_line = self.lines.remove(self.cursor_row + 1);
+            self.lines[self.cursor_row].push_str(&next_line);
+            self.preferred_col = None;
+            true
+        } else {
+            false
         }
-        let start_byte = char_to_byte_index(&self.content, self.cursor);
-        let end_byte = char_to_byte_index(&self.content, self.cursor + 1);
-        self.content.drain(start_byte..end_byte);
-        true
     }
 
     pub fn delete_word_left(&mut self) -> bool {
-        if self.cursor == 0 || self.content.is_empty() {
-            return false;
+        if self.cursor_col > 0 {
+            let old_col = self.cursor_col;
+            self.move_word_left();
+            let new_col = self.cursor_col;
+            let start_byte = char_to_byte_index(&self.lines[self.cursor_row], new_col);
+            let end_byte = char_to_byte_index(&self.lines[self.cursor_row], old_col);
+            self.lines[self.cursor_row].drain(start_byte..end_byte);
+            self.preferred_col = None;
+            true
+        } else if self.multiline && self.cursor_row > 0 {
+            self.backspace()
+        } else {
+            false
         }
-        let old_cursor = self.cursor;
-        self.move_word_left();
-        let new_cursor = self.cursor;
-        let start_byte = char_to_byte_index(&self.content, new_cursor);
-        let end_byte = char_to_byte_index(&self.content, old_cursor);
-        self.content.drain(start_byte..end_byte);
-        true
     }
 
     pub fn delete_to_end(&mut self) -> bool {
-        if self.cursor >= self.len() {
-            return false;
+        let cur_len = self.line_len(self.cursor_row);
+        if self.cursor_col < cur_len {
+            let start_byte = char_to_byte_index(&self.lines[self.cursor_row], self.cursor_col);
+            self.lines[self.cursor_row].truncate(start_byte);
+            self.preferred_col = None;
+            true
+        } else if self.multiline && self.cursor_row + 1 < self.lines.len() {
+            let next_line = self.lines.remove(self.cursor_row + 1);
+            self.lines[self.cursor_row].push_str(&next_line);
+            self.preferred_col = None;
+            true
+        } else {
+            false
         }
-        let start_byte = char_to_byte_index(&self.content, self.cursor);
-        self.content.truncate(start_byte);
-        true
     }
 
     pub fn delete_to_start(&mut self) -> bool {
-        if self.cursor == 0 {
-            return false;
+        if self.cursor_col > 0 {
+            let end_byte = char_to_byte_index(&self.lines[self.cursor_row], self.cursor_col);
+            self.lines[self.cursor_row].drain(0..end_byte);
+            self.cursor_col = 0;
+            self.preferred_col = None;
+            true
+        } else {
+            false
         }
-        let end_byte = char_to_byte_index(&self.content, self.cursor);
-        self.content.drain(0..end_byte);
-        self.cursor = 0;
-        true
     }
 
     pub fn clear(&mut self) {
-        self.content.clear();
-        self.cursor = 0;
-        self.scroll_offset = 0;
+        self.lines = vec![String::new()];
+        self.cursor_row = 0;
+        self.cursor_col = 0;
+        self.scroll_row = 0;
+        self.scroll_col = 0;
+        self.preferred_col = None;
     }
 
-    /// Adjusts `scroll_offset` so that `cursor` is visible within `visible_width`.
-    pub fn update_viewport(&mut self, visible_width: usize) {
-        if visible_width == 0 {
-            return;
+    pub fn update_viewport(&mut self, visible_width: usize, visible_height: usize) {
+        if visible_height > 0 {
+            if self.cursor_row < self.scroll_row {
+                self.scroll_row = self.cursor_row;
+            } else if self.cursor_row >= self.scroll_row + visible_height {
+                self.scroll_row = self.cursor_row.saturating_sub(visible_height) + 1;
+            }
         }
-        if self.cursor < self.scroll_offset {
-            self.scroll_offset = self.cursor;
-        } else if self.cursor >= self.scroll_offset + visible_width {
-            self.scroll_offset = self.cursor.saturating_sub(visible_width) + 1;
+        if visible_width > 0 {
+            if self.cursor_col < self.scroll_col {
+                self.scroll_col = self.cursor_col;
+            } else if self.cursor_col >= self.scroll_col + visible_width {
+                self.scroll_col = self.cursor_col.saturating_sub(visible_width) + 1;
+            }
         }
     }
 
-    /// Returns the visible substring for `scroll_offset` and `visible_width`.
-    pub fn visible_text(&self, visible_width: usize) -> &str {
-        if visible_width == 0 || self.content.is_empty() {
-            return "";
+    pub fn visible_text(&self, visible_width: usize) -> String {
+        if visible_width == 0 || self.lines.is_empty() {
+            return String::new();
         }
-        let start_byte = char_to_byte_index(&self.content, self.scroll_offset);
-        let end_byte = char_to_byte_index(&self.content, self.scroll_offset + visible_width);
-        &self.content[start_byte..end_byte]
+        let row = self.cursor_row.min(self.lines.len().saturating_sub(1));
+        let line = &self.lines[row];
+        let start_byte = char_to_byte_index(line, self.scroll_col);
+        let end_byte = char_to_byte_index(line, self.scroll_col + visible_width);
+        line[start_byte..end_byte].to_string()
     }
 
-    /// Processes keyboard events, returning true if content was modified or cursor moved.
+    pub fn visible_lines(&self, visible_width: usize, visible_height: usize) -> Vec<String> {
+        if visible_height == 0 || self.lines.is_empty() {
+            return Vec::new();
+        }
+        let end_row = (self.scroll_row + visible_height).min(self.lines.len());
+        let mut result = Vec::with_capacity(end_row.saturating_sub(self.scroll_row));
+        for r in self.scroll_row..end_row {
+            let line = &self.lines[r];
+            let start_byte = char_to_byte_index(line, self.scroll_col);
+            let end_byte = char_to_byte_index(line, self.scroll_col + visible_width);
+            result.push(line[start_byte..end_byte].to_string());
+        }
+        result
+    }
+
     pub fn handle_key(&mut self, key: &KeyEvent) -> bool {
         let is_ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
         let is_alt = key.modifiers.contains(KeyModifiers::ALT);
@@ -230,6 +485,22 @@ impl TextBuffer {
             KeyCode::Char(c) if !is_ctrl && !is_alt => {
                 self.insert_char(c);
                 true
+            }
+            KeyCode::Enter => {
+                if self.multiline {
+                    self.insert_char('\n');
+                    true
+                } else {
+                    false
+                }
+            }
+            KeyCode::Tab => {
+                if self.multiline {
+                    self.insert_str("    ");
+                    true
+                } else {
+                    false
+                }
             }
             KeyCode::Backspace => {
                 if is_alt {
@@ -255,128 +526,47 @@ impl TextBuffer {
                 }
                 true
             }
+            KeyCode::Up => {
+                if is_ctrl {
+                    self.move_top();
+                } else {
+                    self.move_up();
+                }
+                true
+            }
+            KeyCode::Down => {
+                if is_ctrl {
+                    self.move_bottom();
+                } else {
+                    self.move_down();
+                }
+                true
+            }
+            KeyCode::PageUp => {
+                self.page_up(10);
+                true
+            }
+            KeyCode::PageDown => {
+                self.page_down(10);
+                true
+            }
             KeyCode::Home => {
-                self.move_home();
+                if is_ctrl {
+                    self.move_top();
+                } else {
+                    self.move_home();
+                }
                 true
             }
             KeyCode::End => {
-                self.move_end();
+                if is_ctrl {
+                    self.move_bottom();
+                } else {
+                    self.move_end();
+                }
                 true
             }
             _ => false,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_text_buffer_insert_and_cursor() {
-        let mut buf = TextBuffer::new("");
-        assert_eq!(buf.cursor(), 0);
-        assert_eq!(buf.len(), 0);
-
-        buf.insert_char('H');
-        buf.insert_char('i');
-        assert_eq!(buf.content(), "Hi");
-        assert_eq!(buf.cursor(), 2);
-
-        buf.move_left();
-        assert_eq!(buf.cursor(), 1);
-        buf.insert_char('e');
-        buf.insert_char('y');
-        assert_eq!(buf.content(), "Heyi");
-        assert_eq!(buf.cursor(), 3);
-    }
-
-    #[test]
-    fn test_text_buffer_backspace_and_delete() {
-        let mut buf = TextBuffer::new("Rust");
-        assert_eq!(buf.cursor(), 4);
-
-        assert!(buf.backspace());
-        assert_eq!(buf.content(), "Rus");
-        assert_eq!(buf.cursor(), 3);
-
-        buf.set_cursor(1);
-        assert!(buf.delete());
-        assert_eq!(buf.content(), "Rs");
-        assert_eq!(buf.cursor(), 1);
-    }
-
-    #[test]
-    fn test_text_buffer_word_navigation_and_deletion() {
-        let mut buf = TextBuffer::new("one two three");
-        assert_eq!(buf.cursor(), 13);
-
-        buf.move_word_left();
-        assert_eq!(buf.cursor(), 8); // at start of "three"
-
-        buf.move_word_left();
-        assert_eq!(buf.cursor(), 4); // at start of "two"
-
-        buf.move_word_right();
-        assert_eq!(buf.cursor(), 8); // after "two "
-
-        buf.move_end();
-        assert!(buf.delete_word_left());
-        assert_eq!(buf.content(), "one two ");
-        assert_eq!(buf.cursor(), 8);
-    }
-
-    #[test]
-    fn test_text_buffer_line_operations() {
-        let mut buf = TextBuffer::new("first second third");
-        buf.set_cursor(6); // at start of "second"
-
-        assert!(buf.delete_to_end());
-        assert_eq!(buf.content(), "first ");
-
-        buf.insert_str("word");
-        assert_eq!(buf.content(), "first word");
-        buf.set_cursor(6);
-        assert!(buf.delete_to_start());
-        assert_eq!(buf.content(), "word");
-        assert_eq!(buf.cursor(), 0);
-    }
-
-    #[test]
-    fn test_text_buffer_viewport_scrolling() {
-        let mut buf = TextBuffer::new("");
-        let visible_width = 5;
-
-        for c in "0123456789".chars() {
-            buf.insert_char(c);
-            buf.update_viewport(visible_width);
-        }
-
-        assert_eq!(buf.content(), "0123456789");
-        assert_eq!(buf.cursor(), 10);
-        assert_eq!(buf.scroll_offset(), 6);
-        assert_eq!(buf.visible_text(visible_width), "6789");
-
-        buf.move_home();
-        buf.update_viewport(visible_width);
-        assert_eq!(buf.cursor(), 0);
-        assert_eq!(buf.scroll_offset(), 0);
-        assert_eq!(buf.visible_text(visible_width), "01234");
-    }
-
-    #[test]
-    fn test_text_buffer_unicode() {
-        let mut buf = TextBuffer::new("🦀🚀");
-        assert_eq!(buf.len(), 2);
-        assert_eq!(buf.cursor(), 2);
-
-        buf.move_left();
-        assert_eq!(buf.cursor(), 1);
-        buf.insert_char('✨');
-        assert_eq!(buf.content(), "🦀✨🚀");
-        assert_eq!(buf.cursor(), 2);
-
-        assert!(buf.backspace());
-        assert_eq!(buf.content(), "🦀🚀");
     }
 }

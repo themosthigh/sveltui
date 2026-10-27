@@ -33,6 +33,7 @@ pub struct BoxElement {
     pub on_click_at: Option<Rc<dyn Fn(u16, u16)>>,
     pub focus_id: Option<FocusId>,
     pub on_key: Option<Rc<dyn Fn(KeyEvent)>>,
+    pub on_scroll: Option<Rc<dyn Fn(i16, i16)>>,
     pub cursor_offset: Option<(u16, u16)>,
     pub children: Vec<VNode>,
 }
@@ -216,6 +217,11 @@ impl BoxElement {
         self
     }
 
+    pub fn on_scroll(mut self, handler: impl Fn(i16, i16) + 'static) -> Self {
+        self.on_scroll = Some(Rc::new(handler));
+        self
+    }
+
     pub fn child(mut self, child: impl IntoNode) -> Self {
         self.children.push(child.into_node());
         self
@@ -278,6 +284,9 @@ impl TextElement {
     }
 }
 
+// BoxElement is the fundamental layout container in svtui; keeping it unboxed in VNode
+// avoids unnecessary heap allocation indirection on every node creation and pattern match.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum VNode {
     Box(BoxElement),

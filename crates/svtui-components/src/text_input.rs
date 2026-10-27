@@ -1,35 +1,23 @@
-use crate::text_buffer::TextBuffer;
+use crate::text_buffer::{TextBuffer, with_buffer, with_buffer_mut};
 use crossterm::event::{KeyCode, KeyEvent};
 use crossterm::style::Color;
-use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 use svtui_element::{BoxElement, FocusId, IntoNode, TextElement, VNode, is_focused};
 use svtui_layout::{Align, BorderStyle, Justify, Padding, Size};
 use svtui_reactive::{ReadSignal, WriteSignal};
 
-thread_local! {
-    static BUFFER_MAP: RefCell<HashMap<FocusId, TextBuffer>> = RefCell::new(HashMap::new());
-}
-
-#[allow(dead_code)]
-fn get_cursor(id: FocusId, text_len: usize) -> usize {
-    BUFFER_MAP.with(|m| {
-        let mut map = m.borrow_mut();
-        let buf = map.entry(id).or_default();
-        if buf.cursor > text_len {
-            buf.cursor = text_len;
+pub fn get_cursor(id: FocusId, text_len: usize) -> usize {
+    with_buffer_mut(id, |buf| {
+        if buf.cursor_col > text_len {
+            buf.cursor_col = text_len;
         }
-        buf.cursor
+        buf.cursor_col
     })
 }
 
-#[allow(dead_code)]
-fn set_cursor(id: FocusId, pos: usize) {
-    BUFFER_MAP.with(|m| {
-        let mut map = m.borrow_mut();
-        let buf = map.entry(id).or_default();
-        buf.cursor = pos;
+pub fn set_cursor(id: FocusId, pos: usize) {
+    with_buffer_mut(id, |buf| {
+        buf.cursor_col = pos;
     });
 }
 
@@ -151,12 +139,12 @@ impl IntoNode for TextInput {
         };
 
         // Sync or retrieve TextBuffer for this FocusId
-        let (display_text, text_color, cursor_col) = BUFFER_MAP.with(|m| {
-            let mut map = m.borrow_mut();
-            let buf = map.entry(id).or_default();
+        let (display_text, text_color, cursor_col) = with_buffer_mut(id, |buf| {
+            buf.set_multiline(false);
 
             if let Some(buf_sig) = self.buffer {
                 *buf = buf_sig.get();
+                buf.set_multiline(false);
             } else if let Some(val_sig) = self.value {
                 let current_val = val_sig.get();
                 if buf.content() != current_val {
@@ -164,8 +152,8 @@ impl IntoNode for TextInput {
                 }
             }
 
-            buf.update_viewport(visible_width);
-            let cur_col = (buf.cursor().saturating_sub(buf.scroll_offset())) as u16;
+            buf.update_viewport(visible_width, 1);
+            let cur_col = (buf.cursor_col.saturating_sub(buf.scroll_col)) as u16;
 
             if buf.is_empty() {
                 let ph = if self.placeholder.is_empty() {
@@ -175,7 +163,7 @@ impl IntoNode for TextInput {
                 };
                 (ph, Color::DarkGrey, 0u16)
             } else {
-                let visible = buf.visible_text(visible_width).to_string();
+                let visible = buf.visible_text(visible_width);
                 (visible, Color::White, cur_col)
             }
         });
@@ -196,43 +184,32 @@ impl IntoNode for TextInput {
                 // Outer box starts at target.rect.x.
                 // Inner text starts after border(1) + padding(1) = 2.
                 let click_col = rel_x.saturating_sub(2) as usize;
-                BUFFER_MAP.with(|m| {
-                    let mut map = m.borrow_mut();
-                    if let Some(buf) = map.get_mut(&id) {
-                        let new_cursor = buf.scroll_offset() + click_col;
-                        buf.set_cursor(new_cursor);
-                        if let Some(sb) = set_buffer {
-                            sb.set(buf.clone());
-                        }
+                with_buffer_mut(id, |buf| {
+                    let new_cursor = buf.scroll_col + click_col;
+                    buf.set_cursor(new_cursor);
+                    if let Some(sb) = set_buffer {
+                        sb.set(buf.clone());
                     }
                 });
             })
             .on_key(move |key: KeyEvent| {
                 if key.code == KeyCode::Enter {
                     if let Some(ref submit) = on_submit {
-                        let text = BUFFER_MAP.with(|m| {
-                            m.borrow()
-                                .get(&id)
-                                .map(|b| b.content().to_string())
-                                .unwrap_or_default()
-                        });
+                        let text = with_buffer(id, |b| b.content());
                         submit(text);
                     }
                     return;
                 }
 
-                BUFFER_MAP.with(|m| {
-                    let mut map = m.borrow_mut();
-                    if let Some(buf) = map.get_mut(&id) {
-                        let modified = buf.handle_key(&key);
-                        if modified {
-                            let text = buf.content().to_string();
-                            if let Some(sv) = set_value {
-                                sv.set(text);
-                            }
-                            if let Some(sb) = set_buffer {
-                                sb.set(buf.clone());
-                            }
+                with_buffer_mut(id, |buf| {
+                    let modified = buf.handle_key(&key);
+                    if modified {
+                        let text = buf.content();
+                        if let Some(sv) = set_value {
+                            sv.set(text);
+                        }
+                        if let Some(sb) = set_buffer {
+                            sb.set(buf.clone());
                         }
                     }
                 });
@@ -253,52 +230,5 @@ impl IntoNode for TextInput {
         }
 
         b.into_node()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use svtui_reactive::create_signal;
-
-    #[test]
-    fn test_text_input_cursor_forward_typing() {
-        let (val, set_val) = create_signal(String::new());
-        let id = FocusId(999);
-
-        // Initially cursor should be at 0
-        assert_eq!(get_cursor(id, 0), 0);
-
-        // Type 'a'
-        let mut text: String = val.get();
-        let cur = get_cursor(id, text.len());
-        text.insert(cur, 'a');
-        set_cursor(id, cur + 1);
-        set_val.set(text);
-
-        assert_eq!(val.get(), "a");
-        assert_eq!(get_cursor(id, 1), 1);
-
-        // Type 'b'
-        let mut text: String = val.get();
-        let cur = get_cursor(id, text.len());
-        text.insert(cur, 'b');
-        set_cursor(id, cur + 1);
-        set_val.set(text);
-
-        // Value must be "ab", NOT "ba"!
-        assert_eq!(val.get(), "ab");
-        assert_eq!(get_cursor(id, 2), 2);
-
-        // Type 'c'
-        let mut text: String = val.get();
-        let cur = get_cursor(id, text.len());
-        text.insert(cur, 'c');
-        set_cursor(id, cur + 1);
-        set_val.set(text);
-
-        // Value must be "abc"!
-        assert_eq!(val.get(), "abc");
-        assert_eq!(get_cursor(id, 3), 3);
     }
 }

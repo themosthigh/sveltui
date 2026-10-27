@@ -372,32 +372,38 @@ pub fn render_node_offset(
                 }
 
                 // Register interaction
-                let on_scroll_handler: Option<Rc<dyn Fn(i16, i16)>> = if is_scrollable {
-                    scroll_fid.map(|fid| {
-                        Rc::new(move |dx: i16, dy: i16| {
-                            let (cur_x, cur_y) = get_scroll(fid);
-                            let (actual_dx, actual_dy) =
-                                if max_scroll_y == 0 && max_scroll_x > 0 && dx == 0 && dy != 0 {
-                                    (dy * 2, 0)
-                                } else {
-                                    (dx, dy)
-                                };
-                            let new_x = if actual_dx < 0 {
-                                cur_x.saturating_sub((-actual_dx) as u16)
-                            } else {
-                                cur_x.saturating_add(actual_dx as u16).min(max_scroll_x)
-                            };
-                            let new_y = if actual_dy < 0 {
-                                cur_y.saturating_sub((-actual_dy) as u16)
-                            } else {
-                                cur_y.saturating_add(actual_dy as u16).min(max_scroll_y)
-                            };
-                            set_scroll(fid, (new_x, new_y));
-                        }) as Rc<dyn Fn(i16, i16)>
-                    })
-                } else {
-                    None
-                };
+                let on_scroll_handler: Option<Rc<dyn Fn(i16, i16)>> =
+                    b.on_scroll.clone().or_else(|| {
+                        if is_scrollable {
+                            scroll_fid.map(|fid| {
+                                Rc::new(move |dx: i16, dy: i16| {
+                                    let (cur_x, cur_y) = get_scroll(fid);
+                                    let (actual_dx, actual_dy) = if max_scroll_y == 0
+                                        && max_scroll_x > 0
+                                        && dx == 0
+                                        && dy != 0
+                                    {
+                                        (dy * 2, 0)
+                                    } else {
+                                        (dx, dy)
+                                    };
+                                    let new_x = if actual_dx < 0 {
+                                        cur_x.saturating_sub((-actual_dx) as u16)
+                                    } else {
+                                        cur_x.saturating_add(actual_dx as u16).min(max_scroll_x)
+                                    };
+                                    let new_y = if actual_dy < 0 {
+                                        cur_y.saturating_sub((-actual_dy) as u16)
+                                    } else {
+                                        cur_y.saturating_add(actual_dy as u16).min(max_scroll_y)
+                                    };
+                                    set_scroll(fid, (new_x, new_y));
+                                }) as Rc<dyn Fn(i16, i16)>
+                            })
+                        } else {
+                            None
+                        }
+                    });
 
                 if b.on_click.is_some()
                     || b.on_click_at.is_some()
@@ -458,6 +464,7 @@ pub fn render_node_offset(
                 || b.on_click_at.is_some()
                 || b.focus_id.is_some()
                 || b.on_key.is_some()
+                || b.on_scroll.is_some()
             {
                 let target_rect = Rect::new(x.max(0) as u16, y.max(0) as u16, width, height);
                 hit_map.register(HitTarget {
@@ -466,7 +473,7 @@ pub fn render_node_offset(
                     on_click_at: b.on_click_at.clone(),
                     focus_id: b.focus_id,
                     on_key: b.on_key.clone(),
-                    on_scroll: None,
+                    on_scroll: b.on_scroll.clone(),
                 });
             }
 
