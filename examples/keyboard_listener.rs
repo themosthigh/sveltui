@@ -65,8 +65,8 @@ fn main() -> std::io::Result<()> {
                     title=" Keyboard Listener "
                     padding=1
                     width=46
-                    align_items=Align::Center
-                    justify_content=Justify::Start
+                    justify_content=Justify::Center
+                    align_items=Align::Start
                 >
                     <Text color=Color::White bold=true>
                         { format!("Total Keystrokes: {}", count) }
@@ -88,7 +88,7 @@ fn main() -> std::io::Result<()> {
                             view! { <Text color=Color::DarkGrey>"  (No keys pressed yet)"</Text> }
                         } else {
                             view! {
-                                <Box align_items=Align::Center justify_content=Justify::Start>
+                                <Box justify_content=Justify::Center align_items=Align::Start>
                                     {
                                         hist.iter().map(|item| {
                                             view! { <Text color=Color::DarkGrey>{ format!("  {}", item) }</Text> }

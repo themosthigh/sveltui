@@ -84,3 +84,58 @@ fn test_compute_popover_rect_clamping() {
     let rect = compute_popover_rect(Placement::Anchor { x: 75, y: 22 }, (20, 10), None, screen);
     assert_eq!(rect, Rect::new(60, 14, 20, 10));
 }
+
+#[test]
+fn fill_allocations_conserve_space_across_minimums_and_caps() {
+    use svtui_layout::{FlexItem, resolve_flex_sizes};
+    for available in 0..=24 {
+        for min_a in [0, 3, 9] {
+            for min_b in [0, 4, 12] {
+                for max_a in [2, 8, 20] {
+                    for max_b in [1, 7, 18] {
+                        let mut items = [
+                            FlexItem {
+                                size: 5,
+                                min: 0,
+                                max: u16::MAX,
+                                fill: false,
+                            },
+                            FlexItem {
+                                size: 0,
+                                min: min_a,
+                                max: max_a,
+                                fill: true,
+                            },
+                            FlexItem {
+                                size: 0,
+                                min: min_b,
+                                max: max_b,
+                                fill: true,
+                            },
+                        ];
+                        resolve_flex_sizes(&mut items, available, 1);
+                        let budget = available.saturating_sub(7);
+                        let a = items[1].size;
+                        let b = items[2].size;
+                        assert_eq!(items[0].size, 5);
+                        assert!((min_a..=max_a.max(min_a)).contains(&a));
+                        assert!((min_b..=max_b.max(min_b)).contains(&b));
+                        if min_a + min_b > budget {
+                            assert_eq!(a + b, min_a + min_b);
+                        } else {
+                            assert!(a + b <= budget);
+                            if a + b < budget {
+                                assert_eq!(a, max_a.max(min_a));
+                                assert_eq!(
+                                    b,
+                                    max_b.max(min_b),
+                                    "available={available}, min={min_a},{min_b}, max={max_a},{max_b}, result={a},{b}"
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

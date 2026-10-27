@@ -9,6 +9,12 @@ pub enum Overflow {
     Auto,
 }
 
+impl Overflow {
+    pub fn is_scrollable(self) -> bool {
+        matches!(self, Self::Scroll | Self::Auto)
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum ScrollbarVisibility {
     #[default]

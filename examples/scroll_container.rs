@@ -24,8 +24,8 @@ fn main() -> std::io::Result<()> {
                     title=" Scrollable Container Showcase "
                     padding=1
                     width=52
-                    align_items=Align::Center
-                    justify_content=Justify::Start
+                    justify_content=Justify::Center
+                    align_items=Align::Start
                 >
                     <Text color=Color::White bold=true>
                         "Scroll Container Demo"

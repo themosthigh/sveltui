@@ -4,15 +4,34 @@ use crossterm::style::Color;
 use std::fmt;
 use std::rc::Rc;
 use svtui_layout::{
-    Align, BorderStyle, Justify, Overflow, Padding, Placement, ScrollbarStyle, ScrollbarVisibility,
-    Size,
+    Align, BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, ScrollbarStyle,
+    ScrollbarVisibility, Size,
 };
 
+/// A single-line flex container with border-box sizing in terminal cells.
+///
+/// Column is the default: `justify_content` controls vertical placement and
+/// `align_items` controls horizontal placement. Row exchanges those axes.
+/// `gap` adds spacing between children without changing their source order.
+///
+/// On the main axis, Fill children share the space left by fixed, percentage,
+/// and content-sized children. On the cross axis, Fill occupies the available
+/// dimension. Stretch expands Auto cross sizes only. Both honor min/max bounds;
+/// if a minimum exceeds a maximum, the minimum wins. Content never implicitly
+/// shrinks below its minimum: use overflow settings to clip or scroll it.
+///
+/// Widths/heights include this box's border and padding. Percentages refer to
+/// the parent's content viewport after scrollbar reservation. During intrinsic
+/// measurement of an Auto parent, dependent percentages/Fill use content sizes
+/// until the parent has a definite size. Wrapping and weighted grow/shrink are
+/// not currently supported.
 #[derive(Clone, Default)]
 pub struct BoxElement {
     pub border: BorderStyle,
     pub border_color: Option<Color>,
     pub title: Option<String>,
+    pub flex_direction: FlexDirection,
+    pub gap: u16,
     pub align_items: Align,
     pub justify_content: Justify,
     pub width: Size,
@@ -45,6 +64,8 @@ impl fmt::Debug for BoxElement {
             .field("border", &self.border)
             .field("border_color", &self.border_color)
             .field("title", &self.title)
+            .field("flex_direction", &self.flex_direction)
+            .field("gap", &self.gap)
             .field("align_items", &self.align_items)
             .field("justify_content", &self.justify_content)
             .field("width", &self.width)
@@ -89,11 +110,25 @@ impl BoxElement {
         self
     }
 
+    /// Select the main axis. Column is the default.
+    pub fn flex_direction(mut self, direction: FlexDirection) -> Self {
+        self.flex_direction = direction;
+        self
+    }
+
+    /// Space between adjacent children along the main axis, in cells.
+    pub fn gap(mut self, gap: u16) -> Self {
+        self.gap = gap;
+        self
+    }
+
+    /// Align each child along the cross axis.
     pub fn align_items(mut self, align: Align) -> Self {
         self.align_items = align;
         self
     }
 
+    /// Distribute children along the main axis.
     pub fn justify_content(mut self, justify: Justify) -> Self {
         self.justify_content = justify;
         self
@@ -272,6 +307,9 @@ impl BoxElement {
 #[derive(Clone, Debug, Default)]
 pub struct TextElement {
     pub content: String,
+    /// Repeat this character after each line's content to its allocated width.
+    /// This does not add intrinsic width; use a stretching parent to expand it.
+    pub fill: Option<char>,
     pub fg: Option<Color>,
     pub bg: Option<Color>,
     pub bold: bool,
@@ -289,6 +327,13 @@ impl TextElement {
 
     pub fn color(mut self, color: Color) -> Self {
         self.fg = Some(color);
+        self
+    }
+
+    /// Fill the unused cells of each rendered line with a character.
+    /// An empty string fills one line. Content is clipped to the allocation.
+    pub fn fill(mut self, character: char) -> Self {
+        self.fill = Some(character);
         self
     }
 

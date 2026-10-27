@@ -27,7 +27,7 @@ fn main() -> std::io::Result<()> {
                     title=" Popover, Dropdown & Modal Dialog Demo "
                     padding=1
                     width=68
-                    align_items=Align::Center
+                    justify_content=Justify::Center
                 >
                     <Text color=Color::DarkGrey>
                         "Top-layer overlay with arrow navigation, focus highlights, and 3-level submenus."
@@ -36,7 +36,7 @@ fn main() -> std::io::Result<()> {
                     <Box height=1 />
 
                     // Top Action Bar with 3-Level Nested Dropdown Menu and Anchored Popover
-                    <Box width=Size::Fill justify_content=Justify::SpaceBetween>
+                    <Box width=Size::Fill flex_direction=FlexDirection::Row align_items=Align::Center justify_content=Justify::SpaceBetween>
                         <DropdownMenu
                             open=is_menu_open
                             placement=Placement::BottomStart
@@ -147,7 +147,7 @@ fn main() -> std::io::Result<()> {
                         border_color=Color::DarkGrey
                         padding=1
                         width=Size::Fill
-                        align_items=Align::Center
+                        justify_content=Justify::Center
                     >
                         <Text color=Color::White>
                             "Click the button below to trigger a modal confirmation dialog:"
@@ -166,7 +166,7 @@ fn main() -> std::io::Result<()> {
                     // Status line
                     <Box
                         width=Size::Fill
-                        justify_content=Justify::Start
+                        align_items=Align::Start
                     >
                         <Text color=Color::White bold=true>"Status: "</Text>
                         <Text color=Color::DarkGrey>{status_msg}</Text>
@@ -194,7 +194,7 @@ fn main() -> std::io::Result<()> {
                             "Press Tab to cycle buttons or Esc to dismiss."
                         </Text>
                         <Box height=1 />
-                        <Box width=Size::Fill justify_content=Justify::End>
+                        <Box width=Size::Fill flex_direction=FlexDirection::Row justify_content=Justify::End gap=1>
                             <Button
                                 on_click={move || {
                                     set_status.set("Dialog cancelled by user.".to_string());

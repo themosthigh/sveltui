@@ -56,8 +56,8 @@ fn main() -> std::io::Result<()> {
                     title=" Interactive Components Showcase "
                     padding=1
                     width=54
-                    align_items=Align::Center
-                    justify_content=Justify::Start
+                    justify_content=Justify::Center
+                    align_items=Align::Start
                 >
                     <Text color=Color::Green bold=true>
                         "Tab: Navigate Focus | Mouse: Click | Esc: Exit"

@@ -18,17 +18,11 @@ impl Size {
     }
 }
 
+/// Apply dimension limits. Auto adds no bound; a conflicting minimum wins.
 pub fn clamp_dimension(val: u16, min: Option<Size>, max: Option<Size>, parent: u16) -> u16 {
-    let mut result = val;
-    if let Some(min_s) = min {
-        let min_v = min_s.resolve(parent, 0);
-        result = result.max(min_v);
-    }
-    if let Some(max_s) = max {
-        let max_v = max_s.resolve(parent, parent);
-        result = result.min(max_v);
-    }
-    result
+    let min = min.map_or(0, |size| size.resolve(parent, 0));
+    let max = max.map_or(u16::MAX, |size| size.resolve(parent, u16::MAX));
+    val.clamp(min, max.max(min))
 }
 
 impl From<u16> for Size {

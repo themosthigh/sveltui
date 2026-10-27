@@ -40,3 +40,7 @@ path = "../../examples/scroll_container.rs"
 [[example]]
 name = "popover_and_dialog"
 path = "../../examples/popover_and_dialog.rs"
+
+[[example]]
+name = "flexbox"
+path = "../../examples/flexbox.rs"

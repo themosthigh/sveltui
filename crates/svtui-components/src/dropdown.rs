@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use svtui_element::{FocusId, IntoNode, VNode, set_focused, use_focus};
-use svtui_layout::{BorderStyle, Justify, Padding, Placement, Size};
+use svtui_layout::{BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, Size};
 use svtui_macros::view;
 use svtui_reactive::Runtime;
 
@@ -204,6 +204,8 @@ impl IntoNode for DropdownItem {
             <Box
                 width=Size::Fill
                 padding=Padding::zero()
+                flex_direction=FlexDirection::Row
+                overflow=Overflow::Hidden
                 justify_content=Justify::SpaceBetween
                 focus_id=id
                 opt_bg=row_bg
@@ -407,15 +409,19 @@ impl IntoNode for DropdownSubmenu {
                         <Box
                             width=Size::Fill
                             padding=Padding::zero()
+                            flex_direction=FlexDirection::Row
+                            overflow=Overflow::Hidden
                             justify_content=Justify::SpaceBetween
                             focus_id=id
                             opt_bg=row_bg
                             opt_on_click=click_handler
                             opt_on_key=key_handler
                         >
-                            <Text fg=label_fg bold=is_active>
-                                {label_text}
-                            </Text>
+                            <Box width=Size::Fill overflow=Overflow::Hidden>
+                                <Text fg=label_fg bold=is_active>
+                                    {label_text}
+                                </Text>
+                            </Box>
                             <Text fg=arrow_fg bold=is_active>
                                 "▶ "
                             </Text>

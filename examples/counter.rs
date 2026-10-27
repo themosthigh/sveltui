@@ -18,7 +18,7 @@ fn main() -> std::io::Result<()> {
                     border_color=Color::White
                     title=" Counter "
                     padding=1
-                    width=38
+                    width=58
                     align_items=Align::Center
                     justify_content=Justify::Center
                 >
@@ -29,6 +29,8 @@ fn main() -> std::io::Result<()> {
                     <Divider />
 
                     <Box
+                        flex_direction=FlexDirection::Row
+                        gap=1
                         align_items=Align::Center
                         justify_content=Justify::Center
                     >

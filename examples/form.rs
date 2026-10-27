@@ -35,8 +35,8 @@ fn main() -> std::io::Result<()> {
                     title=" Form "
                     padding=1
                     width=46
-                    align_items=Align::Center
-                    justify_content=Justify::Start
+                    justify_content=Justify::Center
+                    align_items=Align::Start
                 >
                     <Text color=Color::White bold=true>
                         "User Registration"
@@ -129,8 +129,8 @@ fn main() -> std::io::Result<()> {
                                         title=" Submitted Summary "
                                         padding=1
                                         width=38
-                                        align_items=Align::Center
-                                        justify_content=Justify::Start
+                                        justify_content=Justify::Center
+                                        align_items=Align::Start
                                     >
                                         <Text color=Color::White>{ format!("Name:       {}", if data.name.is_empty() { "(Empty)" } else { &data.name }) }</Text>
                                         <Text color=Color::White>{ format!("Email:      {}", if data.email.is_empty() { "(Empty)" } else { &data.email }) }</Text>

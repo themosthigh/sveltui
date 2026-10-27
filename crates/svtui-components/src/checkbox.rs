@@ -80,8 +80,8 @@ impl IntoNode for Checkbox {
         let mut b = BoxElement::new()
             .border(BorderStyle::None)
             .padding(Padding::zero())
-            .align_items(Align::Center)
-            .justify_content(Justify::Start)
+            .justify_content(Justify::Center)
+            .align_items(Align::Start)
             .focus_id(id)
             .child(
                 TextElement::new(box_display)

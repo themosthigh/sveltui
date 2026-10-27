@@ -73,8 +73,8 @@ impl IntoNode for ProgressBar {
         let mut b = BoxElement::new()
             .border(BorderStyle::None)
             .padding(Padding::zero())
-            .align_items(Align::Center)
-            .justify_content(Justify::Start)
+            .justify_content(Justify::Center)
+            .align_items(Align::Start)
             .child(
                 TextElement::new(bar_text)
                     .color(self.fill_color)

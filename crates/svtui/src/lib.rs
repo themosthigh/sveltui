@@ -26,8 +26,8 @@ pub use element::{
     VNode, is_focused, set_focused, use_focus,
 };
 pub use layout::{
-    Align, BorderStyle, Justify, Overflow, Padding, Placement, ScrollbarChars, ScrollbarStyle,
-    ScrollbarVisibility, Size,
+    Align, BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, ScrollbarChars,
+    ScrollbarStyle, ScrollbarVisibility, Size,
 };
 pub use reactive::{ReadSignal, Runtime, WriteSignal, create_effect, create_signal};
 pub use terminal::{Buffer, Cell, Terminal, TerminalColor as Color};
@@ -45,8 +45,8 @@ pub mod prelude {
         TextElement, VNode, is_focused, set_focused, use_focus,
     };
     pub use crate::layout::{
-        Align, BorderStyle, Justify, Overflow, Padding, Placement, ScrollbarChars, ScrollbarStyle,
-        ScrollbarVisibility, Size,
+        Align, BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, ScrollbarChars,
+        ScrollbarStyle, ScrollbarVisibility, Size,
     };
     pub use crate::reactive::{ReadSignal, WriteSignal, create_effect, create_signal};
     pub use crate::terminal::TerminalColor as Color;

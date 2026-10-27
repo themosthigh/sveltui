@@ -177,8 +177,8 @@ impl IntoNode for TextInput {
             .border_color(border_color)
             .padding(Padding::symmetric(1, 0))
             .width(self.width)
-            .align_items(Align::Center)
-            .justify_content(Justify::Start)
+            .justify_content(Justify::Center)
+            .align_items(Align::Start)
             .focus_id(id)
             .on_click_at(move |rel_x: u16, _rel_y: u16| {
                 // Outer box starts at target.rect.x.
