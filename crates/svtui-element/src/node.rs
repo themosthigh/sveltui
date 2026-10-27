@@ -4,7 +4,8 @@ use crossterm::style::Color;
 use std::fmt;
 use std::rc::Rc;
 use svtui_layout::{
-    Align, BorderStyle, Justify, Overflow, Padding, ScrollbarStyle, ScrollbarVisibility, Size,
+    Align, BorderStyle, Justify, Overflow, Padding, Placement, ScrollbarStyle, ScrollbarVisibility,
+    Size,
 };
 
 #[derive(Clone, Default)]
@@ -184,8 +185,38 @@ impl BoxElement {
         self
     }
 
+    pub fn opt_bg(mut self, color: Option<Color>) -> Self {
+        self.bg = color;
+        self
+    }
+
     pub fn fg(mut self, color: Color) -> Self {
         self.fg = Some(color);
+        self
+    }
+
+    pub fn opt_fg(mut self, color: Option<Color>) -> Self {
+        self.fg = color;
+        self
+    }
+
+    pub fn opt_border_color(mut self, color: Option<Color>) -> Self {
+        self.border_color = color;
+        self
+    }
+
+    pub fn opt_focus_id(mut self, id: Option<FocusId>) -> Self {
+        self.focus_id = id;
+        self
+    }
+
+    pub fn opt_on_click(mut self, handler: Option<Rc<dyn Fn()>>) -> Self {
+        self.on_click = handler;
+        self
+    }
+
+    pub fn opt_on_key(mut self, handler: Option<Rc<dyn Fn(KeyEvent)>>) -> Self {
+        self.on_key = handler;
         self
     }
 
@@ -223,7 +254,10 @@ impl BoxElement {
     }
 
     pub fn child(mut self, child: impl IntoNode) -> Self {
-        self.children.push(child.into_node());
+        match child.into_node() {
+            VNode::Fragment(items) => self.children.extend(items),
+            other => self.children.push(other),
+        }
         self
     }
 
@@ -263,8 +297,18 @@ impl TextElement {
         self
     }
 
+    pub fn opt_fg(mut self, color: Option<Color>) -> Self {
+        self.fg = color;
+        self
+    }
+
     pub fn bg(mut self, color: Color) -> Self {
         self.bg = Some(color);
+        self
+    }
+
+    pub fn opt_bg(mut self, color: Option<Color>) -> Self {
+        self.bg = color;
         self
     }
 
@@ -284,6 +328,104 @@ impl TextElement {
     }
 }
 
+/// Floating overlay element rendered in the top layer.
+#[derive(Clone, Default)]
+pub struct OverlayElement {
+    pub trigger: Option<Box<VNode>>,
+    pub content: Option<Box<VNode>>,
+    pub open: bool,
+    pub placement: Placement,
+    pub backdrop: bool,
+    pub modal: bool,
+    pub on_close: Option<Rc<dyn Fn()>>,
+}
+
+impl fmt::Debug for OverlayElement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OverlayElement")
+            .field("trigger", &self.trigger)
+            .field("content", &self.content)
+            .field("open", &self.open)
+            .field("placement", &self.placement)
+            .field("backdrop", &self.backdrop)
+            .field("modal", &self.modal)
+            .field("has_close_handler", &self.on_close.is_some())
+            .finish()
+    }
+}
+
+impl OverlayElement {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn trigger(mut self, trigger: impl IntoNode) -> Self {
+        let node = trigger.into_node();
+        if matches!(node, VNode::Empty) {
+            self.trigger = None;
+        } else {
+            self.trigger = Some(Box::new(node));
+        }
+        self
+    }
+
+    pub fn opt_trigger(mut self, trigger: Option<impl IntoNode>) -> Self {
+        self.trigger = trigger.and_then(|t| {
+            let node = t.into_node();
+            if matches!(node, VNode::Empty) {
+                None
+            } else {
+                Some(Box::new(node))
+            }
+        });
+        self
+    }
+
+    pub fn content(mut self, content: impl IntoNode) -> Self {
+        let node = content.into_node();
+        if matches!(node, VNode::Empty) {
+            self.content = None;
+        } else {
+            self.content = Some(Box::new(node));
+        }
+        self
+    }
+
+    pub fn child(self, child: impl IntoNode) -> Self {
+        self.content(child)
+    }
+
+    pub fn open(mut self, open: bool) -> Self {
+        self.open = open;
+        self
+    }
+
+    pub fn placement(mut self, placement: Placement) -> Self {
+        self.placement = placement;
+        self
+    }
+
+    pub fn backdrop(mut self, backdrop: bool) -> Self {
+        self.backdrop = backdrop;
+        self
+    }
+
+    pub fn modal(mut self, modal: bool) -> Self {
+        self.modal = modal;
+        self
+    }
+
+    pub fn on_close(mut self, f: impl Fn() + 'static) -> Self {
+        self.on_close = Some(Rc::new(f));
+        self
+    }
+
+    pub fn opt_on_close(mut self, f: Option<Rc<dyn Fn()>>) -> Self {
+        self.on_close = f;
+        self
+    }
+}
+
 // BoxElement is the fundamental layout container in svtui; keeping it unboxed in VNode
 // avoids unnecessary heap allocation indirection on every node creation and pattern match.
 #[allow(clippy::large_enum_variant)]
@@ -291,6 +433,7 @@ impl TextElement {
 pub enum VNode {
     Box(BoxElement),
     Text(TextElement),
+    Overlay(OverlayElement),
     Fragment(Vec<VNode>),
     Empty,
 }
@@ -314,6 +457,12 @@ impl IntoNode for BoxElement {
 impl IntoNode for TextElement {
     fn into_node(self) -> VNode {
         VNode::Text(self)
+    }
+}
+
+impl IntoNode for OverlayElement {
+    fn into_node(self) -> VNode {
+        VNode::Overlay(self)
     }
 }
 

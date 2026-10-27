@@ -4,6 +4,13 @@ use svtui_layout::{BorderStyle, Overflow, Size, clamp_dimension};
 pub fn measure_node(node: &VNode, max_w: u16, max_h: u16) -> (u16, u16) {
     match node {
         VNode::Empty => (0, 0),
+        VNode::Overlay(overlay) => {
+            if let Some(ref trigger) = overlay.trigger {
+                measure_node(trigger, max_w, max_h)
+            } else {
+                (0, 0)
+            }
+        }
         VNode::Text(text) => {
             let lines: Vec<&str> = text.content.lines().collect();
             let height = (lines.len().max(1) as u16).min(max_h);

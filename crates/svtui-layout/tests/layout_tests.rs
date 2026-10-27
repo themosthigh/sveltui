@@ -1,4 +1,4 @@
-use svtui_layout::{BorderStyle, Rect, Size, clamp_dimension};
+use svtui_layout::{BorderStyle, Placement, Rect, Size, clamp_dimension, compute_popover_rect};
 
 #[test]
 fn test_rect_inner() {
@@ -49,4 +49,38 @@ fn test_clamp_dimension() {
         clamp_dimension(20, Some(Size::Fixed(15)), Some(Size::Fixed(25)), 100),
         20
     );
+}
+
+#[test]
+fn test_compute_popover_rect_center() {
+    let screen = Rect::new(0, 0, 80, 24);
+    let rect = compute_popover_rect(Placement::Center, (20, 10), None, screen);
+    assert_eq!(rect, Rect::new(30, 7, 20, 10));
+}
+
+#[test]
+fn test_compute_popover_rect_anchored_bottom_start() {
+    let screen = Rect::new(0, 0, 80, 24);
+    let anchor = Rect::new(10, 5, 12, 3);
+    let rect = compute_popover_rect(Placement::BottomStart, (20, 6), Some(anchor), screen);
+    assert_eq!(rect, Rect::new(10, 8, 20, 6));
+}
+
+#[test]
+fn test_compute_popover_rect_auto_flip() {
+    let screen = Rect::new(0, 0, 80, 24);
+    // Anchor placed near bottom edge: y=20, h=2 (ends at y=22)
+    let anchor = Rect::new(10, 20, 12, 2);
+    // With height=8, bottom would need y=22..30 which exceeds screen height 24.
+    // Space below is 2, space above is 20, so it auto-flips to Top!
+    let rect = compute_popover_rect(Placement::BottomStart, (20, 8), Some(anchor), screen);
+    assert_eq!(rect, Rect::new(10, 12, 20, 8));
+}
+
+#[test]
+fn test_compute_popover_rect_clamping() {
+    let screen = Rect::new(0, 0, 80, 24);
+    // Explicit anchor coordinate at edge
+    let rect = compute_popover_rect(Placement::Anchor { x: 75, y: 22 }, (20, 10), None, screen);
+    assert_eq!(rect, Rect::new(60, 14, 20, 10));
 }

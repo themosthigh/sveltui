@@ -79,3 +79,103 @@ fn test_text_input_cursor_forward_typing() {
     assert_eq!(val.get(), "abc");
     assert_eq!(get_cursor(id, 3), 3);
 }
+
+#[test]
+fn test_popover_component_into_node() {
+    use svtui_components::{Button, Popover};
+    use svtui_layout::Placement;
+
+    let popover = Popover::new()
+        .trigger(Button::new("Open Menu"))
+        .content(Button::new("Inside Popover"))
+        .open(true)
+        .placement(Placement::BottomStart)
+        .into_node();
+
+    match popover {
+        VNode::Overlay(overlay) => {
+            assert!(overlay.open);
+            assert_eq!(overlay.placement, Placement::BottomStart);
+            assert!(overlay.trigger.is_some());
+            assert!(overlay.content.is_some());
+        }
+        _ => panic!("Expected VNode::Overlay"),
+    }
+}
+
+#[test]
+fn test_dialog_component_into_node() {
+    use svtui_components::Dialog;
+
+    let dialog = Dialog::new()
+        .title("Confirm Action")
+        .open(true)
+        .child(Button::new("OK"))
+        .into_node();
+
+    match dialog {
+        VNode::Overlay(overlay) => {
+            assert!(overlay.open);
+            assert!(overlay.modal);
+            assert!(overlay.backdrop);
+            assert!(overlay.content.is_some());
+        }
+        _ => panic!("Expected VNode::Overlay"),
+    }
+}
+
+#[test]
+fn test_dropdown_component_into_node() {
+    use svtui_components::{Button, DropdownItem, DropdownMenu};
+
+    let dropdown = DropdownMenu::new()
+        .trigger(Button::new("File"))
+        .open(true)
+        .item(DropdownItem::new("New File"))
+        .item(DropdownItem::new("Save"))
+        .into_node();
+
+    match dropdown {
+        VNode::Overlay(overlay) => {
+            assert!(overlay.open);
+            assert!(!overlay.modal);
+            assert!(overlay.trigger.is_some());
+            assert!(overlay.content.is_some());
+        }
+        _ => panic!("Expected VNode::Overlay"),
+    }
+}
+
+#[test]
+fn test_nested_dropdown_submenus_3_level() {
+    use svtui_components::{Button, DropdownItem, DropdownMenu, DropdownSubmenu};
+
+    // Level 3: Document formats
+    let level_3 = DropdownSubmenu::new("Document")
+        .item(DropdownItem::new("PDF Document (*.pdf)"))
+        .item(DropdownItem::new("Markdown (*.md)"))
+        .open(true);
+
+    // Level 2: Export submenu containing Level 3
+    let level_2 = DropdownSubmenu::new("Export As")
+        .item(DropdownItem::new("Image (PNG)"))
+        .item(level_3)
+        .item(DropdownItem::new("Archive (*.zip)"))
+        .open(true);
+
+    // Level 1: Root dropdown menu containing Level 2
+    let level_1 = DropdownMenu::new()
+        .trigger(Button::new("File"))
+        .open(true)
+        .item(DropdownItem::new("New Project"))
+        .item(level_2)
+        .into_node();
+
+    match level_1 {
+        VNode::Overlay(overlay) => {
+            assert!(overlay.open);
+            assert!(overlay.content.is_some());
+        }
+        _ => panic!("Expected root VNode::Overlay"),
+    }
+}

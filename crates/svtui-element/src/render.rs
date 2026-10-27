@@ -1,11 +1,20 @@
 use crate::events::{HitMap, HitTarget};
 use crate::focus::{is_focused, next_render_focus_id};
 use crate::measure::measure_node;
-use crate::node::VNode;
+use crate::node::{OverlayElement, VNode};
 use crate::scroll::{get_scroll, set_scroll};
+use crossterm::style::Color;
 use std::rc::Rc;
-use svtui_layout::{Align, BorderStyle, Justify, Overflow, Rect, ScrollbarVisibility};
+use svtui_layout::{
+    Align, BorderStyle, Justify, Overflow, Rect, ScrollbarVisibility, compute_popover_rect,
+};
 use svtui_terminal::Buffer;
+
+struct RenderContext<'a> {
+    buffer: &'a mut Buffer,
+    hit_map: &'a mut HitMap,
+    overlays: &'a mut Vec<(OverlayElement, Option<Rect>)>,
+}
 
 pub fn render_node(node: &VNode, rect: Rect, buffer: &mut Buffer) {
     let mut hit_map = HitMap::new();
@@ -18,15 +27,29 @@ pub fn render_node_interactive(
     buffer: &mut Buffer,
     hit_map: &mut HitMap,
 ) {
-    render_node_offset(
-        node,
-        rect.x as i32,
-        rect.y as i32,
-        rect.width,
-        rect.height,
-        buffer,
-        hit_map,
-    );
+    let mut overlays = Vec::new();
+    {
+        let mut ctx = RenderContext {
+            buffer,
+            hit_map,
+            overlays: &mut overlays,
+        };
+        render_node_offset_internal(
+            node,
+            rect.x as i32,
+            rect.y as i32,
+            rect.width,
+            rect.height,
+            &mut ctx,
+        );
+    }
+
+    while !overlays.is_empty() {
+        let current_overlays = std::mem::take(&mut overlays);
+        for (overlay, anchor_rect) in current_overlays {
+            render_single_overlay(overlay, anchor_rect, rect, buffer, hit_map, &mut overlays);
+        }
+    }
 }
 
 pub fn render_node_offset(
@@ -38,10 +61,129 @@ pub fn render_node_offset(
     buffer: &mut Buffer,
     hit_map: &mut HitMap,
 ) {
+    let mut overlays = Vec::new();
+    {
+        let mut ctx = RenderContext {
+            buffer,
+            hit_map,
+            overlays: &mut overlays,
+        };
+        render_node_offset_internal(node, x, y, width, height, &mut ctx);
+    }
+
+    let screen_rect = Rect::new(0, 0, buffer.width, buffer.height);
+    while !overlays.is_empty() {
+        let current_overlays = std::mem::take(&mut overlays);
+        for (overlay, anchor_rect) in current_overlays {
+            render_single_overlay(
+                overlay,
+                anchor_rect,
+                screen_rect,
+                buffer,
+                hit_map,
+                &mut overlays,
+            );
+        }
+    }
+}
+
+fn render_single_overlay(
+    overlay: OverlayElement,
+    anchor_rect: Option<Rect>,
+    screen: Rect,
+    buffer: &mut Buffer,
+    hit_map: &mut HitMap,
+    overlays: &mut Vec<(OverlayElement, Option<Rect>)>,
+) {
+    if !overlay.open {
+        return;
+    }
+
+    if let Some(ref closer) = overlay.on_close {
+        hit_map.overlay_closers.push(closer.clone());
+    }
+
+    if overlay.backdrop {
+        for cell in &mut buffer.cells {
+            cell.fg = Some(Color::DarkGrey);
+            cell.bold = false;
+        }
+    }
+
+    if let Some(ref on_close) = overlay.on_close {
+        hit_map.register(HitTarget {
+            rect: screen,
+            on_click: Some(on_close.clone()),
+            on_click_at: None,
+            focus_id: None,
+            on_key: None,
+            on_scroll: None,
+        });
+    }
+
+    if overlay.modal {
+        hit_map.modal_focus_start = Some(hit_map.targets.len());
+    }
+
+    if let Some(content) = overlay.content {
+        let (cw, ch) = measure_node(&content, screen.width, screen.height);
+        let popover_rect = compute_popover_rect(overlay.placement, (cw, ch), anchor_rect, screen);
+
+        for cy in popover_rect.y..(popover_rect.y + popover_rect.height) {
+            for cx in popover_rect.x..(popover_rect.x + popover_rect.width) {
+                buffer.set_char(cx, cy, ' ', None, None, false);
+            }
+        }
+
+        let mut ctx = RenderContext {
+            buffer,
+            hit_map,
+            overlays,
+        };
+        render_node_offset_internal(
+            &content,
+            popover_rect.x as i32,
+            popover_rect.y as i32,
+            popover_rect.width,
+            popover_rect.height,
+            &mut ctx,
+        );
+    }
+}
+
+fn render_node_offset_internal(
+    node: &VNode,
+    x: i32,
+    y: i32,
+    width: u16,
+    height: u16,
+    ctx: &mut RenderContext,
+) {
+    if let VNode::Overlay(overlay) = node {
+        let anchor_rect = if let Some(ref trigger) = overlay.trigger {
+            let (tw, th) = measure_node(trigger, width, height);
+            let anchor = Rect::new(
+                x.max(0) as u16,
+                y.max(0) as u16,
+                tw.min(width),
+                th.min(height),
+            );
+            render_node_offset_internal(trigger, x, y, tw.min(width), th.min(height), ctx);
+            Some(anchor)
+        } else {
+            None
+        };
+
+        if overlay.open {
+            ctx.overlays.push((overlay.clone(), anchor_rect));
+        }
+        return;
+    }
+
     if width == 0 || height == 0 {
         return;
     }
-    if x >= buffer.width as i32 || y >= buffer.height as i32 {
+    if x >= ctx.buffer.width as i32 || y >= ctx.buffer.height as i32 {
         return;
     }
     if x + width as i32 <= 0 || y + height as i32 <= 0 {
@@ -49,30 +191,36 @@ pub fn render_node_offset(
     }
 
     match node {
-        VNode::Empty => {}
+        VNode::Empty | VNode::Overlay(_) => {}
         VNode::Text(text) => {
             let lines: Vec<&str> = text.content.lines().collect();
             for (i, line) in lines.iter().enumerate() {
                 let curr_y = y + i as i32;
-                if curr_y < 0 || curr_y >= (y + height as i32) || curr_y >= buffer.height as i32 {
+                if curr_y < 0 || curr_y >= (y + height as i32) || curr_y >= ctx.buffer.height as i32
+                {
                     continue;
                 }
-                let clip = buffer.active_clip();
+                let clip = ctx.buffer.active_clip();
                 if curr_y < clip.y as i32 || curr_y >= (clip.y as i32 + clip.height as i32) {
                     continue;
                 }
                 for (char_idx, ch) in line.chars().enumerate() {
                     let curr_x = x + char_idx as i32;
-                    if curr_x >= x + width as i32 || curr_x >= buffer.width as i32 {
+                    if curr_x >= x + width as i32 || curr_x >= ctx.buffer.width as i32 {
                         break;
                     }
                     if curr_x >= 0 {
-                        buffer.set_char(
+                        let bg = text.bg.or_else(|| {
+                            ctx.buffer
+                                .get(curr_x as u16, curr_y as u16)
+                                .and_then(|c| c.bg)
+                        });
+                        ctx.buffer.set_char(
                             curr_x as u16,
                             curr_y as u16,
                             ch,
                             text.fg,
-                            text.bg,
+                            bg,
                             text.bold,
                         );
                     }
@@ -83,7 +231,7 @@ pub fn render_node_offset(
             let mut curr_y = y;
             for child in children {
                 let (_, ch) = measure_node(child, width, height);
-                render_node_offset(child, x, curr_y, width, ch.min(height), buffer, hit_map);
+                render_node_offset_internal(child, x, curr_y, width, ch.min(height), ctx);
                 curr_y = curr_y.saturating_add(ch as i32);
                 if curr_y >= y + height as i32 {
                     break;
@@ -93,10 +241,10 @@ pub fn render_node_offset(
         VNode::Box(b) => {
             // Track focus ancestry hierarchy
             if let Some(id) = b.focus_id {
-                for &anc in &hit_map.focus_stack {
-                    hit_map.ancestors.entry(id).or_default().insert(anc);
+                for &anc in &ctx.hit_map.focus_stack {
+                    ctx.hit_map.ancestors.entry(id).or_default().insert(anc);
                 }
-                hit_map.focus_stack.push(id);
+                ctx.hit_map.focus_stack.push(id);
             }
 
             // Fill background if specified
@@ -104,7 +252,7 @@ pub fn render_node_offset(
                 for curr_y in y..(y + height as i32) {
                     for curr_x in x..(x + width as i32) {
                         if curr_x >= 0 && curr_y >= 0 {
-                            buffer.set_char(
+                            ctx.buffer.set_char(
                                 curr_x as u16,
                                 curr_y as u16,
                                 ' ',
@@ -124,25 +272,25 @@ pub fn render_node_offset(
                 let right = x + width as i32 - 1;
                 let bottom = y + height as i32 - 1;
 
-                let mut draw_ch = |cx: i32, cy: i32, ch: char| {
+                let draw_ch = |cx: i32, cy: i32, ch: char, buf: &mut Buffer| {
                     if cx >= 0 && cy >= 0 {
-                        buffer.set_char(cx as u16, cy as u16, ch, b.border_color, None, false);
+                        buf.set_char(cx as u16, cy as u16, ch, b.border_color, None, false);
                     }
                 };
 
-                draw_ch(x, y, chars.top_left);
-                draw_ch(right, y, chars.top_right);
-                draw_ch(x, bottom, chars.bottom_left);
-                draw_ch(right, bottom, chars.bottom_right);
+                draw_ch(x, y, chars.top_left, ctx.buffer);
+                draw_ch(right, y, chars.top_right, ctx.buffer);
+                draw_ch(x, bottom, chars.bottom_left, ctx.buffer);
+                draw_ch(right, bottom, chars.bottom_right, ctx.buffer);
 
                 for cx in (x + 1)..right {
-                    draw_ch(cx, y, chars.horizontal);
-                    draw_ch(cx, bottom, chars.horizontal);
+                    draw_ch(cx, y, chars.horizontal, ctx.buffer);
+                    draw_ch(cx, bottom, chars.horizontal, ctx.buffer);
                 }
 
                 for cy in (y + 1)..bottom {
-                    draw_ch(x, cy, chars.vertical);
-                    draw_ch(right, cy, chars.vertical);
+                    draw_ch(x, cy, chars.vertical, ctx.buffer);
+                    draw_ch(right, cy, chars.vertical, ctx.buffer);
                 }
             }
 
@@ -154,7 +302,8 @@ pub fn render_node_offset(
                 for (idx, ch) in displayed_title.chars().enumerate() {
                     let cx = start_x + idx as i32;
                     if cx >= 0 && y >= 0 {
-                        buffer.set_char(cx as u16, y as u16, ch, b.border_color, None, true);
+                        ctx.buffer
+                            .set_char(cx as u16, y as u16, ch, b.border_color, None, true);
                     }
                 }
             }
@@ -169,7 +318,7 @@ pub fn render_node_offset(
             {
                 let screen_cx = inner_x + cx_off as i32;
                 let screen_cy = inner_y + cy_off as i32;
-                let clip = buffer.active_clip();
+                let clip = ctx.buffer.active_clip();
                 let in_clip = clip.width == 0
                     || (screen_cx >= clip.x as i32
                         && screen_cx < (clip.x + clip.width) as i32
@@ -178,10 +327,10 @@ pub fn render_node_offset(
                 if in_clip
                     && screen_cx >= 0
                     && screen_cy >= 0
-                    && screen_cx < buffer.width as i32
-                    && screen_cy < buffer.height as i32
+                    && screen_cx < ctx.buffer.width as i32
+                    && screen_cy < ctx.buffer.height as i32
                 {
-                    buffer.set_cursor(screen_cx as u16, screen_cy as u16);
+                    ctx.buffer.set_cursor(screen_cx as u16, screen_cy as u16);
                 }
             }
 
@@ -283,7 +432,7 @@ pub fn render_node_offset(
                             let cy = inner_y + row as i32;
                             if cy >= 0 {
                                 if cy >= thumb_start_y && cy < thumb_start_y + thumb_len as i32 {
-                                    buffer.set_char(
+                                    ctx.buffer.set_char(
                                         sb_x as u16,
                                         cy as u16,
                                         b.scrollbar_style.chars.vertical_thumb,
@@ -292,7 +441,7 @@ pub fn render_node_offset(
                                         true,
                                     );
                                 } else {
-                                    buffer.set_char(
+                                    ctx.buffer.set_char(
                                         sb_x as u16,
                                         cy as u16,
                                         b.scrollbar_style.chars.vertical_track,
@@ -332,7 +481,7 @@ pub fn render_node_offset(
                             let cx = inner_x + col as i32;
                             if cx >= 0 {
                                 if cx >= thumb_start_x && cx < thumb_start_x + thumb_len as i32 {
-                                    buffer.set_char(
+                                    ctx.buffer.set_char(
                                         cx as u16,
                                         sb_y as u16,
                                         b.scrollbar_style.chars.horizontal_thumb,
@@ -341,7 +490,7 @@ pub fn render_node_offset(
                                         true,
                                     );
                                 } else {
-                                    buffer.set_char(
+                                    ctx.buffer.set_char(
                                         cx as u16,
                                         sb_y as u16,
                                         b.scrollbar_style.chars.horizontal_track,
@@ -360,7 +509,7 @@ pub fn render_node_offset(
                     let corner_x = inner_x + inner_w as i32 - 1;
                     let corner_y = inner_y + inner_h as i32 - 1;
                     if corner_x >= 0 && corner_y >= 0 {
-                        buffer.set_char(
+                        ctx.buffer.set_char(
                             corner_x as u16,
                             corner_y as u16,
                             b.scrollbar_style.chars.corner,
@@ -412,7 +561,7 @@ pub fn render_node_offset(
                     || on_scroll_handler.is_some()
                 {
                     let target_rect = Rect::new(x.max(0) as u16, y.max(0) as u16, width, height);
-                    hit_map.register(HitTarget {
+                    ctx.hit_map.register(HitTarget {
                         rect: target_rect,
                         on_click: b.on_click.clone(),
                         on_click_at: b.on_click_at.clone(),
@@ -432,7 +581,7 @@ pub fn render_node_offset(
                         viewport_w,
                         viewport_h,
                     );
-                    buffer.push_clip(clip_rect);
+                    ctx.buffer.push_clip(clip_rect);
                 }
 
                 if !b.children.is_empty() {
@@ -452,13 +601,13 @@ pub fn render_node_offset(
                             _ => inner_x,
                         } - scroll_x as i32;
 
-                        render_node_offset(child, start_x, curr_y, cw, ch, buffer, hit_map);
+                        render_node_offset_internal(child, start_x, curr_y, cw, ch, ctx);
                         curr_y += ch as i32;
                     }
                 }
 
                 if needs_clip {
-                    buffer.pop_clip();
+                    ctx.buffer.pop_clip();
                 }
             } else if b.on_click.is_some()
                 || b.on_click_at.is_some()
@@ -467,7 +616,7 @@ pub fn render_node_offset(
                 || b.on_scroll.is_some()
             {
                 let target_rect = Rect::new(x.max(0) as u16, y.max(0) as u16, width, height);
-                hit_map.register(HitTarget {
+                ctx.hit_map.register(HitTarget {
                     rect: target_rect,
                     on_click: b.on_click.clone(),
                     on_click_at: b.on_click_at.clone(),
@@ -479,7 +628,7 @@ pub fn render_node_offset(
 
             // Pop from focus ancestry stack
             if b.focus_id.is_some() {
-                hit_map.focus_stack.pop();
+                ctx.hit_map.focus_stack.pop();
             }
         }
     }

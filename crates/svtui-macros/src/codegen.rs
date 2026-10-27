@@ -2,23 +2,33 @@ use crate::ast::{Element, Node};
 use quote::{quote, quote_spanned};
 use syn::spanned::Spanned;
 
+fn element_root() -> proc_macro2::TokenStream {
+    match std::env::var("CARGO_PKG_NAME").as_deref() {
+        Ok("svtui-components") => quote! { ::svtui_element },
+        Ok("svtui-element") => quote! { crate },
+        _ => quote! { ::svtui::element },
+    }
+}
+
 pub fn codegen_node(node: &Node) -> proc_macro2::TokenStream {
+    let root = element_root();
     match node {
         Node::Element(el) => codegen_element(el),
         Node::Text(lit) => {
             quote! {
-                ::svtui::element::IntoNode::into_node(#lit)
+                #root::IntoNode::into_node(#lit)
             }
         }
         Node::Block(expr) => {
             quote_spanned! { expr.span() =>
-                ::svtui::element::IntoNode::into_node(#expr)
+                #root::IntoNode::into_node(#expr)
             }
         }
     }
 }
 
 pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
+    let root = element_root();
     let tag = &el.name;
     let tag_str = tag.to_string();
 
@@ -42,7 +52,7 @@ pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
             }
 
             quote! {
-                ::svtui::element::BoxElement::new()
+                #root::BoxElement::new()
                     #(#setter_calls)*
                     #(#child_calls)*
                     .into_node()
@@ -81,9 +91,34 @@ pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
             }
 
             quote! {
-                ::svtui::element::TextElement::new(#text_arg)
+                #root::TextElement::new(#text_arg)
                     #(#setter_calls)*
                     #(#extra_children)*
+                    .into_node()
+            }
+        }
+        "Overlay" => {
+            let mut setter_calls = Vec::new();
+            for attr in &el.attributes {
+                let attr_name = &attr.name;
+                let attr_val = &attr.value;
+                setter_calls.push(quote! {
+                    .#attr_name(#attr_val)
+                });
+            }
+
+            let mut child_calls = Vec::new();
+            for child in &el.children {
+                let child_stream = codegen_node(child);
+                child_calls.push(quote! {
+                    .child(#child_stream)
+                });
+            }
+
+            quote! {
+                #root::OverlayElement::new()
+                    #(#setter_calls)*
+                    #(#child_calls)*
                     .into_node()
             }
         }
@@ -116,7 +151,7 @@ pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
             }
 
             quote! {
-                ::svtui::element::IntoNode::into_node(
+                #root::IntoNode::into_node(
                     #tag::default()
                         #(#setter_calls)*
                         #(#child_calls)*

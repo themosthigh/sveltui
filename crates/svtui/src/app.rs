@@ -4,7 +4,8 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use svtui_element::{
-    FocusId, HitMap, VNode, render_node_interactive, reset_focus_counter, update_focus_context,
+    FocusId, HitMap, VNode, get_focused, render_node_interactive, reset_focus_counter, set_focused,
+    update_focus_context,
 };
 use svtui_layout::Rect;
 use svtui_reactive::Runtime;
@@ -97,6 +98,9 @@ where
 
             // Re-render if dirty
             if Runtime::is_dirty() {
+                if let Some(new_f) = get_focused() {
+                    focused_id = Some(new_f);
+                }
                 terminal.curr_buffer.clear();
                 reset_focus_counter();
                 update_focus_context(focused_id, &hit_map);
@@ -110,6 +114,16 @@ where
                     &mut terminal.curr_buffer,
                     &mut hit_map,
                 );
+
+                if hit_map.modal_focus_start.is_some() {
+                    let modal_focusables = hit_map.focusable_ids();
+                    if !modal_focusables.is_empty()
+                        && !focused_id.is_some_and(|id| modal_focusables.contains(&id))
+                    {
+                        focused_id = modal_focusables.first().copied();
+                    }
+                }
+
                 update_focus_context(focused_id, &hit_map);
 
                 terminal.flush()?;
@@ -179,13 +193,30 @@ where
                         _ => {}
                     },
                     Event::Key(key) => {
-                        // Quit condition: Ctrl+C, Esc (if not in input), or 'q' (if no input focused)
+                        // Quit condition: Ctrl+C, or 'q' (if no input focused)
                         if (key.code == KeyCode::Char('c')
                             && key.modifiers.contains(KeyModifiers::CONTROL))
-                            || key.code == KeyCode::Esc
                             || (key.code == KeyCode::Char('q') && focused_id.is_none())
                         {
                             break;
+                        }
+
+                        // Esc key: Light dismiss topmost submenu or overlay if any is open, otherwise quit
+                        if key.code == KeyCode::Esc {
+                            if svtui_components::close_topmost_submenu().is_some() {
+                                if let Some(new_f) = get_focused() {
+                                    focused_id = Some(new_f);
+                                }
+                                Runtime::set_dirty(true);
+                                continue;
+                            }
+                            if let Some(closer) = hit_map.overlay_closers.pop() {
+                                closer();
+                                Runtime::set_dirty(true);
+                                continue;
+                            } else {
+                                break;
+                            }
                         }
 
                         // Save shortcut: Ctrl+S
@@ -228,6 +259,79 @@ where
                                     }
                                 };
                                 focused_id = Some(focusable[next_idx]);
+                                set_focused(focused_id);
+                                Runtime::set_dirty(true);
+                                continue;
+                            }
+                        }
+
+                        // Up / Down arrow navigation is STRICTLY within dropdown menu items.
+                        // Every other focus is TAB ONLY.
+                        if (key.code == KeyCode::Down || key.code == KeyCode::Up)
+                            && focused_id.is_some_and(svtui_components::is_menu_item)
+                        {
+                            let current_id = focused_id.unwrap();
+                            let container_id = hit_map.ancestors.get(&current_id).and_then(|anc| {
+                                hit_map
+                                    .focus_stack
+                                    .iter()
+                                    .rev()
+                                    .find(|id| anc.contains(id))
+                                    .copied()
+                            });
+
+                            let siblings: Vec<FocusId> = hit_map
+                                .focusable_ids()
+                                .into_iter()
+                                .filter(|&id| {
+                                    svtui_components::is_menu_item(id)
+                                        && match container_id {
+                                            Some(cid) => hit_map
+                                                .ancestors
+                                                .get(&id)
+                                                .is_some_and(|anc| anc.contains(&cid)),
+                                            None => true,
+                                        }
+                                })
+                                .collect();
+
+                            if !siblings.is_empty() {
+                                let is_up = key.code == KeyCode::Up;
+                                let current_idx = siblings.iter().position(|&x| x == current_id);
+                                let next_idx = match current_idx {
+                                    Some(idx) => {
+                                        if is_up {
+                                            if idx == 0 {
+                                                siblings.len() - 1
+                                            } else {
+                                                idx - 1
+                                            }
+                                        } else {
+                                            (idx + 1) % siblings.len()
+                                        }
+                                    }
+                                    None => {
+                                        if is_up {
+                                            siblings.len() - 1
+                                        } else {
+                                            0
+                                        }
+                                    }
+                                };
+                                focused_id = Some(siblings[next_idx]);
+                                set_focused(focused_id);
+                                Runtime::set_dirty(true);
+                                continue;
+                            }
+                        } else if key.code == KeyCode::Down {
+                            // If a dropdown menu is open and trigger is focused, Down enters the first menu item
+                            let first_menu_item = hit_map
+                                .focusable_ids()
+                                .into_iter()
+                                .find(|&id| svtui_components::is_menu_item(id));
+                            if let Some(first_id) = first_menu_item {
+                                focused_id = Some(first_id);
+                                set_focused(focused_id);
                                 Runtime::set_dirty(true);
                                 continue;
                             }
@@ -241,6 +345,9 @@ where
                             {
                                 if let Some(ref on_key) = target.on_key {
                                     on_key(key);
+                                    if let Some(new_f) = get_focused() {
+                                        focused_id = Some(new_f);
+                                    }
                                     Runtime::set_dirty(true);
                                     consumed = true;
                                 }

@@ -24,3 +24,36 @@ fn test_jsx_custom_components_expansion() {
         </Box>
     };
 }
+
+#[test]
+fn test_jsx_overlay_components_expansion() {
+    let (is_open, set_open) = create_signal(true);
+    let (modal_open, set_modal_open) = create_signal(false);
+
+    let _node: VNode = view! {
+        <Box width=80 height=24>
+            <DropdownMenu
+                open={is_open.get()}
+                placement=Placement::BottomStart
+                on_close={move || set_open.set(false)}
+                trigger=Button::new("Actions")
+            >
+                <DropdownItem label="Cut" />
+                <DropdownItem label="Copy" />
+                <DropdownItem label="Paste" />
+            </DropdownMenu>
+
+            <Dialog
+                open={modal_open.get()}
+                title="Confirm Delete"
+                on_close={move || set_modal_open.set(false)}
+            >
+                <Text>"Are you sure you want to delete this file?"</Text>
+                <Box justify_content=Justify::End>
+                    <Button on_click={move || set_modal_open.set(false)}>"Cancel"</Button>
+                    <Button variant=ButtonVariant::Danger on_click={move || set_modal_open.set(false)}>"Delete"</Button>
+                </Box>
+            </Dialog>
+        </Box>
+    };
+}

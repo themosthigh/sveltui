@@ -335,6 +335,7 @@ dependencies = [
  "crossterm",
  "svtui-element",
  "svtui-layout",
+ "svtui-macros",
  "svtui-reactive",
  "svtui-terminal",
 ]

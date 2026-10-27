@@ -1,7 +1,10 @@
 pub mod badge;
 pub mod button;
 pub mod checkbox;
+pub mod dialog;
 pub mod divider;
+pub mod dropdown;
+pub mod popover;
 pub mod progress_bar;
 pub mod switch;
 pub mod text_area;
@@ -11,7 +14,14 @@ pub mod text_input;
 pub use badge::Badge;
 pub use button::{Button, ButtonVariant};
 pub use checkbox::Checkbox;
+pub use dialog::Dialog;
 pub use divider::Divider;
+pub use dropdown::{
+    DropdownItem, DropdownMenu, DropdownSubmenu, close_all_submenus, close_submenu,
+    close_topmost_submenu, has_open_submenus, is_menu_item, is_submenu_open, open_submenu,
+    register_menu_item,
+};
+pub use popover::Popover;
 pub use progress_bar::ProgressBar;
 pub use switch::Switch;
 pub use text_area::TextArea;

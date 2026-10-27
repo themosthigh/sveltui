@@ -309,3 +309,48 @@ fn test_render_node_cursor_offset() {
     // Clean up focus state
     set_focused(None);
 }
+
+#[test]
+fn test_overlay_rendering_and_hit_targets() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use svtui_element::OverlayElement;
+    use svtui_layout::Placement;
+
+    let closed = Rc::new(AtomicBool::new(false));
+    let closed_clone = closed.clone();
+
+    let dialog_focus = FocusId(42);
+    let overlay = OverlayElement::new()
+        .open(true)
+        .placement(Placement::Center)
+        .modal(true)
+        .backdrop(true)
+        .on_close(move || closed_clone.store(true, Ordering::SeqCst))
+        .content(
+            BoxElement::new()
+                .width(20)
+                .height(5)
+                .focus_id(dialog_focus)
+                .into_node(),
+        );
+
+    // Outer document with a base button
+    let base_button_focus = FocusId(1);
+    let root = BoxElement::new()
+        .focus_id(base_button_focus)
+        .child(overlay)
+        .into_node();
+
+    let mut buffer = Buffer::new(80, 24);
+    let mut hit_map = HitMap::new();
+    render_node_interactive(&root, Rect::new(0, 0, 80, 24), &mut buffer, &mut hit_map);
+
+    // Verify modal focus trapping: only dialog_focus should be returned, NOT base_button_focus
+    assert_eq!(hit_map.focusable_ids(), vec![dialog_focus]);
+
+    // Verify overlay closer registered
+    assert_eq!(hit_map.overlay_closers.len(), 1);
+    let closer = hit_map.overlay_closers.pop().unwrap();
+    closer();
+    assert!(closed.load(Ordering::SeqCst));
+}

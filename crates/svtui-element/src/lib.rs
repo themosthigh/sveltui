@@ -11,6 +11,6 @@ pub use focus::{
     reset_focus_counter, set_focused, update_focus_context, use_focus,
 };
 pub use measure::measure_node;
-pub use node::{BoxElement, IntoNode, TextElement, VNode};
+pub use node::{BoxElement, IntoNode, OverlayElement, TextElement, VNode};
 pub use render::{render_node, render_node_interactive, render_node_offset};
 pub use scroll::{get_scroll, set_scroll};

@@ -19,6 +19,8 @@ pub struct HitMap {
     pub targets: Vec<HitTarget>,
     pub focus_stack: Vec<FocusId>,
     pub ancestors: HashMap<FocusId, HashSet<FocusId>>,
+    pub overlay_closers: Vec<Rc<dyn Fn()>>,
+    pub modal_focus_start: Option<usize>,
 }
 
 impl HitMap {
@@ -30,6 +32,8 @@ impl HitMap {
         self.targets.clear();
         self.focus_stack.clear();
         self.ancestors.clear();
+        self.overlay_closers.clear();
+        self.modal_focus_start = None;
     }
 
     pub fn register(&mut self, target: HitTarget) {
@@ -53,9 +57,14 @@ impl HitMap {
     }
 
     /// Returns all registered focusable IDs in DOM order.
+    /// If a modal overlay is active, only targets within the modal are returned.
     pub fn focusable_ids(&self) -> Vec<FocusId> {
         let mut ids = Vec::new();
-        for target in &self.targets {
+        let targets_slice = match self.modal_focus_start {
+            Some(start) if start <= self.targets.len() => &self.targets[start..],
+            _ => &self.targets[..],
+        };
+        for target in targets_slice {
             if let Some(id) = target.focus_id.filter(|id| !ids.contains(id)) {
                 ids.push(id);
             }
