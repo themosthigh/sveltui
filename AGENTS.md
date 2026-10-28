@@ -55,13 +55,7 @@ svtui/
 │   ├── svtui-macros/           # Declarative JSX macro (`view! { ... }`)
 │   ├── svtui-reactive/         # Fine-grained reactive signals (`create_signal`, `Runtime`)
 │   └── svtui-terminal/         # Double-buffering, terminal rendering, raw mode
-└── examples/
-    ├── hello_world.rs          # Minimal centered text in a single-border box (`cargo run --example hello_world`)
-    ├── counter.rs              # Reactive signal counter with buttons (`cargo run --example counter`)
-    ├── keyboard_listener.rs    # Real-time keypress & modifier inspector (`cargo run --example keyboard_listener`)
-    ├── form.rs                 # Comprehensive form with inputs & switches (`cargo run --example form`)
-    ├── interactive_components.rs # Components showcase with `:focus-within` (`cargo run --example interactive_components`)
-    └── scroll_container.rs     # Scrollable box container with scrollbars (`cargo run --example scroll_container`)
+└── examples/                   # Framework and component examples
 ```
 
 ---
@@ -122,20 +116,3 @@ When authoring or executing git commits as an AI agent, you must follow these st
   - `evil-docs: ...`
 - **Subject Line Length**: Prefer ~50 characters for the commit subject line (keep concise and actionable).
 - **Body / Description Wrap**: Wrap commit description/body text at a maximum of **72 characters** per line. Break to the next line when exceeded.
-
----
-
-## 5. Running Examples
-
-Verify interactive behavior by running any example directly via Cargo:
-
-```bash
-cargo run --example hello_world            # Hello World example
-cargo run --example counter                # Simple Counter example
-cargo run --example keyboard_listener      # Keyboard Event Listener
-cargo run --example form                   # Form with text inputs & toggles
-cargo run --example interactive_components # Full Component Showcase
-cargo run --example scroll_container       # Scroll Container with scrollbars
-cargo run --example popover_and_dialog     # Popover, Dropdown & Modal Dialog Showcase
-cargo run --example application_syntax     # Application Syntax (Svelte 5-style) Demo
-```

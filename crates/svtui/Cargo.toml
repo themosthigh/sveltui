@@ -17,38 +17,68 @@ notify = "6.1"
 name = "hello_world"
 path = "../../examples/hello_world.rs"
 
+# Framework Examples
 [[example]]
-name = "counter"
-path = "../../examples/counter.rs"
+name = "framework_state"
+path = "../../examples/framework_state.rs"
 
 [[example]]
-name = "keyboard_listener"
-path = "../../examples/keyboard_listener.rs"
+name = "framework_conditionals"
+path = "../../examples/framework_conditionals.rs"
 
 [[example]]
-name = "form"
-path = "../../examples/form.rs"
+name = "framework_loops"
+path = "../../examples/framework_loops.rs"
 
 [[example]]
-name = "interactive_components"
-path = "../../examples/interactive_components.rs"
+name = "framework_snippets"
+path = "../../examples/framework_snippets.rs"
 
 [[example]]
-name = "scroll_container"
-path = "../../examples/scroll_container.rs"
+name = "framework_lifecycle"
+path = "../../examples/framework_lifecycle.rs"
 
 [[example]]
-name = "popover_and_dialog"
-path = "../../examples/popover_and_dialog.rs"
+name = "framework_context"
+path = "../../examples/framework_context.rs"
 
 [[example]]
-name = "flexbox"
-path = "../../examples/flexbox.rs"
+name = "framework_async"
+path = "../../examples/framework_async.rs"
 
 [[example]]
-name = "keyboard_scopes"
-path = "../../examples/keyboard_scopes.rs"
+name = "framework_error_boundary"
+path = "../../examples/framework_error_boundary.rs"
+
+# Component Examples
+[[example]]
+name = "component_button"
+path = "../../examples/component_button.rs"
 
 [[example]]
-name = "application_syntax"
-path = "../../examples/application_syntax.rs"
+name = "component_form"
+path = "../../examples/component_form.rs"
+
+[[example]]
+name = "component_dialog"
+path = "../../examples/component_dialog.rs"
+
+[[example]]
+name = "component_dropdown"
+path = "../../examples/component_dropdown.rs"
+
+[[example]]
+name = "component_scroll"
+path = "../../examples/component_scroll.rs"
+
+[[example]]
+name = "component_layout"
+path = "../../examples/component_layout.rs"
+
+[[example]]
+name = "component_interactive"
+path = "../../examples/component_interactive.rs"
+
+[[example]]
+name = "component_keyboard"
+path = "../../examples/component_keyboard.rs"
