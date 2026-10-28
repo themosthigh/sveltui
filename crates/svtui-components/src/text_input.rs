@@ -5,7 +5,24 @@ use std::rc::Rc;
 use svtui_element::{BoxElement, FocusId, IntoNode, TextElement, VNode, is_focused};
 use svtui_element::{EventResult, Role, Semantics};
 use svtui_layout::{Align, BorderStyle, Justify, Padding, Size};
-use svtui_reactive::{ReadSignal, WriteSignal};
+use svtui_reactive::{ReadSignal, State, WriteSignal};
+
+pub enum TextInputBinding {
+    Read(ReadSignal<String>),
+    State(State<String>),
+}
+
+impl From<ReadSignal<String>> for TextInputBinding {
+    fn from(s: ReadSignal<String>) -> Self {
+        Self::Read(s)
+    }
+}
+
+impl From<State<String>> for TextInputBinding {
+    fn from(s: State<String>) -> Self {
+        Self::State(s)
+    }
+}
 
 pub fn get_cursor(id: FocusId, text_len: usize) -> usize {
     with_buffer_mut(id, |buf| {
@@ -67,8 +84,16 @@ impl TextInput {
         }
     }
 
-    pub fn value(mut self, value: ReadSignal<String>) -> Self {
-        self.value = Some(value);
+    pub fn value(mut self, value: impl Into<TextInputBinding>) -> Self {
+        match value.into() {
+            TextInputBinding::Read(r) => {
+                self.value = Some(r);
+            }
+            TextInputBinding::State(s) => {
+                self.value = Some(s.read());
+                self.set_value = Some(s.write());
+            }
+        }
         self
     }
 

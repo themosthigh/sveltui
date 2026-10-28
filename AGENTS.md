@@ -137,4 +137,5 @@ cargo run --example form                   # Form with text inputs & toggles
 cargo run --example interactive_components # Full Component Showcase
 cargo run --example scroll_container       # Scroll Container with scrollbars
 cargo run --example popover_and_dialog     # Popover, Dropdown & Modal Dialog Showcase
+cargo run --example application_syntax     # Application Syntax (Svelte 5-style) Demo
 ```

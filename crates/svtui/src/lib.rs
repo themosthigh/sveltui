@@ -56,8 +56,8 @@ pub use svtui_layout as layout;
 pub use svtui_reactive as reactive;
 pub use svtui_terminal as terminal;
 
-// Re-export proc-macro
-pub use svtui_macros::view;
+// Re-export proc-macros
+pub use svtui_macros::{Props, component, view};
 
 // Re-export common types
 pub use app::App;
@@ -68,14 +68,19 @@ pub use components::{
 pub use element::collection::*;
 pub use element::interaction::*;
 pub use element::{
-    BoxElement, FocusHandle, FocusId, FocusState, HitMap, IntoNode, OverlayElement, TextElement,
-    VNode, is_focused, use_focus,
+    BoxElement, ErrorBoundary, FocusHandle, FocusId, FocusState, HitMap, IntoNode, OverlayElement,
+    Provider, Snippet, TextElement, VNode, is_focused, use_focus,
 };
 pub use layout::{
     Align, BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, ScrollbarChars,
     ScrollbarStyle, ScrollbarVisibility, Size,
 };
-pub use reactive::{ReadSignal, Runtime, WriteSignal, create_effect, create_signal};
+pub use reactive::{
+    AsyncState, BlockingFuture, ComponentScope, Derived, ReadSignal, Runtime, State, TaskHandle,
+    WriteSignal, batch, create_effect, create_signal, derived, effect, on_destroy, on_mount,
+    provide_context, reset_hook_counter, spawn_blocking, spawn_task, state, use_async_state,
+    use_context,
+};
 pub use terminal::{Buffer, Cell, Terminal, TerminalColor as Color};
 
 pub mod prelude {
@@ -87,14 +92,19 @@ pub mod prelude {
     pub use crate::element::collection::*;
     pub use crate::element::interaction::*;
     pub use crate::element::{
-        BoxElement, FocusHandle, FocusId, FocusState, HitMap, IntoNode, OverlayElement,
-        TextElement, VNode, is_focused, use_focus,
+        BoxElement, ErrorBoundary, FocusHandle, FocusId, FocusState, HitMap, IntoNode,
+        OverlayElement, Provider, Snippet, TextElement, VNode, is_focused, use_focus,
     };
     pub use crate::layout::{
         Align, BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, ScrollbarChars,
         ScrollbarStyle, ScrollbarVisibility, Size,
     };
-    pub use crate::reactive::{ReadSignal, WriteSignal, create_effect, create_signal};
+    pub use crate::reactive::{
+        AsyncState, BlockingFuture, ComponentScope, Derived, ReadSignal, State, TaskHandle,
+        WriteSignal, batch, create_effect, create_signal, derived, effect, on_destroy, on_mount,
+        provide_context, reset_hook_counter, spawn_blocking, spawn_task, state, use_async_state,
+        use_context,
+    };
     pub use crate::terminal::TerminalColor as Color;
-    pub use crate::view;
+    pub use crate::{Props, component, view};
 }

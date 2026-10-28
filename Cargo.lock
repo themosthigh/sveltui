@@ -346,6 +346,7 @@ version = "0.1.0"
 dependencies = [
  "crossterm",
  "svtui-layout",
+ "svtui-reactive",
  "svtui-terminal",
 ]
 

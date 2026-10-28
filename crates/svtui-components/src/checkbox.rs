@@ -2,7 +2,24 @@ use crossterm::style::Color;
 use svtui_element::{Activation, Role, Semantics};
 use svtui_element::{BoxElement, FocusId, IntoNode, TextElement, VNode, is_focused};
 use svtui_layout::{Align, BorderStyle, Justify, Padding};
-use svtui_reactive::{ReadSignal, WriteSignal};
+use svtui_reactive::{ReadSignal, State, WriteSignal};
+
+pub enum CheckboxBinding {
+    Read(ReadSignal<bool>),
+    State(State<bool>),
+}
+
+impl From<ReadSignal<bool>> for CheckboxBinding {
+    fn from(s: ReadSignal<bool>) -> Self {
+        Self::Read(s)
+    }
+}
+
+impl From<State<bool>> for CheckboxBinding {
+    fn from(s: State<bool>) -> Self {
+        Self::State(s)
+    }
+}
 
 #[derive(Clone, Default)]
 pub struct Checkbox {
@@ -28,8 +45,16 @@ impl Checkbox {
         }
     }
 
-    pub fn checked(mut self, checked: ReadSignal<bool>) -> Self {
-        self.checked = Some(checked);
+    pub fn checked(mut self, checked: impl Into<CheckboxBinding>) -> Self {
+        match checked.into() {
+            CheckboxBinding::Read(r) => {
+                self.checked = Some(r);
+            }
+            CheckboxBinding::State(s) => {
+                self.checked = Some(s.read());
+                self.set_checked = Some(s.write());
+            }
+        }
         self
     }
 

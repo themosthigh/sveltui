@@ -48,3 +48,7 @@ path = "../../examples/flexbox.rs"
 [[example]]
 name = "keyboard_scopes"
 path = "../../examples/keyboard_scopes.rs"
+
+[[example]]
+name = "application_syntax"
+path = "../../examples/application_syntax.rs"

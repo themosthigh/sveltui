@@ -7,3 +7,4 @@ edition = "2024"
 crossterm = "0.28"
 svtui-layout = { path = "../svtui-layout" }
 svtui-terminal = { path = "../svtui-terminal" }
+svtui-reactive = { path = "../svtui-reactive" }

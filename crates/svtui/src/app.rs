@@ -119,6 +119,7 @@ where
                 // Clear before construction so writes during rendering survive.
                 Runtime::set_dirty(false);
                 reset_focus_counter();
+                svtui_reactive::reset_hook_counter();
                 let root_node = focus.with_context(&mut self.view);
                 terminal.curr_buffer.clear();
                 hit_map.clear();
