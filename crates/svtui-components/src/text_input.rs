@@ -3,6 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use crossterm::style::Color;
 use std::rc::Rc;
 use svtui_element::{BoxElement, FocusId, IntoNode, TextElement, VNode, is_focused};
+use svtui_element::{EventResult, Role, Semantics};
 use svtui_layout::{Align, BorderStyle, Justify, Padding, Size};
 use svtui_reactive::{ReadSignal, WriteSignal};
 
@@ -180,6 +181,13 @@ impl IntoNode for TextInput {
             .justify_content(Justify::Center)
             .align_items(Align::Start)
             .focus_id(id)
+            .tab_stop(true)
+            .semantics(Semantics::new(
+                Role::Textbox,
+                self.title
+                    .clone()
+                    .unwrap_or_else(|| self.placeholder.clone()),
+            ))
             .on_click_at(move |rel_x: u16, _rel_y: u16| {
                 // Outer box starts at target.rect.x.
                 // Inner text starts after border(1) + padding(1) = 2.
@@ -192,15 +200,22 @@ impl IntoNode for TextInput {
                     }
                 });
             })
-            .on_key(move |key: KeyEvent| {
+            .on_key(move |key: KeyEvent, _ctx| {
                 if key.code == KeyCode::Enter {
                     if let Some(ref submit) = on_submit {
                         let text = with_buffer(id, |b| b.content());
                         submit(text);
                     }
-                    return;
+                    return if on_submit.is_some() {
+                        EventResult::Handled
+                    } else {
+                        EventResult::Ignored
+                    };
                 }
 
+                if !with_buffer(id, |buf| buf.accepts_key(&key)) {
+                    return EventResult::Ignored;
+                }
                 with_buffer_mut(id, |buf| {
                     let modified = buf.handle_key(&key);
                     if modified {
@@ -213,6 +228,7 @@ impl IntoNode for TextInput {
                         }
                     }
                 });
+                EventResult::Handled
             })
             .child(
                 TextElement::new(display_text)

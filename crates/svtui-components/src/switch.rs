@@ -1,4 +1,5 @@
 use crossterm::style::Color;
+use svtui_element::{Activation, Role, Semantics};
 use svtui_element::{BoxElement, FocusId, IntoNode, TextElement, VNode, is_focused};
 use svtui_layout::{Align, BorderStyle, Justify, Padding};
 use svtui_reactive::{ReadSignal, WriteSignal};
@@ -87,6 +88,10 @@ impl IntoNode for Switch {
             .justify_content(Justify::Center)
             .align_items(Align::Start)
             .focus_id(id)
+            .tab_stop(true)
+            .disabled(self.disabled)
+            .activation(Activation::Toggle)
+            .semantics(Semantics::new(Role::Switch, label_text).checked(is_on))
             .child(
                 TextElement::new(switch_display)
                     .color(switch_color)

@@ -153,5 +153,6 @@ fn main() -> std::io::Result<()> {
             </Box>
         }
     })
+    .on_key(svtui::app::exit_shortcuts)
     .run()
 }

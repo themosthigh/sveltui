@@ -1,8 +1,8 @@
 use std::rc::Rc;
 use svtui_element::{
-    BoxElement, FocusId, HitMap, HitTarget, IntoNode, TextElement, get_scroll, is_focused,
-    measure_node, next_render_focus_id, render_node_interactive, reset_focus_counter, set_focused,
-    update_focus_context, use_focus,
+    BoxElement, FocusId, FocusManager, HitMap, HitTarget, InteractionTree, IntoNode, TextElement,
+    get_scroll, is_focused, measure_node, next_render_focus_id, render_node_interactive,
+    reset_focus_counter, use_focus,
 };
 use svtui_layout::{BorderStyle, Overflow, Rect};
 use svtui_terminal::Buffer;
@@ -20,6 +20,8 @@ fn test_hit_map() {
     let mut hit_map = HitMap::new();
     hit_map.register(HitTarget {
         rect: Rect::new(5, 5, 10, 3),
+        layer: None,
+        dismiss: None,
         on_click: Some(Rc::new(|| {})),
         on_click_at: None,
         focus_id: Some(FocusId(1)),
@@ -29,7 +31,7 @@ fn test_hit_map() {
 
     assert!(hit_map.hit_test(6, 6).is_some());
     assert!(hit_map.hit_test(0, 0).is_none());
-    assert_eq!(hit_map.focusable_ids(), vec![FocusId(1)]);
+    assert!(hit_map.focusable_ids().is_empty()); // pointer IDs do not imply Tab stops
 }
 
 #[test]
@@ -40,7 +42,10 @@ fn test_stable_focus_ids_across_renders() {
     assert_eq!(id1, FocusId(0));
     assert_eq!(id2, FocusId(1));
 
-    set_focused(Some(id2));
+    let tree = BoxElement::new().focus_id(id2).tab_stop(true).into_node();
+    let mut manager = FocusManager::new();
+    manager.reconcile(InteractionTree::from_node(&tree));
+    assert!(manager.focus(id2));
 
     reset_focus_counter();
     let frame2_id1 = next_render_focus_id();
@@ -48,8 +53,10 @@ fn test_stable_focus_ids_across_renders() {
     assert_eq!(frame2_id1, FocusId(0));
     assert_eq!(frame2_id2, FocusId(1));
 
-    assert!(!is_focused(frame2_id1));
-    assert!(is_focused(frame2_id2));
+    manager.with_context(|| {
+        assert!(!is_focused(frame2_id1));
+        assert!(is_focused(frame2_id2));
+    });
 
     // User-created IDs are globally unique and never collide with render-counter IDs
     let u1 = FocusId::new();
@@ -68,9 +75,11 @@ fn test_use_focus_and_focus_within() {
 
     let tree = BoxElement::new()
         .focus_id(parent_id)
+        .tab_stop(true)
         .child(
             BoxElement::new()
                 .focus_id(child_id)
+                .tab_stop(true)
                 .child(TextElement::new("Child button")),
         )
         .into_node();
@@ -79,27 +88,29 @@ fn test_use_focus_and_focus_within() {
     render_node_interactive(&tree, Rect::new(0, 0, 40, 10), &mut buffer, &mut hit_map);
 
     // When child is focused:
-    update_focus_context(Some(child_id), &hit_map);
+    let mut manager = FocusManager::new();
+    manager.reconcile(hit_map.interactions.clone());
+    manager.focus(child_id);
+    manager.with_context(|| {
+        let child_state = use_focus(child_id);
+        assert!(child_state.is_focused());
+        assert!(!child_state.has_focus_within());
+        assert!(child_state.is_active());
 
-    let child_state = use_focus(child_id);
-    assert!(child_state.is_focused());
-    assert!(!child_state.has_focus_within());
-    assert!(child_state.is_active());
-
-    // Parent should contain focus (:focus-within)
-    let parent_state = use_focus(parent_id);
-    assert!(!parent_state.is_focused());
-    assert!(parent_state.has_focus_within());
-    assert!(parent_state.is_active());
-
+        // Parent should contain focus (:focus-within)
+        let parent_state = use_focus(parent_id);
+        assert!(!parent_state.is_focused());
+        assert!(parent_state.has_focus_within());
+        assert!(parent_state.is_active());
+    });
     // When parent is focused directly:
-    update_focus_context(Some(parent_id), &hit_map);
-    let parent_state_direct = use_focus(parent_id);
-    assert!(parent_state_direct.is_focused());
-    assert!(!parent_state_direct.has_focus_within());
-
-    // When nothing is focused:
-    update_focus_context(None, &hit_map);
+    manager.focus(parent_id);
+    manager.with_context(|| {
+        let parent_state_direct = use_focus(parent_id);
+        assert!(parent_state_direct.is_focused());
+        assert!(!parent_state_direct.has_focus_within());
+    });
+    // Outside a manager binding the focus context is empty:
     assert!(!use_focus(parent_id).is_active());
     assert!(!use_focus(child_id).is_active());
 }
@@ -285,6 +296,7 @@ fn test_render_node_cursor_offset() {
     let input_id = FocusId::new();
     let tree = BoxElement::new()
         .focus_id(input_id)
+        .tab_stop(true)
         .border(BorderStyle::Single)
         .padding(1)
         .width(20)
@@ -300,14 +312,15 @@ fn test_render_node_cursor_offset() {
 
     // When focused: cursor should be positioned at inner_x + 3, inner_y + 0
     // Rect(5, 2, 20, 3) with border(1) and padding(1) -> inner_x = 5 + 1 + 1 = 7, inner_y = 2 + 1 + 1 = 4
-    set_focused(Some(input_id));
+    let mut manager = FocusManager::new();
+    manager.reconcile(InteractionTree::from_node(&tree));
+    manager.focus(input_id);
     let mut buffer2 = Buffer::new(30, 10);
     let mut hit_map2 = HitMap::new();
-    render_node_interactive(&tree, Rect::new(5, 2, 20, 3), &mut buffer2, &mut hit_map2);
+    manager.with_context(|| {
+        render_node_interactive(&tree, Rect::new(5, 2, 20, 3), &mut buffer2, &mut hit_map2)
+    });
     assert_eq!(buffer2.cursor(), Some((7 + 3, 4)));
-
-    // Clean up focus state
-    set_focused(None);
 }
 
 #[test]
@@ -331,6 +344,7 @@ fn test_overlay_rendering_and_hit_targets() {
                 .width(20)
                 .height(5)
                 .focus_id(dialog_focus)
+                .tab_stop(true)
                 .into_node(),
         );
 
@@ -348,9 +362,11 @@ fn test_overlay_rendering_and_hit_targets() {
     // Verify modal focus trapping: only dialog_focus should be returned, NOT base_button_focus
     assert_eq!(hit_map.focusable_ids(), vec![dialog_focus]);
 
-    // Verify overlay closer registered
-    assert_eq!(hit_map.overlay_closers.len(), 1);
-    let closer = hit_map.overlay_closers.pop().unwrap();
-    closer();
+    let mut manager = FocusManager::new();
+    manager.reconcile(hit_map.interactions.clone());
+    manager.dispatch(crossterm::event::KeyEvent::new(
+        crossterm::event::KeyCode::Esc,
+        crossterm::event::KeyModifiers::NONE,
+    ));
     assert!(closed.load(Ordering::SeqCst));
 }

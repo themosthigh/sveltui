@@ -1,5 +1,6 @@
 use crossterm::style::Color;
 use svtui_element::{BoxElement, IntoNode, TextElement, VNode};
+use svtui_element::{Role, Semantics};
 use svtui_layout::{Align, BorderStyle, Justify, Padding};
 
 #[derive(Clone)]
@@ -70,7 +71,12 @@ impl IntoNode for ProgressBar {
             format!("[{}{}]", filled, empty)
         };
 
+        let semantics = Semantics {
+            value: Some(f64::from(self.ratio)),
+            ..Semantics::new(Role::ProgressBar, self.title.clone().unwrap_or_default())
+        };
         let mut b = BoxElement::new()
+            .semantics(semantics)
             .border(BorderStyle::None)
             .padding(Padding::zero())
             .justify_content(Justify::Center)

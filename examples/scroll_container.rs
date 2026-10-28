@@ -40,6 +40,7 @@ fn main() -> std::io::Result<()> {
                         border=border_style
                         border_color=Color::White
                         focus_id=scroll_id
+                        tab_stop=true
                         width=46
                         height=10
                         padding=Padding::symmetric(1, 0)
@@ -72,5 +73,6 @@ fn main() -> std::io::Result<()> {
             </Box>
         }
     })
+    .on_key(svtui::app::exit_shortcuts)
     .run()
 }

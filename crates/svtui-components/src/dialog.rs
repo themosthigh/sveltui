@@ -1,6 +1,9 @@
+use crossterm::event::KeyEvent;
 use crossterm::style::Color;
 use std::rc::Rc;
 use svtui_element::{BoxElement, IntoNode, OverlayElement, VNode};
+use svtui_element::{DismissLayer, FocusId, InitialFocus, Role, Semantics};
+use svtui_element::{EventContext, EventResult, KeyHandler};
 use svtui_layout::{BorderStyle, Padding, Placement, Size};
 
 /// Modal dialog component with top-layer deferred rendering, scrim backdrop,
@@ -8,6 +11,9 @@ use svtui_layout::{BorderStyle, Padding, Placement, Size};
 #[derive(Clone)]
 pub struct Dialog {
     open: bool,
+    id: Option<FocusId>,
+    opener: Option<FocusId>,
+    initial_focus: InitialFocus,
     title: Option<String>,
     border: BorderStyle,
     border_color: Option<Color>,
@@ -15,6 +21,8 @@ pub struct Dialog {
     height: Size,
     padding: Padding,
     on_close: Option<Rc<dyn Fn()>>,
+    on_open: Option<Rc<dyn Fn()>>,
+    on_key: Option<KeyHandler>,
     children: Vec<VNode>,
     placement: Placement,
     backdrop: bool,
@@ -24,6 +32,9 @@ impl Default for Dialog {
     fn default() -> Self {
         Self {
             open: false,
+            id: None,
+            opener: None,
+            initial_focus: InitialFocus::First,
             title: None,
             border: BorderStyle::Single,
             border_color: Some(Color::White),
@@ -31,6 +42,8 @@ impl Default for Dialog {
             height: Size::Auto,
             padding: Padding::all(1),
             on_close: None,
+            on_open: None,
+            on_key: None,
             children: Vec::new(),
             placement: Placement::Center,
             backdrop: true,
@@ -41,6 +54,19 @@ impl Default for Dialog {
 impl Dialog {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn id(mut self, id: FocusId) -> Self {
+        self.id = Some(id);
+        self
+    }
+    pub fn opener(mut self, id: FocusId) -> Self {
+        self.opener = Some(id);
+        self
+    }
+    pub fn initial_focus(mut self, target: InitialFocus) -> Self {
+        self.initial_focus = target;
+        self
     }
 
     pub fn open(mut self, open: bool) -> Self {
@@ -78,6 +104,19 @@ impl Dialog {
         self
     }
 
+    pub fn on_key(
+        mut self,
+        handler: impl Fn(KeyEvent, &mut EventContext) -> EventResult + 'static,
+    ) -> Self {
+        self.on_key = Some(Rc::new(handler));
+        self
+    }
+
+    pub fn on_open(mut self, handler: impl Fn() + 'static) -> Self {
+        self.on_open = Some(Rc::new(handler));
+        self
+    }
+
     pub fn on_close(mut self, handler: impl Fn() + 'static) -> Self {
         self.on_close = Some(Rc::new(handler));
         self
@@ -107,6 +146,10 @@ impl Dialog {
 
 impl IntoNode for Dialog {
     fn into_node(self) -> VNode {
+        let semantics = Semantics {
+            modal: Some(true),
+            ..Semantics::new(Role::Dialog, self.title.clone().unwrap_or_default())
+        };
         let mut b = BoxElement::new()
             .border(self.border)
             .width(self.width)
@@ -123,13 +166,20 @@ impl IntoNode for Dialog {
             b = b.child(child);
         }
 
+        let mut layer = DismissLayer::dialog();
+        layer.scope.initial_focus = self.initial_focus;
         let mut overlay = OverlayElement::new()
+            .id(self.id.unwrap_or_default())
+            .semantics(semantics)
             .open(self.open)
             .placement(self.placement)
-            .modal(true)
+            .layer(layer)
             .backdrop(self.backdrop)
             .content(b);
 
+        overlay.opener = self.opener;
+        overlay.on_key = self.on_key;
+        overlay.on_open = self.on_open;
         if let Some(h) = self.on_close {
             overlay.on_close = Some(h);
         }

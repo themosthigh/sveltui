@@ -108,7 +108,7 @@ fn main() -> std::io::Result<()> {
             </Box>
         }
     })
-    .on_key(move |key| {
+    .on_key(move |key, context| {
         let (code_str, mod_str) = format_key(key);
         set_last_key.set(code_str.clone());
         set_last_mods.set(mod_str.clone());
@@ -121,6 +121,8 @@ fn main() -> std::io::Result<()> {
                 h.remove(0);
             }
         });
+        svtui::app::exit_shortcuts(key, context);
+        EventResult::Handled
     })
     .run()
 }

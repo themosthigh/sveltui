@@ -1,5 +1,6 @@
 use crossterm::style::Color;
 use std::rc::Rc;
+use svtui_element::{Activation, Role, Semantics};
 use svtui_element::{BoxElement, FocusId, IntoNode, TextElement, VNode, use_focus};
 use svtui_layout::{Align, BorderStyle, Justify, Padding, Size};
 
@@ -108,6 +109,10 @@ impl IntoNode for Button {
             .align_items(Align::Center)
             .justify_content(Justify::Center)
             .focus_id(id)
+            .tab_stop(true)
+            .disabled(self.disabled)
+            .activation(Activation::Press)
+            .semantics(Semantics::new(Role::Button, self.label.clone()))
             .child(
                 TextElement::new(displayed_text)
                     .color(text_color)

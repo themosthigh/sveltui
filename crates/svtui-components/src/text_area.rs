@@ -1,7 +1,9 @@
+use crate::text_buffer::with_buffer;
 use crate::text_buffer::{TextBuffer, with_buffer_mut};
 use crossterm::event::KeyEvent;
 use crossterm::style::Color;
 use svtui_element::{BoxElement, FocusId, IntoNode, TextElement, VNode, is_focused};
+use svtui_element::{EventResult, Role, Semantics};
 use svtui_layout::{Align, BorderStyle, Justify, Padding, Size};
 use svtui_reactive::{ReadSignal, WriteSignal};
 
@@ -185,6 +187,13 @@ impl IntoNode for TextArea {
             .align_items(Align::Start)
             .justify_content(Justify::Start)
             .focus_id(id)
+            .tab_stop(true)
+            .semantics(Semantics::new(
+                Role::Textbox,
+                self.title
+                    .clone()
+                    .unwrap_or_else(|| self.placeholder.clone()),
+            ))
             .on_click_at(move |rel_x: u16, rel_y: u16| {
                 let click_col = rel_x.saturating_sub(2 + gutter_width as u16) as usize;
                 let click_row = rel_y.saturating_sub(1) as usize;
@@ -207,7 +216,10 @@ impl IntoNode for TextArea {
                     }
                 });
             })
-            .on_key(move |key: KeyEvent| {
+            .on_key(move |key: KeyEvent, _ctx| {
+                if !with_buffer(id, |buf| buf.accepts_key(&key)) {
+                    return EventResult::Ignored;
+                }
                 with_buffer_mut(id, |buf| {
                     let modified = buf.handle_key(&key);
                     if modified {
@@ -220,6 +232,7 @@ impl IntoNode for TextArea {
                         }
                     }
                 });
+                EventResult::Handled
             });
 
         if focused {

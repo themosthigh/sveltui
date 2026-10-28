@@ -56,8 +56,8 @@ fn justification_and_cross_alignment_work_on_both_axes() {
                 let node = view! {
                     <Box flex_direction=direction width=width height=height gap=1
                         justify_content=justify align_items=align>
-                        <Box focus_id={ids[0]} width=cw height=ch />
-                        <Box focus_id={ids[1]} width=cw height=ch />
+                        <Box focus_id={ids[0]} tab_stop=true width=cw height=ch />
+                        <Box focus_id={ids[1]} tab_stop=true width=cw height=ch />
                     </Box>
                 };
                 let (_, hits) = render(&node, 20, 20);
@@ -82,9 +82,9 @@ fn fill_shares_remaining_space_and_redistributes_capped_allocations() {
         let (max_w_b, max_h_b) = direction.axes(60, u16::MAX);
         let node = view! {
             <Box flex_direction=direction width=width height=height>
-                <Box focus_id={ids[0]} width=fixed_w height=fixed_h />
-                <Box focus_id={ids[1]} width=fill_w height=fill_h max_width=max_w_a max_height=max_h_a />
-                <Box focus_id={ids[2]} width=fill_w height=fill_h max_width=max_w_b max_height=max_h_b />
+                <Box focus_id={ids[0]} tab_stop=true width=fixed_w height=fixed_h />
+                <Box focus_id={ids[1]} tab_stop=true width=fill_w height=fill_h max_width=max_w_a max_height=max_h_a />
+                <Box focus_id={ids[2]} tab_stop=true width=fill_w height=fill_h max_width=max_w_b max_height=max_h_b />
             </Box>
         };
         let (_, hits) = render(&node, width, height);
@@ -101,8 +101,8 @@ fn fill_minimums_are_resolved_before_other_child_maximums() {
     let b = FocusId::new();
     let node = view! {
         <Box flex_direction=FlexDirection::Row width=100 height=1>
-            <Box width=Size::Fill min_width=90 height=1 focus_id=a />
-            <Box width=Size::Fill max_width=20 height=1 focus_id=b />
+            <Box width=Size::Fill min_width=90 height=1 focus_id=a tab_stop=true />
+            <Box width=Size::Fill max_width=20 height=1 focus_id=b tab_stop=true />
         </Box>
     };
     let (_, hits) = render(&node, 100, 2);
@@ -115,9 +115,9 @@ fn fill_remainders_go_to_earlier_siblings_after_gaps() {
     let ids = [FocusId::new(), FocusId::new(), FocusId::new()];
     let node = view! {
         <Box flex_direction=FlexDirection::Row width=10 height=1 gap=1>
-            <Box width=Size::Fill height=1 focus_id={ids[0]} />
-            <Box width=Size::Fill height=1 focus_id={ids[1]} />
-            <Box width=Size::Fill height=1 focus_id={ids[2]} />
+            <Box width=Size::Fill height=1 focus_id={ids[0]} tab_stop=true />
+            <Box width=Size::Fill height=1 focus_id={ids[1]} tab_stop=true />
+            <Box width=Size::Fill height=1 focus_id={ids[2]} tab_stop=true />
         </Box>
     };
     let (_, hits) = render(&node, 10, 2);
@@ -133,9 +133,9 @@ fn stretch_respects_explicit_sizes_and_maximums() {
     let c = FocusId::new();
     let node = view! {
         <Box width=10 height=6 align_items=Align::Stretch>
-            <Box height=1 max_width=6 focus_id=a><Text>"a"</Text></Box>
-            <Box height=1 width=3 focus_id=b />
-            <Box height=1 width=Size::Fill max_width=5 focus_id=c />
+            <Box height=1 max_width=6 focus_id=a tab_stop=true><Text>"a"</Text></Box>
+            <Box height=1 width=3 focus_id=b tab_stop=true />
+            <Box height=1 width=Size::Fill max_width=5 focus_id=c tab_stop=true />
         </Box>
     };
     let (_, hits) = render(&node, 20, 10);
@@ -150,8 +150,8 @@ fn percentage_and_fill_use_the_constrained_parent_content_box() {
     let child = FocusId::new();
     let node = view! {
         <Box width=40 border=BorderStyle::Single padding=1>
-            <Box width=Size::Percent(50.0) border=BorderStyle::Single focus_id=parent>
-                <Box width=Size::Fill height=1 focus_id=child />
+            <Box width=Size::Percent(50.0) border=BorderStyle::Single focus_id=parent tab_stop=true>
+                <Box width=Size::Fill height=1 focus_id=child tab_stop=true />
             </Box>
         </Box>
     };
@@ -166,7 +166,7 @@ fn minimum_wins_conflicting_maximum_and_survives_parent_pressure() {
     let id = FocusId::new();
     let node = view! {
         <Box width=5 height=2 overflow_x=Overflow::Scroll>
-            <Box width=4 min_width=12 max_width=8 height=1 focus_id=id><Text>"abcdefghijkl"</Text></Box>
+            <Box width=4 min_width=12 max_width=8 height=1 focus_id=id tab_stop=true><Text>"abcdefghijkl"</Text></Box>
         </Box>
     };
     let (_, hits) = render(&node, 20, 5);
@@ -190,7 +190,7 @@ fn horizontal_flex_scrolls_without_shrinking_fixed_children() {
     let id = FocusId::new();
     let node = view! {
         <Box width=10 height=3 flex_direction=FlexDirection::Row
-            overflow_x=Overflow::Scroll scroll_x=6 focus_id=id>
+            overflow_x=Overflow::Scroll scroll_x=6 focus_id=id tab_stop=true>
             <Box width=8 height=1><Text>"ABCDEFGH"</Text></Box>
             <Box width=8 height=1><Text>"ijklmnop"</Text></Box>
         </Box>
@@ -207,7 +207,7 @@ fn vertical_scrollbar_reduces_fill_width_without_causing_horizontal_scroll() {
     let child = FocusId::new();
     let node = view! {
         <Box width=10 height=3 overflow=Overflow::Auto>
-            <Box width=Size::Fill height=5 focus_id=child />
+            <Box width=Size::Fill height=5 focus_id=child tab_stop=true />
         </Box>
     };
     let (buffer, hits) = render(&node, 20, 10);
@@ -240,8 +240,8 @@ fn overlay_trigger_keeps_its_allocated_percentage_size_and_anchor() {
         <Box width=40 height=4 flex_direction=FlexDirection::Row>
             <Box width=10 height=2 />
             <Overlay open=true placement=Placement::BottomStart
-                trigger={view! { <Box width=Size::Percent(50.0) height=2 focus_id=trigger /> }}>
-                <Box width=5 height=1 focus_id=popup><Text>"popup"</Text></Box>
+                trigger={view! { <Box width=Size::Percent(50.0) height=2 focus_id=trigger tab_stop=true /> }}>
+                <Box width=5 height=1 focus_id=popup tab_stop=true><Text>"popup"</Text></Box>
             </Overlay>
         </Box>
     };
@@ -258,7 +258,7 @@ fn empty_and_fragment_children_do_not_add_phantom_gaps() {
             {None::<VNode>}
             {vec![vec![view! { <Text>"ab"</Text> }]]}
             <Overlay open=false />
-            <Box width=1 height=1 focus_id=id><Text>"c"</Text></Box>
+            <Box width=1 height=1 focus_id=id tab_stop=true><Text>"c"</Text></Box>
         </Box>
     };
     assert_eq!(measure_node(&node, 80, 24), (5, 1));
@@ -272,14 +272,21 @@ fn cursor_and_focus_ancestry_follow_nested_row_layout() {
     let parent = FocusId::new();
     let input = FocusId::new();
     let (value, set_value) = create_signal(String::from("abc"));
-    set_focused(Some(input));
-    let node = view! {
-        <Box flex_direction=FlexDirection::Row width=30 height=5 focus_id=parent gap=1>
-            <Box width=4 height=3 />
-            <TextInput value=value set_value=set_value width=Size::Fill id=input />
-        </Box>
+    let build = || {
+        view! {
+            <Box flex_direction=FlexDirection::Row width=30 height=5 focus_id=parent tab_stop=true gap=1>
+                <Box width=4 height=3 />
+                <TextInput value=value set_value=set_value width=Size::Fill id=input />
+            </Box>
+        }
     };
-    let (buffer, hits) = render(&node, 40, 10);
+    let initial = build();
+    let mut manager = FocusManager::new();
+    manager.reconcile(InteractionTree::from_node(&initial));
+    manager.focus(input);
+    let node = manager.with_context(build);
+
+    let (buffer, hits) = manager.with_context(|| render(&node, 40, 10));
     let target = rect(&hits, input);
     assert_eq!(target.x, 5);
     assert_eq!(target.width, 25);
@@ -290,7 +297,6 @@ fn cursor_and_focus_ancestry_follow_nested_row_layout() {
     );
     assert!(hits.ancestors.get(&input).unwrap().contains(&parent));
     assert_eq!(hits.focusable_ids(), vec![parent, input]);
-    set_focused(None);
 }
 
 #[test]
@@ -302,14 +308,15 @@ fn scrolled_hit_targets_match_visible_cells_and_keep_local_click_coordinates() {
     let clicked = Rc::new(Cell::new(None));
     let received = clicked.clone();
     // on_click_at is a two-argument builder; use it on a JSX-created box.
-    let mut child = view! { <Box width=8 height=1 focus_id=first><Text>"ABCDEFGH"</Text></Box> };
+    let mut child =
+        view! { <Box width=8 height=1 focus_id=first tab_stop=true><Text>"ABCDEFGH"</Text></Box> };
     if let VNode::Box(b) = &mut child {
         b.on_click_at = Some(Rc::new(move |x, y| received.set(Some((x, y)))));
     }
     let node = view! {
         <Box width=10 height=3 flex_direction=FlexDirection::Row overflow_x=Overflow::Scroll scroll_x=6>
             {child}
-            <Box width=8 height=1 focus_id=second><Text>"ijklmnop"</Text></Box>
+            <Box width=8 height=1 focus_id=second tab_stop=true><Text>"ijklmnop"</Text></Box>
         </Box>
     };
     let (_, hits) = render(&node, 20, 5);
@@ -324,17 +331,23 @@ fn scrolled_hit_targets_match_visible_cells_and_keep_local_click_coordinates() {
 fn dropdown_submenu_label_and_arrow_share_one_full_width_row() {
     let submenu = FocusId::new();
     let leaf = FocusId::new();
-    set_focused(Some(submenu));
-    let node = view! {
-        <DropdownMenu width=24 open=true placement={Placement::Anchor { x: 0, y: 0 }}>
-            <DropdownSubmenu label="Export a very long document label" id=submenu>
-                <DropdownItem label="PDF" />
-            </DropdownSubmenu>
-            <DropdownItem id=leaf label="Close" />
-        </DropdownMenu>
+    let build = || {
+        view! {
+            <DropdownMenu width=24 open=true placement={Placement::Anchor { x: 0, y: 0 }}>
+                <DropdownSubmenu label="Export a very long document label" id=submenu>
+                    <DropdownItem label="PDF" />
+                </DropdownSubmenu>
+                <DropdownItem id=leaf label="Close" />
+            </DropdownMenu>
+        }
     };
-    set_focused(None);
-    let (buffer, hits) = render(&node, 80, 24);
+    let initial = build();
+    let mut manager = FocusManager::new();
+    manager.reconcile(InteractionTree::from_node(&initial));
+    manager.focus(submenu);
+    let node = manager.with_context(build);
+
+    let (buffer, hits) = manager.with_context(|| render(&node, 80, 24));
     assert_eq!(rect(&hits, submenu), svtui::layout::Rect::new(1, 1, 22, 1));
     assert_eq!(rect(&hits, leaf).y, 2);
     assert_eq!(buffer.get(21, 1).unwrap().ch, '▶');
@@ -348,9 +361,11 @@ fn dropdown_submenu_label_and_arrow_share_one_full_width_row() {
 #[test]
 fn space_between_handles_empty_singleton_and_excess_content() {
     for count in 0..=2 {
-        let id = FocusId::new();
-        let children = (0..count)
-            .map(|_| view! { <Box width=6 height=1 focus_id=id /> })
+        let ids: Vec<_> = (0..count).map(|_| FocusId::new()).collect();
+        let children = ids
+            .iter()
+            .copied()
+            .map(|id| view! { <Box width=6 height=1 focus_id=id tab_stop=true /> })
             .collect::<Vec<_>>();
         let node = view! {
             <Box width=10 height=1 flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween>
@@ -359,7 +374,7 @@ fn space_between_handles_empty_singleton_and_excess_content() {
         };
         let (_, hits) = render(&node, 30, 4);
         if count > 0 {
-            assert_eq!(rect(&hits, id).x, 0);
+            assert_eq!(rect(&hits, ids[0]).x, 0);
         }
     }
 }
@@ -370,8 +385,8 @@ fn percentage_full_width_is_distinct_from_sharing_remaining_space() {
     let fill = FocusId::new();
     let node = view! {
         <Box width=20 height=1 flex_direction=FlexDirection::Row>
-            <Box width=Size::Percent(100.0) height=1 focus_id=percentage />
-            <Box width=Size::Fill min_width=3 height=1 focus_id=fill />
+            <Box width=Size::Percent(100.0) height=1 focus_id=percentage tab_stop=true />
+            <Box width=Size::Fill min_width=3 height=1 focus_id=fill tab_stop=true />
         </Box>
     };
     let (_, hits) = render(&node, 30, 4);

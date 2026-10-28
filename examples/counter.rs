@@ -44,5 +44,6 @@ fn main() -> Result<(), std::io::Error> {
             </Box>
         }
     })
+    .on_key(svtui::app::exit_shortcuts)
     .run()
 }

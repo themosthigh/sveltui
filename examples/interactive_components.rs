@@ -1,8 +1,11 @@
 use svtui::prelude::*;
 
 /// Example of a custom reusable container using `use_focus` to implement DOM-like `:focus-within`.
-fn focus_card(title: &str, children: impl IntoIterator<Item = impl IntoNode>) -> VNode {
-    let card_id = FocusId::new();
+fn focus_card(
+    card_id: FocusId,
+    title: &str,
+    children: impl IntoIterator<Item = impl IntoNode>,
+) -> VNode {
     let focus = use_focus(card_id);
 
     // Completely opt-in: highlights container border when any child contains focus!
@@ -30,6 +33,7 @@ fn focus_card(title: &str, children: impl IntoIterator<Item = impl IntoNode>) ->
 }
 
 fn main() -> std::io::Result<()> {
+    let card_id = FocusId::new();
     let (name, set_name) = create_signal(String::new());
     let (dark_mode, set_dark_mode) = create_signal(true);
     let (notifications, set_notifications) = create_signal(false);
@@ -82,7 +86,7 @@ fn main() -> std::io::Result<()> {
                     <Divider title="Custom Element (:focus-within)" />
 
                     {
-                        focus_card("Settings Card", vec![
+                        focus_card(card_id, "Settings Card", vec![
                             view! { <Switch checked=dark_mode set_checked=set_dark_mode label="Enable Dark Mode" /> },
                             view! { <Checkbox checked=notifications set_checked=set_notifications label="Subscribe to Updates" /> },
                         ])
@@ -126,5 +130,6 @@ fn main() -> std::io::Result<()> {
             </Box>
         }
     })
+    .on_key(svtui::app::exit_shortcuts)
     .run()
 }

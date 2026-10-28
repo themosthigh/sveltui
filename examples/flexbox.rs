@@ -40,10 +40,10 @@ fn main() -> std::io::Result<()> {
             </Box>
         }
     })
-    .on_key(move |key| match key.code {
-        crossterm::event::KeyCode::Char('r') => set_direction.set(FlexDirection::Row),
-        crossterm::event::KeyCode::Char('c') => set_direction.set(FlexDirection::Column),
-        _ => {}
+    .on_key(move |key, context| match key.code {
+        crossterm::event::KeyCode::Char('r') => { set_direction.set(FlexDirection::Row); EventResult::Handled },
+        crossterm::event::KeyCode::Char('c') => { set_direction.set(FlexDirection::Column); EventResult::Handled },
+        _ => svtui::app::exit_shortcuts(key, context)
     })
     .run()
 }

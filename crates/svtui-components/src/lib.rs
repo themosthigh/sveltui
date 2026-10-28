@@ -16,11 +16,7 @@ pub use button::{Button, ButtonVariant};
 pub use checkbox::Checkbox;
 pub use dialog::Dialog;
 pub use divider::Divider;
-pub use dropdown::{
-    DropdownItem, DropdownMenu, DropdownSubmenu, close_all_submenus, close_submenu,
-    close_topmost_submenu, has_open_submenus, is_menu_item, is_submenu_open, open_submenu,
-    register_menu_item,
-};
+pub use dropdown::{DropdownItem, DropdownMenu, DropdownSubmenu};
 pub use popover::Popover;
 pub use progress_bar::ProgressBar;
 pub use switch::Switch;

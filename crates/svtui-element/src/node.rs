@@ -1,4 +1,8 @@
 use crate::focus::FocusId;
+use crate::interaction::{
+    Activation, DismissLayer, EventContext, EventResult, FocusGroup, FocusScope, Focusability,
+    Interaction, KeyHandler, Semantics,
+};
 use crossterm::event::KeyEvent;
 use crossterm::style::Color;
 use std::fmt;
@@ -52,7 +56,8 @@ pub struct BoxElement {
     pub on_click: Option<Rc<dyn Fn()>>,
     pub on_click_at: Option<Rc<dyn Fn(u16, u16)>>,
     pub focus_id: Option<FocusId>,
-    pub on_key: Option<Rc<dyn Fn(KeyEvent)>>,
+    pub on_key: Option<KeyHandler>,
+    pub interaction: Option<Box<Interaction>>,
     pub on_scroll: Option<Rc<dyn Fn(i16, i16)>>,
     pub cursor_offset: Option<(u16, u16)>,
     pub children: Vec<VNode>,
@@ -250,7 +255,10 @@ impl BoxElement {
         self
     }
 
-    pub fn opt_on_key(mut self, handler: Option<Rc<dyn Fn(KeyEvent)>>) -> Self {
+    pub fn opt_on_key(mut self, handler: Option<KeyHandler>) -> Self {
+        if handler.is_some() {
+            self.ensure_interaction_id();
+        }
         self.on_key = handler;
         self
     }
@@ -273,13 +281,82 @@ impl BoxElement {
         self
     }
 
+    /// Assign identity without opting into Tab navigation.
     pub fn focus_id(mut self, id: impl Into<FocusId>) -> Self {
         self.focus_id = Some(id.into());
         self
     }
 
-    pub fn on_key(mut self, handler: impl Fn(KeyEvent) + 'static) -> Self {
+    pub fn on_key(
+        mut self,
+        handler: impl Fn(KeyEvent, &mut EventContext) -> EventResult + 'static,
+    ) -> Self {
+        self.ensure_interaction_id();
         self.on_key = Some(Rc::new(handler));
+        self
+    }
+
+    fn ensure_interaction_id(&mut self) {
+        if self.focus_id.is_none() {
+            self.focus_id = Some(FocusId::default());
+        }
+    }
+
+    fn interaction_mut(&mut self) -> &mut Interaction {
+        self.ensure_interaction_id();
+        self.interaction
+            .get_or_insert_with(|| Box::new(Interaction::default()))
+            .as_mut()
+    }
+
+    /// Opt into keyboard focus independently of identity and pointer handlers.
+    pub fn focusability(mut self, value: Focusability) -> Self {
+        self.interaction_mut().focusability = value;
+        self
+    }
+
+    pub fn tab_stop(self, value: bool) -> Self {
+        if !value && self.interaction.is_none() {
+            return self;
+        }
+        self.focusability(if value {
+            Focusability::TabStop
+        } else {
+            Focusability::None
+        })
+    }
+
+    pub fn disabled(mut self, value: bool) -> Self {
+        self.interaction_mut().disabled = value;
+        self
+    }
+
+    pub fn hidden(mut self, value: bool) -> Self {
+        self.interaction_mut().hidden = value;
+        self
+    }
+
+    pub fn activation(mut self, value: Activation) -> Self {
+        self.interaction_mut().activation = value;
+        self
+    }
+
+    pub fn focus_scope(mut self, scope: FocusScope) -> Self {
+        let interaction = self.interaction_mut();
+        interaction.scope = Some(scope);
+        if interaction.focusability == Focusability::None {
+            interaction.focusability = Focusability::Programmatic;
+        }
+        self
+    }
+
+    pub fn focus_group(mut self, group: FocusGroup) -> Self {
+        self.interaction_mut().group = Some(group);
+        self
+    }
+
+    pub fn semantics(mut self, semantics: Semantics) -> Self {
+        self.interaction_mut().semantics = semantics;
         self
     }
 
@@ -376,6 +453,13 @@ impl TextElement {
 /// Floating overlay element rendered in the top layer.
 #[derive(Clone, Default)]
 pub struct OverlayElement {
+    pub id: FocusId,
+    pub opener: Option<FocusId>,
+    pub layer: DismissLayer,
+    pub focus_group: Option<FocusGroup>,
+    pub managed: bool,
+    pub on_key: Option<KeyHandler>,
+    pub semantics: Semantics,
     pub trigger: Option<Box<VNode>>,
     pub content: Option<Box<VNode>>,
     pub open: bool,
@@ -383,6 +467,7 @@ pub struct OverlayElement {
     pub backdrop: bool,
     pub modal: bool,
     pub on_close: Option<Rc<dyn Fn()>>,
+    pub on_open: Option<Rc<dyn Fn()>>,
 }
 
 impl fmt::Debug for OverlayElement {
@@ -402,6 +487,45 @@ impl fmt::Debug for OverlayElement {
 impl OverlayElement {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn id(mut self, id: FocusId) -> Self {
+        self.id = id;
+        self
+    }
+    pub fn opener(mut self, id: FocusId) -> Self {
+        self.opener = Some(id);
+        self
+    }
+    pub fn layer(mut self, layer: DismissLayer) -> Self {
+        self.modal = layer.scope.contain_tab;
+        self.layer = layer;
+        self
+    }
+    pub fn managed(mut self, managed: bool) -> Self {
+        self.managed = managed;
+        self
+    }
+    pub fn semantics(mut self, semantics: Semantics) -> Self {
+        self.semantics = semantics;
+        self
+    }
+
+    pub fn focus_group(mut self, group: FocusGroup) -> Self {
+        self.focus_group = Some(group);
+        self
+    }
+    pub fn opt_on_key(mut self, handler: Option<KeyHandler>) -> Self {
+        self.on_key = handler;
+        self
+    }
+
+    pub fn on_key(
+        mut self,
+        handler: impl Fn(KeyEvent, &mut EventContext) -> EventResult + 'static,
+    ) -> Self {
+        self.on_key = Some(Rc::new(handler));
+        self
     }
 
     pub fn trigger(mut self, trigger: impl IntoNode) -> Self {
@@ -457,6 +581,20 @@ impl OverlayElement {
 
     pub fn modal(mut self, modal: bool) -> Self {
         self.modal = modal;
+        self.layer = if modal {
+            DismissLayer::dialog()
+        } else {
+            DismissLayer::popover()
+        };
+        self
+    }
+
+    pub fn on_open(mut self, handler: impl Fn() + 'static) -> Self {
+        self.on_open = Some(Rc::new(handler));
+        self
+    }
+    pub fn opt_on_open(mut self, handler: Option<Rc<dyn Fn()>>) -> Self {
+        self.on_open = handler;
         self
     }
 

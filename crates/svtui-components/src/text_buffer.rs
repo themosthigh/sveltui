@@ -464,6 +464,27 @@ impl TextBuffer {
         result
     }
 
+    /// Whether the editor owns this key, including no-op edits at boundaries.
+    /// Tab remains available for focus traversal in the standard components.
+    pub fn accepts_key(&self, key: &KeyEvent) -> bool {
+        let control = key.modifiers.contains(KeyModifiers::CONTROL);
+        let alt = key.modifiers.contains(KeyModifiers::ALT);
+        match key.code {
+            KeyCode::Char(c) if control => matches!(c, 'w' | 'k' | 'u' | 'a' | 'e' | 'h' | 'd'),
+            KeyCode::Char(_) => !alt,
+            KeyCode::Enter | KeyCode::Up | KeyCode::Down | KeyCode::PageUp | KeyCode::PageDown => {
+                self.multiline
+            }
+            KeyCode::Backspace
+            | KeyCode::Delete
+            | KeyCode::Left
+            | KeyCode::Right
+            | KeyCode::Home
+            | KeyCode::End => true,
+            _ => false,
+        }
+    }
+
     pub fn handle_key(&mut self, key: &KeyEvent) -> bool {
         let is_ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
         let is_alt = key.modifiers.contains(KeyModifiers::ALT);

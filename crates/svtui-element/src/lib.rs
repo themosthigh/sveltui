@@ -1,4 +1,9 @@
+pub mod collection;
+pub use collection::*;
 pub mod events;
+pub mod interaction;
+mod manager;
+pub use interaction::*;
 mod flex;
 pub mod focus;
 pub mod measure;
@@ -8,8 +13,8 @@ pub mod scroll;
 
 pub use events::{HitMap, HitTarget};
 pub use focus::{
-    FocusHandle, FocusId, FocusState, get_focused, is_focused, next_render_focus_id,
-    reset_focus_counter, set_focused, update_focus_context, use_focus,
+    FocusHandle, FocusId, FocusState, is_focused, is_layer_open, next_render_focus_id,
+    reset_focus_counter, use_focus,
 };
 pub use measure::measure_node;
 pub use node::{BoxElement, IntoNode, OverlayElement, TextElement, VNode};

@@ -1,4 +1,4 @@
-use crate::events::{HitMap, HitTarget};
+use crate::events::{HitMap, HitTarget, LayoutTarget, ScrollRegion};
 use crate::flex::layout_box;
 use crate::focus::{is_focused, next_render_focus_id};
 use crate::measure::decoration;
@@ -13,6 +13,8 @@ use svtui_terminal::Buffer;
 struct RenderContext<'a> {
     buffer: &'a mut Buffer,
     hit_map: &'a mut HitMap,
+    layer: Option<crate::FocusId>,
+    scrolls: Vec<ScrollRegion>,
     overlays: &'a mut Vec<(OverlayElement, Option<Rect>)>,
 }
 
@@ -48,6 +50,7 @@ fn register_target(ctx: &mut RenderContext<'_>, x: i32, y: i32, mut target: HitT
             handler(cx.saturating_add(dx), cy.saturating_add(dy));
         }));
     }
+    target.layer = target.layer.or(ctx.layer);
     ctx.hit_map.register(target);
 }
 
@@ -62,12 +65,15 @@ pub fn render_node_interactive(
     buffer: &mut Buffer,
     hit_map: &mut HitMap,
 ) {
+    hit_map.collect_interactions(node);
     let (width, height) = measure_node(node, rect.width, rect.height);
     let mut overlays = Vec::new();
     {
         let mut ctx = RenderContext {
             buffer,
             hit_map,
+            layer: None,
+            scrolls: Vec::new(),
             overlays: &mut overlays,
         };
         render_node_offset_internal(node, rect.x as i32, rect.y as i32, width, height, &mut ctx);
@@ -79,6 +85,7 @@ pub fn render_node_interactive(
             render_single_overlay(overlay, anchor_rect, rect, buffer, hit_map, &mut overlays);
         }
     }
+    hit_map.finish_interactions();
 }
 
 pub fn render_node_offset(
@@ -90,12 +97,15 @@ pub fn render_node_offset(
     buffer: &mut Buffer,
     hit_map: &mut HitMap,
 ) {
+    hit_map.collect_interactions(node);
     let (width, height) = measure_node(node, width, height);
     let mut overlays = Vec::new();
     {
         let mut ctx = RenderContext {
             buffer,
             hit_map,
+            layer: None,
+            scrolls: Vec::new(),
             overlays: &mut overlays,
         };
         render_node_offset_internal(node, x, y, width, height, &mut ctx);
@@ -115,6 +125,7 @@ pub fn render_node_offset(
             );
         }
     }
+    hit_map.finish_interactions();
 }
 
 fn render_single_overlay(
@@ -129,10 +140,6 @@ fn render_single_overlay(
         return;
     }
 
-    if let Some(ref closer) = overlay.on_close {
-        hit_map.overlay_closers.push(closer.clone());
-    }
-
     if overlay.backdrop {
         for cell in &mut buffer.cells {
             cell.fg = Some(Color::DarkGrey);
@@ -140,24 +147,31 @@ fn render_single_overlay(
         }
     }
 
-    if let Some(ref on_close) = overlay.on_close {
+    hit_map.register(HitTarget {
+        rect: screen,
+        layer: Some(overlay.id),
+        dismiss: Some(overlay.id),
+        on_click: None,
+        on_click_at: None,
+        focus_id: None,
+        on_key: None,
+        on_scroll: None,
+    });
+
+    if let Some(content) = overlay.content {
+        let (cw, ch) = measure_node(&content, screen.width, screen.height);
+        let popover_rect = compute_popover_rect(overlay.placement, (cw, ch), anchor_rect, screen);
+
         hit_map.register(HitTarget {
-            rect: screen,
-            on_click: Some(on_close.clone()),
+            rect: popover_rect,
+            layer: Some(overlay.id),
+            dismiss: None,
+            on_click: None,
             on_click_at: None,
             focus_id: None,
             on_key: None,
             on_scroll: None,
         });
-    }
-
-    if overlay.modal {
-        hit_map.modal_focus_start = Some(hit_map.targets.len());
-    }
-
-    if let Some(content) = overlay.content {
-        let (cw, ch) = measure_node(&content, screen.width, screen.height);
-        let popover_rect = compute_popover_rect(overlay.placement, (cw, ch), anchor_rect, screen);
 
         for cy in popover_rect.y..(popover_rect.y + popover_rect.height) {
             for cx in popover_rect.x..(popover_rect.x + popover_rect.width) {
@@ -168,6 +182,8 @@ fn render_single_overlay(
         let mut ctx = RenderContext {
             buffer,
             hit_map,
+            layer: Some(overlay.id),
+            scrolls: Vec::new(),
             overlays,
         };
         render_node_offset_internal(
@@ -189,6 +205,20 @@ fn render_node_offset_internal(
     height: u16,
     ctx: &mut RenderContext,
 ) {
+    if let VNode::Box(b) = node
+        && let Some(id) = b.focus_id
+    {
+        ctx.hit_map.layouts.insert(
+            id,
+            LayoutTarget {
+                x,
+                y,
+                width,
+                height,
+                scrolls: ctx.scrolls.clone(),
+            },
+        );
+    }
     if let VNode::Overlay(overlay) = node {
         let anchor_rect = if let Some(ref trigger) = overlay.trigger {
             let anchor = Rect::new(x.max(0) as u16, y.max(0) as u16, width, height);
@@ -219,10 +249,12 @@ fn render_node_offset_internal(
         }
         return;
     }
-    if x >= ctx.buffer.width as i32 || y >= ctx.buffer.height as i32 {
-        return;
-    }
-    if x + width as i32 <= 0 || y + height as i32 <= 0 {
+    if (x >= ctx.buffer.width as i32
+        || y >= ctx.buffer.height as i32
+        || x + width as i32 <= 0
+        || y + height as i32 <= 0)
+        && !matches!(node, VNode::Box(_) | VNode::Fragment(_))
+    {
         return;
     }
 
@@ -284,12 +316,12 @@ fn render_node_offset_internal(
             }
         }
         VNode::Box(b) => {
-            // Track focus ancestry hierarchy
-            if let Some(id) = b.focus_id {
-                for &anc in &ctx.hit_map.focus_stack {
-                    ctx.hit_map.ancestors.entry(id).or_default().insert(anc);
-                }
-                ctx.hit_map.focus_stack.push(id);
+            if b.interaction.as_ref().is_some_and(|i| i.hidden) {
+                return;
+            }
+            let previous_layer = ctx.layer;
+            if b.interaction.as_ref().is_some_and(|i| i.scope.is_some()) {
+                ctx.layer = b.focus_id;
             }
 
             // Fill background if specified
@@ -318,7 +350,8 @@ fn render_node_offset_internal(
                 let bottom = y + height as i32 - 1;
 
                 let draw_ch = |cx: i32, cy: i32, ch: char, buf: &mut Buffer| {
-                    if cx >= 0 && cy >= 0 {
+                    if cx >= 0 && cy >= 0 && cx < i32::from(buf.width) && cy < i32::from(buf.height)
+                    {
                         buf.set_char(cx as u16, cy as u16, ch, b.border_color, None, false);
                     }
                 };
@@ -328,12 +361,12 @@ fn render_node_offset_internal(
                 draw_ch(x, bottom, chars.bottom_left, ctx.buffer);
                 draw_ch(right, bottom, chars.bottom_right, ctx.buffer);
 
-                for cx in (x + 1)..right {
+                for cx in (x + 1).max(0)..right.min(i32::from(ctx.buffer.width)) {
                     draw_ch(cx, y, chars.horizontal, ctx.buffer);
                     draw_ch(cx, bottom, chars.horizontal, ctx.buffer);
                 }
 
-                for cy in (y + 1)..bottom {
+                for cy in (y + 1).max(0)..bottom.min(i32::from(ctx.buffer.height)) {
                     draw_ch(x, cy, chars.vertical, ctx.buffer);
                     draw_ch(right, cy, chars.vertical, ctx.buffer);
                 }
@@ -346,7 +379,11 @@ fn render_node_offset_internal(
                 let start_x = x + 2;
                 for (idx, ch) in displayed_title.chars().enumerate() {
                     let cx = start_x + idx as i32;
-                    if cx >= 0 && y >= 0 {
+                    if cx >= 0
+                        && y >= 0
+                        && cx < i32::from(ctx.buffer.width)
+                        && y < i32::from(ctx.buffer.height)
+                    {
                         ctx.buffer
                             .set_char(cx as u16, y as u16, ch, b.border_color, None, true);
                     }
@@ -444,9 +481,10 @@ fn render_node_offset_internal(
                         inner_y
                     };
 
-                    if sb_x >= 0 {
-                        for row in 0..track_h {
-                            let cy = inner_y + row as i32;
+                    if sb_x >= 0 && sb_x < i32::from(ctx.buffer.width) {
+                        for cy in inner_y.max(0)
+                            ..(inner_y + i32::from(track_h)).min(i32::from(ctx.buffer.height))
+                        {
                             if cy >= 0 {
                                 if cy >= thumb_start_y && cy < thumb_start_y + thumb_len as i32 {
                                     ctx.buffer.set_char(
@@ -493,9 +531,10 @@ fn render_node_offset_internal(
                         inner_x
                     };
 
-                    if sb_y >= 0 {
-                        for col in 0..track_w {
-                            let cx = inner_x + col as i32;
+                    if sb_y >= 0 && sb_y < i32::from(ctx.buffer.height) {
+                        for cx in inner_x.max(0)
+                            ..(inner_x + i32::from(track_w)).min(i32::from(ctx.buffer.width))
+                        {
                             if cx >= 0 {
                                 if cx >= thumb_start_x && cx < thumb_start_x + thumb_len as i32 {
                                     ctx.buffer.set_char(
@@ -584,6 +623,8 @@ fn render_node_offset_internal(
                         y,
                         HitTarget {
                             rect: target_rect,
+                            layer: None,
+                            dismiss: None,
                             on_click: b.on_click.clone(),
                             on_click_at: b.on_click_at.clone(),
                             focus_id: scroll_fid,
@@ -625,6 +666,17 @@ fn render_node_offset_internal(
                     ctx.buffer.push_clip(clip_rect);
                 }
 
+                if is_scrollable && let Some(id) = scroll_fid {
+                    ctx.scrolls.push(ScrollRegion {
+                        id,
+                        x: inner_x,
+                        y: inner_y,
+                        width: viewport_w,
+                        height: viewport_h,
+                        max_x: b.scroll_x.is_none().then_some(max_scroll_x),
+                        max_y: b.scroll_y.is_none().then_some(max_scroll_y),
+                    });
+                }
                 for child in &layout.children {
                     render_node_offset_internal(
                         child.node,
@@ -636,6 +688,9 @@ fn render_node_offset_internal(
                     );
                 }
 
+                if is_scrollable {
+                    ctx.scrolls.pop();
+                }
                 if needs_clip {
                     ctx.buffer.pop_clip();
                 }
@@ -652,6 +707,8 @@ fn render_node_offset_internal(
                     y,
                     HitTarget {
                         rect: target_rect,
+                        layer: None,
+                        dismiss: None,
                         on_click: b.on_click.clone(),
                         on_click_at: b.on_click_at.clone(),
                         focus_id: b.focus_id,
@@ -661,10 +718,7 @@ fn render_node_offset_internal(
                 );
             }
 
-            // Pop from focus ancestry stack
-            if b.focus_id.is_some() {
-                ctx.hit_map.focus_stack.pop();
-            }
+            ctx.layer = previous_layer;
         }
     }
 }

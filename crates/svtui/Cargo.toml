@@ -44,3 +44,7 @@ path = "../../examples/popover_and_dialog.rs"
 [[example]]
 name = "flexbox"
 path = "../../examples/flexbox.rs"
+
+[[example]]
+name = "keyboard_scopes"
+path = "../../examples/keyboard_scopes.rs"

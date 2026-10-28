@@ -1,4 +1,5 @@
 use crossterm::style::Color;
+use svtui_element::{Activation, Role, Semantics};
 use svtui_element::{BoxElement, FocusId, IntoNode, TextElement, VNode, is_focused};
 use svtui_layout::{Align, BorderStyle, Justify, Padding};
 use svtui_reactive::{ReadSignal, WriteSignal};
@@ -83,6 +84,10 @@ impl IntoNode for Checkbox {
             .justify_content(Justify::Center)
             .align_items(Align::Start)
             .focus_id(id)
+            .tab_stop(true)
+            .disabled(self.disabled)
+            .activation(Activation::Toggle)
+            .semantics(Semantics::new(Role::Checkbox, self.label.clone()).checked(is_checked))
             .child(
                 TextElement::new(box_display)
                     .color(text_color)

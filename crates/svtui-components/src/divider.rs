@@ -1,5 +1,6 @@
 use crossterm::style::Color;
 use svtui_element::{BoxElement, IntoNode, TextElement, VNode};
+use svtui_element::{Role, Semantics};
 use svtui_layout::{Align, BorderStyle, Overflow, Padding, Size};
 
 /// A one-line rule that fills its allocated width, including after resizing.
@@ -65,12 +66,14 @@ impl Divider {
 
 impl IntoNode for Divider {
     fn into_node(self) -> VNode {
+        let semantics = Semantics::new(Role::Separator, self.title.clone().unwrap_or_default());
         let text = self
             .title
             .filter(|title| !title.is_empty())
             .map_or_else(String::new, |title| format!("─── {title} "));
 
         let mut element = BoxElement::new()
+            .semantics(semantics)
             .border(BorderStyle::None)
             .padding(Padding::zero())
             .width(self.width)

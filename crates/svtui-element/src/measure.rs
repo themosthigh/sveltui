@@ -65,6 +65,7 @@ pub(crate) fn children(nodes: &[VNode]) -> Vec<&VNode> {
         for node in nodes {
             match node {
                 VNode::Empty => {}
+                VNode::Box(b) if b.interaction.as_ref().is_some_and(|i| i.hidden) => {}
                 VNode::Fragment(items) => collect(items, output),
                 _ => output.push(node),
             }
