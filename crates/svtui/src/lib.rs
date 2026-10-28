@@ -77,9 +77,9 @@ pub use layout::{
 };
 pub use reactive::{
     AsyncState, BlockingFuture, ComponentScope, Derived, ReadSignal, Runtime, State, TaskHandle,
-    WriteSignal, batch, create_effect, create_signal, derived, effect, on_destroy, on_mount,
-    provide_context, reset_hook_counter, spawn_blocking, spawn_task, state, use_async_state,
-    use_context,
+    WriteSignal, batch, begin_frame, create_effect, create_signal, derived, effect, end_frame,
+    on_destroy, on_mount, provide_context, reset_hook_counter, spawn_blocking, spawn_task, state,
+    state_with, use_async_state, use_context, use_hook,
 };
 pub use terminal::{Buffer, Cell, Terminal, TerminalColor as Color};
 
@@ -101,9 +101,9 @@ pub mod prelude {
     };
     pub use crate::reactive::{
         AsyncState, BlockingFuture, ComponentScope, Derived, ReadSignal, State, TaskHandle,
-        WriteSignal, batch, create_effect, create_signal, derived, effect, on_destroy, on_mount,
-        provide_context, reset_hook_counter, spawn_blocking, spawn_task, state, use_async_state,
-        use_context,
+        WriteSignal, batch, begin_frame, create_effect, create_signal, derived, effect, end_frame,
+        on_destroy, on_mount, provide_context, reset_hook_counter, spawn_blocking, spawn_task,
+        state, state_with, use_async_state, use_context, use_hook,
     };
     pub use crate::terminal::TerminalColor as Color;
     pub use crate::{Props, component, view};

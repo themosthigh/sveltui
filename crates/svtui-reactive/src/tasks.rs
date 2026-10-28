@@ -1,7 +1,4 @@
 use crate::signal::{State, state};
-use std::any::Any;
-use std::cell::RefCell;
-use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -9,18 +6,11 @@ use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 use std::thread;
 
-thread_local! {
-    static HOOK_COUNTER: RefCell<usize> = const { RefCell::new(0) };
-    static ASYNC_HOOKS: RefCell<HashMap<usize, Box<dyn Any>>> = RefCell::new(HashMap::new());
-}
-
 pub fn reset_hook_counter() {
-    HOOK_COUNTER.with(|c| *c.borrow_mut() = 0);
+    crate::lifecycle::begin_frame();
 }
 
-pub fn clear_async_hooks() {
-    ASYNC_HOOKS.with(|h| h.borrow_mut().clear());
-}
+pub fn clear_async_hooks() {}
 
 #[derive(Clone)]
 pub struct TaskHandle {
@@ -118,30 +108,15 @@ where
     Res: IntoAsyncState<T, String> + 'static,
     T: Clone + Send + Sync + 'static,
 {
-    let hook_id = HOOK_COUNTER.with(|c| {
-        let mut current = c.borrow_mut();
-        let id = *current;
-        *current += 1;
-        id
+    let s: State<AsyncState<T, String>> = crate::lifecycle::use_hook(|| {
+        let s: State<AsyncState<T, String>> = state(AsyncState::Loading);
+        let s_clone = s;
+        spawn_task(async move {
+            let res = future.await;
+            s_clone.set(res.into_async_state());
+        });
+        s
     });
 
-    let state_handle = ASYNC_HOOKS.with(|h| {
-        let mut map = h.borrow_mut();
-        if let Some(boxed) = map.get(&hook_id) {
-            boxed
-                .downcast_ref::<State<AsyncState<T, String>>>()
-                .cloned()
-        } else {
-            let s: State<AsyncState<T, String>> = state(AsyncState::Loading);
-            map.insert(hook_id, Box::new(s));
-            let s_clone = s;
-            spawn_task(async move {
-                let res = future.await;
-                s_clone.set(res.into_async_state());
-            });
-            Some(s)
-        }
-    });
-
-    state_handle.unwrap().get()
+    s.get()
 }

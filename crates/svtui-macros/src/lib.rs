@@ -23,15 +23,22 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let sig = &input_fn.sig;
     let block = &input_fn.block;
     let attrs = &input_fn.attrs;
+    let fn_name = &sig.ident;
+
+    let pkg = std::env::var("CARGO_PKG_NAME").unwrap_or_default();
+    let root = if pkg == "svtui-reactive" {
+        quote! { crate }
+    } else {
+        quote! { ::svtui::reactive }
+    };
 
     let expanded = quote! {
         #(#attrs)*
         #[allow(non_snake_case)]
         #vis #sig {
-            let (__result, _scope) = ::svtui::reactive::ComponentScope::run(move || {
+            #root::ComponentScope::run_scoped(stringify!(#fn_name), move || {
                 #block
-            });
-            __result
+            })
         }
     };
 

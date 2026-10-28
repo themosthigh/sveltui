@@ -611,3 +611,163 @@ fn test_section_17_background_tasks() {
     let node = view! { <BackgroundScan /> };
     assert!(matches!(node, VNode::Text(_)));
 }
+
+// Section 18: State Persistence Across Render Passes
+static PERSISTENT_SHARED_BUTTON_CLICK: std::sync::Mutex<Option<Box<dyn Fn() + Send + Sync>>> =
+    std::sync::Mutex::new(None);
+
+#[component]
+fn InteractiveCounter() -> impl IntoNode {
+    let count = state(0);
+    let mut click_guard = PERSISTENT_SHARED_BUTTON_CLICK.lock().unwrap();
+    *click_guard = Some(Box::new(move || {
+        count.update(|v| *v += 1);
+    }));
+
+    view! {
+        <Box>
+            <Text>{format!("Count is: {}", count.get())}</Text>
+        </Box>
+    }
+}
+
+#[test]
+fn test_state_persistence_across_render_passes() {
+    begin_frame();
+    let node1 = view! { <InteractiveCounter /> };
+    end_frame();
+
+    if let VNode::Box(b) = node1 {
+        if let VNode::Text(t) = &b.children[0] {
+            assert_eq!(t.content, "Count is: 0");
+        } else {
+            panic!("Expected text node");
+        }
+    }
+
+    // Trigger state update from the button click closure
+    {
+        let click_fn = PERSISTENT_SHARED_BUTTON_CLICK.lock().unwrap();
+        (click_fn.as_ref().unwrap())();
+    }
+
+    // Render next frame
+    begin_frame();
+    let node2 = view! { <InteractiveCounter /> };
+    end_frame();
+
+    if let VNode::Box(b) = node2 {
+        if let VNode::Text(t) = &b.children[0] {
+            assert_eq!(t.content, "Count is: 1");
+        } else {
+            panic!("Expected text node");
+        }
+    }
+
+    // Trigger another update
+    {
+        let click_fn = PERSISTENT_SHARED_BUTTON_CLICK.lock().unwrap();
+        (click_fn.as_ref().unwrap())();
+        (click_fn.as_ref().unwrap())();
+    }
+
+    // Render third frame
+    begin_frame();
+    let node3 = view! { <InteractiveCounter /> };
+    end_frame();
+
+    if let VNode::Box(b) = node3 {
+        if let VNode::Text(t) = &b.children[0] {
+            assert_eq!(t.content, "Count is: 3");
+        } else {
+            panic!("Expected text node");
+        }
+    }
+}
+
+#[derive(Props)]
+struct InstanceCounterProps {
+    initial: i32,
+}
+
+#[component]
+fn InstanceCounter(props: InstanceCounterProps) -> (State<i32>, VNode) {
+    let count = state(props.initial);
+    let vnode = view! { <Text>{format!("Val: {}", count.get())}</Text> };
+    (count, vnode)
+}
+
+#[test]
+fn test_multiple_component_instances_have_independent_state() {
+    begin_frame();
+    let (s1, n1) = InstanceCounter(InstanceCounterProps { initial: 10 });
+    let (_s2, n2) = InstanceCounter(InstanceCounterProps { initial: 20 });
+    end_frame();
+
+    if let VNode::Text(t1) = n1 {
+        assert_eq!(t1.content, "Val: 10");
+    }
+    if let VNode::Text(t2) = n2 {
+        assert_eq!(t2.content, "Val: 20");
+    }
+
+    // Mutate instance 1
+    s1.update(|v| *v += 5);
+
+    // Frame 2
+    begin_frame();
+    let (_s1_f2, n1_f2) = InstanceCounter(InstanceCounterProps { initial: 10 });
+    let (_s2_f2, n2_f2) = InstanceCounter(InstanceCounterProps { initial: 20 });
+    end_frame();
+
+    if let VNode::Text(t1) = n1_f2 {
+        assert_eq!(t1.content, "Val: 15");
+    }
+    if let VNode::Text(t2) = n2_f2 {
+        assert_eq!(t2.content, "Val: 20");
+    }
+}
+
+#[test]
+fn test_unmount_and_remount_lifecycle() {
+    let mounted_count = Arc::new(AtomicUsize::new(0));
+    let cleaned_count = Arc::new(AtomicUsize::new(0));
+
+    let m = mounted_count.clone();
+    let c = cleaned_count.clone();
+
+    // Frame 1: render child
+    begin_frame();
+    let s = ComponentScope::run_scoped("LifecycleItem", || {
+        let st = state(100);
+        let m_inner = m.clone();
+        let c_inner = c.clone();
+        on_mount(move || {
+            m_inner.fetch_add(1, Ordering::SeqCst);
+            move || {
+                c_inner.fetch_add(1, Ordering::SeqCst);
+            }
+        });
+        st
+    });
+    s.set(999);
+    end_frame();
+
+    assert_eq!(mounted_count.load(Ordering::SeqCst), 1);
+    assert_eq!(cleaned_count.load(Ordering::SeqCst), 0);
+
+    // Frame 2: omit child -> unmounts
+    begin_frame();
+    // LifecycleItem not called
+    end_frame();
+
+    assert_eq!(cleaned_count.load(Ordering::SeqCst), 1);
+
+    // Frame 3: remount child
+    begin_frame();
+    let s_remount = ComponentScope::run_scoped("LifecycleItem", || state(100));
+    end_frame();
+
+    // Fresh state!
+    assert_eq!(s_remount.get(), 100);
+}

@@ -198,8 +198,14 @@ impl<T> From<State<T>> for WriteSignal<T> {
 }
 
 pub fn state<T: Clone + 'static>(initial: T) -> State<T> {
-    let (read, write) = create_signal(initial);
-    State { read, write }
+    state_with(move || initial)
+}
+
+pub fn state_with<T: Clone + 'static>(init: impl FnOnce() -> T) -> State<T> {
+    crate::lifecycle::use_hook(|| {
+        let (read, write) = create_signal(init());
+        State { read, write }
+    })
 }
 
 #[derive(Clone)]

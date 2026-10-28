@@ -5,7 +5,6 @@ use crate::ast::{
 use proc_macro2::TokenStream;
 use syn::ext::IdentExt;
 use syn::parse::{Parse, ParseStream, Parser};
-use syn::punctuated::Punctuated;
 use syn::{Expr, Ident, LitStr, Pat, Result, Token};
 
 pub fn parse_attr_value(input: ParseStream) -> Result<Expr> {
@@ -309,9 +308,29 @@ fn parse_snippet_node(input: ParseStream, first_content: ParseStream) -> Result<
     let args = if first_content.peek(syn::token::Paren) {
         let args_content;
         syn::parenthesized!(args_content in first_content);
-        let punctuated: Punctuated<Pat, Token![,]> =
-            args_content.parse_terminated(Pat::parse_single, Token![,])?;
-        punctuated.into_iter().collect()
+        let mut list = Vec::new();
+        while !args_content.is_empty() {
+            let pat = Pat::parse_single(&args_content)?;
+            let final_pat = if args_content.peek(Token![:]) {
+                args_content.parse::<Token![:]>()?;
+                let ty: syn::Type = args_content.parse()?;
+                Pat::Type(syn::PatType {
+                    attrs: Vec::new(),
+                    pat: Box::new(pat),
+                    colon_token: Default::default(),
+                    ty: Box::new(ty),
+                })
+            } else {
+                pat
+            };
+            list.push(final_pat);
+            if args_content.peek(Token![,]) {
+                args_content.parse::<Token![,]>()?;
+            } else {
+                break;
+            }
+        }
+        list
     } else {
         Vec::new()
     };

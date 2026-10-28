@@ -119,8 +119,9 @@ where
                 // Clear before construction so writes during rendering survive.
                 Runtime::set_dirty(false);
                 reset_focus_counter();
-                svtui_reactive::reset_hook_counter();
+                svtui_reactive::begin_frame();
                 let root_node = focus.with_context(&mut self.view);
+                svtui_reactive::end_frame();
                 terminal.curr_buffer.clear();
                 hit_map.clear();
                 let screen_rect = Rect::new(0, 0, term_w, term_h);
