@@ -386,6 +386,10 @@ impl FlexBoxElement {
 #[derive(Clone, Debug, Default)]
 pub struct TextElement {
     pub content: String,
+    /// Wrap paragraphs at word boundaries within their allocated width.
+    pub wrap: bool,
+    /// Maximum visible lines; truncated content ends with an ellipsis.
+    pub max_lines: Option<usize>,
     /// Repeat this character after each line's content to its allocated width.
     /// This does not add intrinsic width; use a stretching parent to expand it.
     pub fill: Option<char>,
@@ -406,6 +410,16 @@ impl TextElement {
 
     pub fn color(mut self, color: Color) -> Self {
         self.fg = Some(color);
+        self
+    }
+
+    pub fn wrap(mut self, wrap: bool) -> Self {
+        self.wrap = wrap;
+        self
+    }
+
+    pub fn max_lines(mut self, max_lines: usize) -> Self {
+        self.max_lines = Some(max_lines);
         self
     }
 
@@ -1135,6 +1149,9 @@ pub fn TextSpan(props: TextSpanProps) -> TextElement {
 #[derive(Clone, Default)]
 pub struct ParagraphProps {
     pub content: Option<String>,
+    /// Limit wrapped lines, adding `…` when content remains. Zero hides all text.
+    /// Omit this property to show every line.
+    pub max_lines: Option<usize>,
     pub fill: Option<char>,
     pub fg: Option<Color>,
     pub bg: Option<Color>,
@@ -1158,6 +1175,10 @@ impl ParagraphProps {
 impl ParagraphPropsBuilder {
     pub fn content(mut self, content: impl Into<String>) -> Self {
         self.props.content = Some(content.into());
+        self
+    }
+    pub fn max_lines(mut self, max_lines: usize) -> Self {
+        self.props.max_lines = Some(max_lines);
         self
     }
     pub fn fill(mut self, fill: char) -> Self {
@@ -1233,7 +1254,11 @@ pub fn Paragraph(props: ParagraphProps) -> TextElement {
             _ => {}
         }
     }
-    let mut el = TextElement::new(text_content);
+    // Filled text is used for single-line rules such as Divider labels.
+    let mut el = TextElement::new(text_content).wrap(props.fill.is_none());
+    if let Some(max_lines) = props.max_lines {
+        el = el.max_lines(max_lines);
+    }
     if let Some(fill) = props.fill {
         el = el.fill(fill);
     }

@@ -261,11 +261,7 @@ fn render_node_offset_internal(
     match node {
         VNode::Empty | VNode::Overlay(_) => {}
         VNode::Text(text) => {
-            let lines: Vec<&str> = if text.content.is_empty() {
-                vec![""]
-            } else {
-                text.content.lines().collect()
-            };
+            let lines = crate::text::lines(text, Some(width));
             for (i, line) in lines.iter().enumerate() {
                 let curr_y = y + i as i32;
                 if curr_y < 0 || curr_y >= (y + height as i32) || curr_y >= ctx.buffer.height as i32

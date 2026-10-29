@@ -138,6 +138,19 @@ pub(crate) fn content_size(direction: FlexDirection, sizes: &[(u16, u16)], gap: 
     direction.axes(main.min(u64::from(u16::MAX)) as u16, cross)
 }
 
+fn contains_wrapped_text(node: &VNode) -> bool {
+    match node {
+        VNode::Text(text) => text.wrap,
+        VNode::FlexBox(b) => b.children.iter().any(contains_wrapped_text),
+        VNode::Fragment(items) => items.iter().any(contains_wrapped_text),
+        VNode::Overlay(overlay) => overlay
+            .trigger
+            .as_deref()
+            .is_some_and(contains_wrapped_text),
+        VNode::Empty => false,
+    }
+}
+
 pub(crate) fn measure(node: &VNode, bounds: Bounds) -> (u16, u16) {
     match node {
         VNode::Empty => (0, 0),
@@ -146,19 +159,15 @@ pub(crate) fn measure(node: &VNode, bounds: Bounds) -> (u16, u16) {
             .as_deref()
             .map_or((0, 0), |n| measure(n, bounds)),
         VNode::Text(text) => {
-            let width = text
-                .content
-                .lines()
+            let lines = crate::text::lines(text, bounds.width);
+            let width = lines
+                .iter()
                 .map(|line| line.chars().count())
                 .max()
                 .unwrap_or(0);
             (
                 width.min(usize::from(u16::MAX)) as u16,
-                text.content
-                    .lines()
-                    .count()
-                    .max(1)
-                    .min(usize::from(u16::MAX)) as u16,
+                lines.len().min(usize::from(u16::MAX)) as u16,
             )
         }
         VNode::Fragment(items) => {
@@ -242,6 +251,26 @@ pub(crate) fn measure(node: &VNode, bounds: Bounds) -> (u16, u16) {
                         b.max_height,
                     );
                 }
+            }
+            if b.height == Size::Auto && flow.iter().any(|node| contains_wrapped_text(node)) {
+                // An Auto width is resolved from intrinsic content first. Reflow
+                // at that resolved width before reserving the container's height.
+                let layout = crate::flex::layout_box(
+                    b,
+                    width.saturating_sub(extra_w),
+                    bounds.height.unwrap_or(u16::MAX).saturating_sub(extra_h),
+                );
+                height = resolve(
+                    b.height,
+                    layout
+                        .content
+                        .1
+                        .saturating_add(extra_h)
+                        .saturating_add(u16::from(layout.horizontal_scrollbar)),
+                    bounds.height,
+                    b.min_height,
+                    b.max_height,
+                );
             }
             (width, height)
         }

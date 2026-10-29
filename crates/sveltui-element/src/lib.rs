@@ -12,6 +12,7 @@ pub mod provider;
 pub mod render;
 pub mod scroll;
 pub mod snippet;
+mod text;
 pub mod text_buffer;
 
 pub use boundary::{ErrorBoundary, ErrorBoundaryProps, ErrorBoundaryPropsBuilder};

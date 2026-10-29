@@ -54,6 +54,10 @@ path = "../../examples/framework_error_boundary.rs"
 
 # Component Examples
 [[example]]
+name = "component_paragraph"
+path = "../../examples/component_paragraph.rs"
+
+[[example]]
 name = "component_button"
 path = "../../examples/component_button.rs"
 
