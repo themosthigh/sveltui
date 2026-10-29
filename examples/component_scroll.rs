@@ -1,10 +1,14 @@
 use sveltui::prelude::*;
 use sveltui_components::*;
 
+#[cfg(test)]
+#[path = "__tests__/scroll_tests.rs"]
+mod scroll_tests;
+
 #[component]
 fn ScrollDemo() -> impl IntoNode {
     let lines_count = state(20usize);
-    let scroll_id = FocusId::new();
+    let scroll_id = use_hook(FocusId::new);
 
     let focus = use_focus(scroll_id);
     let border_style = if focus.is_active() {

@@ -247,7 +247,10 @@ fn overlay_trigger_keeps_its_allocated_percentage_size_and_anchor() {
         </FlexBox>
     };
     let (_, hits) = render(&node, 80, 24);
-    assert_eq!(rect(&hits, trigger), sveltui::layout::Rect::new(10, 0, 20, 2));
+    assert_eq!(
+        rect(&hits, trigger),
+        sveltui::layout::Rect::new(10, 0, 20, 2)
+    );
     assert_eq!(rect(&hits, popup), sveltui::layout::Rect::new(10, 2, 5, 1));
 }
 
@@ -348,7 +351,10 @@ fn dropdown_submenu_label_and_arrow_share_one_full_width_row() {
     let node = manager.with_context(build);
 
     let (buffer, hits) = manager.with_context(|| render(&node, 80, 24));
-    assert_eq!(rect(&hits, submenu), sveltui::layout::Rect::new(1, 1, 22, 1));
+    assert_eq!(
+        rect(&hits, submenu),
+        sveltui::layout::Rect::new(1, 1, 22, 1)
+    );
     assert_eq!(rect(&hits, leaf).y, 2);
     assert_eq!(buffer.get(21, 1).unwrap().ch, '▶');
     for x in 1..=22 {
