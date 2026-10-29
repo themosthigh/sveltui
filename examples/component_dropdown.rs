@@ -1,4 +1,5 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[component]
 fn DropdownDemo() -> impl IntoNode {
@@ -39,9 +40,12 @@ fn DropdownDemo() -> impl IntoNode {
                         width=24
                         on_close={move || menu_open.set(false)}
                         trigger={
-                            Button::new("File Menu ▾")
-                                .variant(ButtonVariant::Primary)
-                                .on_click(move || menu_open.update(|v| *v = !*v))
+                            Button(
+                                ButtonProps::builder()
+                                    .children("File Menu ▾")
+                                    .on_click(move || menu_open.update(|v| *v = !*v))
+                                    .build(),
+                            )
                         }
                     >
                         <DropdownItem label="New File" on_select={select("New File")} />

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[derive(Props)]
 struct ActiveSessionProps {
@@ -70,13 +71,11 @@ fn LifecycleDemo() -> impl IntoNode {
 
                 <Box flex_direction=FlexDirection::Row gap=1>
                     <Button
-                        variant=ButtonVariant::Primary
                         on_click={move || session_id.update(|id| *id += 1)}
                     >
                         "Next Session ID"
                     </Button>
                     <Button
-                        variant=ButtonVariant::Secondary
                         on_click={move || session_visible.update(|v| *v = !*v)}
                     >
                         {if session_visible.get() { "Unmount Component" } else { "Mount Component" }}

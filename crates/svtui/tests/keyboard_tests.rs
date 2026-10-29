@@ -6,6 +6,7 @@ use svtui::{
     layout::Rect,
     prelude::*,
 };
+use svtui_components::*;
 
 fn key(code: KeyCode) -> KeyEvent {
     KeyEvent::new(code, KeyModifiers::NONE)

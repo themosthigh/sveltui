@@ -1,5 +1,6 @@
 use svtui::prelude::*;
 use svtui::{Buffer, element::render_node, layout::Rect};
+use svtui_components::*;
 
 fn render(node: &VNode, width: u16, height: u16) -> Buffer {
     let mut buffer = Buffer::new(width, height);

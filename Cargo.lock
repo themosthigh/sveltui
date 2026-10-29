@@ -333,11 +333,11 @@ name = "svtui-components"
 version = "0.1.0"
 dependencies = [
  "crossterm",
+ "svtui",
  "svtui-element",
  "svtui-layout",
  "svtui-macros",
  "svtui-reactive",
- "svtui-terminal",
 ]
 
 [[package]]

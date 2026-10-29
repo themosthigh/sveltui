@@ -384,8 +384,8 @@ pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
                     .into_node()
             }
         }
-        "Button" | "TextInput" | "TextArea" | "Checkbox" | "Switch" | "Badge" | "Divider"
-        | "ProgressBar" | "DropdownMenu" | "DropdownItem" | "DropdownSubmenu" | "Popover" => {
+        "TextInput" | "TextArea" | "Checkbox" | "Switch" | "Divider" | "ProgressBar"
+        | "DropdownMenu" | "DropdownItem" | "DropdownSubmenu" | "Popover" => {
             let mut setter_calls = Vec::new();
             for attr in &el.attributes {
                 let attr_name = &attr.name;
@@ -486,10 +486,7 @@ fn codegen_custom_component(
         }
     }
 
-    let has_props = !prop_setters.is_empty() || !snippet_setters.is_empty();
-    let has_regular_children = !regular_children.is_empty();
-
-    let children_snippet = if has_regular_children {
+    let children_setter = if !regular_children.is_empty() {
         let body_ts = if regular_children.len() == 1 {
             codegen_node(regular_children[0])
         } else {
@@ -500,10 +497,13 @@ fn codegen_custom_component(
                 ])
             }
         };
-        Some(quote! {
+        let cs = quote! {
             #root::Snippet::new(move |_| {
                 #body_ts
             })
+        };
+        Some(quote! {
+            .children(#cs)
         })
     } else {
         None
@@ -511,35 +511,22 @@ fn codegen_custom_component(
 
     let tag_props = syn::Ident::new(&format!("{}Props", tag), tag.span());
 
-    if has_props && has_regular_children {
-        let cs = children_snippet.unwrap();
+    let has_props = !prop_setters.is_empty()
+        || !snippet_setters.is_empty()
+        || children_setter.is_some()
+        || tag == "Button"
+        || tag == "Badge";
+
+    if has_props {
         quote! {
             #root::IntoNode::into_node(
                 #tag(
                     #tag_props::builder()
                         #(#prop_setters)*
                         #(#snippet_setters)*
-                        .build(),
-                    #cs
-                )
-            )
-        }
-    } else if has_props {
-        quote! {
-            #root::IntoNode::into_node(
-                #tag(
-                    #tag_props::builder()
-                        #(#prop_setters)*
-                        #(#snippet_setters)*
+                        #children_setter
                         .build()
                 )
-            )
-        }
-    } else if has_regular_children {
-        let cs = children_snippet.unwrap();
-        quote! {
-            #root::IntoNode::into_node(
-                #tag(#cs)
             )
         }
     } else {

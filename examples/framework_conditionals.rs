@@ -1,4 +1,5 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum AuthRole {
@@ -27,19 +28,16 @@ fn ConditionalsDemo() -> impl IntoNode {
                 <Box flex_direction=FlexDirection::Row gap=1 align_items=Align::Center>
                     <Text color=Color::DarkGrey>"Switch Role:"</Text>
                     <Button
-                        variant=if role.get() == AuthRole::LoggedOut { ButtonVariant::Primary } else { ButtonVariant::Outline }
                         on_click={move || role.set(AuthRole::LoggedOut)}
                     >
                         "Logged Out"
                     </Button>
                     <Button
-                        variant=if role.get() == AuthRole::Guest { ButtonVariant::Primary } else { ButtonVariant::Outline }
                         on_click={move || role.set(AuthRole::Guest)}
                     >
                         "Guest"
                     </Button>
                     <Button
-                        variant=if role.get() == AuthRole::Admin { ButtonVariant::Primary } else { ButtonVariant::Outline }
                         on_click={move || role.set(AuthRole::Admin)}
                     >
                         "Admin"

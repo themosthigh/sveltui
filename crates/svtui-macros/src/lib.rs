@@ -45,11 +45,31 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+fn extract_option_inner(ty: &syn::Type) -> Option<&syn::Type> {
+    if let syn::Type::Path(type_path) = ty
+        && let Some(segment) = type_path.path.segments.last()
+        && segment.ident == "Option"
+        && let syn::PathArguments::AngleBracketed(args) = &segment.arguments
+        && let Some(syn::GenericArgument::Type(inner)) = args.args.first()
+    {
+        Some(inner)
+    } else {
+        None
+    }
+}
+
 #[proc_macro_derive(Props, attributes(prop))]
 pub fn derive_props(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let struct_name = &input.ident;
     let builder_name = quote::format_ident!("{}Builder", struct_name);
+
+    let pkg = std::env::var("CARGO_PKG_NAME").unwrap_or_default();
+    let root = if pkg == "svtui-element" {
+        quote! { crate }
+    } else {
+        quote! { ::svtui }
+    };
 
     let fields = match &input.data {
         syn::Data::Struct(s) => match &s.fields {
@@ -115,33 +135,49 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
             #field_name: None,
         });
 
-        setters.push(quote! {
-            pub fn #field_name(mut self, val: impl Into<#field_ty>) -> Self {
-                self.#field_name = Some(val.into());
-                self
-            }
-        });
-
         if is_optional {
+            if let Some(inner_ty) = extract_option_inner(field_ty) {
+                setters.push(quote! {
+                    pub fn #field_name(mut self, val: impl #root::IntoPropOption<#inner_ty>) -> Self {
+                        self.#field_name = Some(val.into_prop_option());
+                        self
+                    }
+                });
+            } else {
+                setters.push(quote! {
+                    pub fn #field_name(mut self, val: impl Into<#field_ty>) -> Self {
+                        self.#field_name = Some(val.into());
+                        self
+                    }
+                });
+            }
             build_inits.push(quote! {
-                #field_name: self.#field_name.unwrap_or(None),
-            });
-        } else if let Some(expr) = default_expr {
-            build_inits.push(quote! {
-                #field_name: self.#field_name.unwrap_or_else(|| #expr),
-            });
-        } else if is_default {
-            build_inits.push(quote! {
-                #field_name: self.#field_name.unwrap_or_default(),
+                #field_name: self.#field_name.flatten(),
             });
         } else {
-            let err_msg = format!(
-                "Field '{}' is required for struct '{}'",
-                field_name, struct_name
-            );
-            build_inits.push(quote! {
-                #field_name: self.#field_name.expect(#err_msg),
+            setters.push(quote! {
+                pub fn #field_name(mut self, val: impl Into<#field_ty>) -> Self {
+                    self.#field_name = Some(val.into());
+                    self
+                }
             });
+            if let Some(expr) = default_expr {
+                build_inits.push(quote! {
+                    #field_name: self.#field_name.unwrap_or_else(|| #expr),
+                });
+            } else if is_default {
+                build_inits.push(quote! {
+                    #field_name: self.#field_name.unwrap_or_default(),
+                });
+            } else {
+                let err_msg = format!(
+                    "Field '{}' is required for struct '{}'",
+                    field_name, struct_name
+                );
+                build_inits.push(quote! {
+                    #field_name: self.#field_name.expect(#err_msg),
+                });
+            }
         }
     }
 

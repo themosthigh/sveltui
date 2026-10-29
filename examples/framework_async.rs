@@ -1,5 +1,6 @@
 use std::time::Duration;
 use svtui::prelude::*;
+use svtui_components::*;
 
 async fn fetch_server_stats(endpoint: String) -> Result<String, String> {
     spawn_blocking(move || {
@@ -39,13 +40,13 @@ fn AsyncDemo() -> impl IntoNode {
                 </Box>
 
                 <Box flex_direction=FlexDirection::Row gap=1>
-                    <Button variant=ButtonVariant::Primary on_click={move || endpoint.set(String::from("eu-west-1"))}>
+                    <Button on_click={move || endpoint.set(String::from("eu-west-1"))}>
                         "EU West"
                     </Button>
-                    <Button variant=ButtonVariant::Secondary on_click={move || endpoint.set(String::from("us-west-2"))}>
+                    <Button on_click={move || endpoint.set(String::from("us-west-2"))}>
                         "US West"
                     </Button>
-                    <Button variant=ButtonVariant::Outline on_click={move || endpoint.set(String::from("fail-region"))}>
+                    <Button on_click={move || endpoint.set(String::from("fail-region"))}>
                         "Simulate Error"
                     </Button>
                 </Box>

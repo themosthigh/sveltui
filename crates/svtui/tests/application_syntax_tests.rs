@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use svtui::prelude::*;
+use svtui_components::*;
 
 // Section 1: Application Setup
 #[component]
@@ -243,15 +244,16 @@ struct DialogProps {
     header: Snippet,
     #[prop(optional)]
     footer: Option<Snippet>,
+    pub children: Snippet,
 }
 
 #[component]
-fn Dialog(props: DialogProps, children: Snippet) -> impl IntoNode {
+fn Dialog(props: DialogProps) -> impl IntoNode {
     view! {
         <Box border=BorderStyle::Double padding=Padding::all(1)>
             <Box>{@render props.header}</Box>
             <Divider />
-            <Box>{@render children}</Box>
+            <Box>{@render props.children}</Box>
             {#if let Some(footer) = &props.footer}
                 <Divider />
                 <Box>{@render footer}</Box>
@@ -272,7 +274,7 @@ fn ConfirmDelete() -> impl IntoNode {
 
             {#snippet footer}
                 <Button>"Cancel"</Button>
-                <Button variant=ButtonVariant::Primary>"Delete"</Button>
+                <Button>"Delete"</Button>
             {/snippet}
         </Dialog>
     }
@@ -433,7 +435,12 @@ fn StepperPanel() -> impl IntoNode {
 fn stepper(value: State<i32>) -> impl IntoNode {
     BoxElement::new()
         .child(TextElement::new(value.get().to_string()))
-        .child(Button::new("+").on_click(move || value.update(|current| *current += 1)))
+        .child(Button(
+            ButtonProps::builder()
+                .on_click(move || value.update(|current| *current += 1))
+                .children("+")
+                .build(),
+        ))
 }
 
 fn stepper_panel() -> impl IntoNode {

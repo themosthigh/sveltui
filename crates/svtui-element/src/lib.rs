@@ -25,4 +25,4 @@ pub use node::{BoxElement, IntoNode, OverlayElement, TextElement, VNode};
 pub use provider::Provider;
 pub use render::{render_node, render_node_interactive, render_node_offset};
 pub use scroll::{get_scroll, set_scroll};
-pub use snippet::{Props, Snippet};
+pub use snippet::{IntoPropOption, OptionSnippetExt, Props, Snippet};

@@ -1,4 +1,5 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[component]
 fn ButtonShowcase() -> impl IntoNode {
@@ -22,45 +23,28 @@ fn ButtonShowcase() -> impl IntoNode {
                 padding=Padding::all(1)
                 gap=1
             >
-                <Text color=Color::White bold=true>"component_button: Variants & Focus Navigation"</Text>
+                <Text color=Color::White bold=true>"component_button: Headless Base-UI Button"</Text>
                 <Divider />
 
-                <Text color=Color::DarkGrey>"Standard Button Variants:"</Text>
+                <Text color=Color::DarkGrey>"Interactive Buttons:"</Text>
                 <Box flex_direction=FlexDirection::Row gap=1>
                     <Button
-                        variant=ButtonVariant::Primary
                         disabled=disable_buttons.get()
-                        on_click={click("Primary Action")}
+                        on_click={click("Action A")}
                     >
-                        "Primary"
+                        "Action A"
                     </Button>
                     <Button
-                        variant=ButtonVariant::Secondary
                         disabled=disable_buttons.get()
-                        on_click={click("Secondary Action")}
+                        on_click={click("Action B")}
                     >
-                        "Secondary"
+                        "Action B"
                     </Button>
                     <Button
-                        variant=ButtonVariant::Outline
                         disabled=disable_buttons.get()
-                        on_click={click("Outline Action")}
+                        on_click={click("Action C")}
                     >
-                        "Outline"
-                    </Button>
-                    <Button
-                        variant=ButtonVariant::Success
-                        disabled=disable_buttons.get()
-                        on_click={click("Success Action")}
-                    >
-                        "Success"
-                    </Button>
-                    <Button
-                        variant=ButtonVariant::Danger
-                        disabled=disable_buttons.get()
-                        on_click={click("Danger Action")}
-                    >
-                        "Danger"
+                        "Action C"
                     </Button>
                 </Box>
 
@@ -69,7 +53,7 @@ fn ButtonShowcase() -> impl IntoNode {
 
                 <Box flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
                     <Switch checked=disable_buttons label="Disable all buttons" />
-                    <Button variant=ButtonVariant::Outline on_click={move || clicks_count.set(0)}>
+                    <Button on_click={move || clicks_count.set(0)}>
                         "Reset Counter"
                     </Button>
                 </Box>

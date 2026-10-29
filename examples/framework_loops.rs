@@ -1,4 +1,5 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[derive(Clone, PartialEq, Eq)]
 struct Task {
@@ -66,13 +67,13 @@ fn LoopsDemo() -> impl IntoNode {
                 <Divider />
 
                 <Box flex_direction=FlexDirection::Row gap=1>
-                    <Button variant=ButtonVariant::Primary on_click={add_task}>
+                    <Button on_click={add_task}>
                         "+ Add Task"
                     </Button>
-                    <Button variant=ButtonVariant::Secondary on_click={remove_last}>
+                    <Button on_click={remove_last}>
                         "- Remove Last"
                     </Button>
-                    <Button variant=ButtonVariant::Outline on_click={clear_all}>
+                    <Button on_click={clear_all}>
                         "Clear All"
                     </Button>
                 </Box>

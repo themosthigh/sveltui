@@ -1,4 +1,5 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[component]
 fn InteractiveShowcase() -> impl IntoNode {
@@ -35,7 +36,7 @@ fn InteractiveShowcase() -> impl IntoNode {
                         <ProgressBar ratio={progress.get() / 100.0} />
                     </Box>
                     <Text color=Color::White>{format!("{}%", progress.get() as u32)}</Text>
-                    <Button variant=ButtonVariant::Outline on_click={advance_progress}>
+                    <Button on_click={advance_progress}>
                         "+15%"
                     </Button>
                 </Box>
@@ -58,7 +59,6 @@ fn InteractiveShowcase() -> impl IntoNode {
                 <Box flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
                     <Text color=Color::DarkGrey>"Tab: Navigate | Space/Enter: Toggle | Esc: Quit"</Text>
                     <Button
-                        variant=ButtonVariant::Primary
                         on_click={move || status_tag.set(String::from("v0.2.0-rc"))}
                     >
                         "Tag Release"

@@ -185,21 +185,28 @@ fn Greetings() -> impl IntoNode {
 
 ### Children & Snippets
 
+Component children and snippets share a unified syntax via [`Snippet`](file:///Users/themosthigh/Projects/experimental/svtui/crates/svtui-element/src/snippet.rs):
+- Required children are declared as `pub children: Snippet`.
+- Optional children or snippet slots are declared as `#[prop(optional)] pub children: Option<Snippet>`.
+- Use `.is_some()` or `.is_none()` to check whether optional children are provided.
+- Use `{@render props.children}` to render directly.
+
 ```rust
 #[derive(Props)]
 struct DialogProps {
     header: Snippet,
     #[prop(optional)]
     footer: Option<Snippet>,
+    pub children: Snippet,
 }
 
 #[component]
-fn Dialog(props: DialogProps, children: Snippet) -> impl IntoNode {
+fn Dialog(props: DialogProps) -> impl IntoNode {
     view! {
         <Box border=BorderStyle::Double padding=Padding::all(1)>
             <Box>{@render props.header}</Box>
             <Divider />
-            <Box>{@render children}</Box>
+            <Box>{@render props.children}</Box>
             {#if let Some(footer) = &props.footer}
                 <Divider />
                 <Box>{@render footer}</Box>
@@ -220,7 +227,7 @@ fn ConfirmDelete() -> impl IntoNode {
 
             {#snippet footer}
                 <Button>"Cancel"</Button>
-                <Button variant=ButtonVariant::Primary>"Delete"</Button>
+                <Button>"Delete"</Button>
             {/snippet}
         </Dialog>
     }

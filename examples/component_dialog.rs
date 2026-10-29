@@ -1,4 +1,5 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[component]
 fn DialogDemo() -> impl IntoNode {
@@ -29,7 +30,6 @@ fn DialogDemo() -> impl IntoNode {
 
                 <Box flex_direction=FlexDirection::Row gap=2>
                     <Button
-                        variant=ButtonVariant::Primary
                         on_click={move || dialog_open.set(true)}
                     >
                         "Open Confirm Modal"
@@ -40,16 +40,18 @@ fn DialogDemo() -> impl IntoNode {
                         placement=Placement::BottomStart
                         on_close={move || popover_open.set(false)}
                         trigger={
-                            Button::new("Anchored Info Popover")
-                                .variant(ButtonVariant::Secondary)
-                                .on_click(move || popover_open.update(|v| *v = !*v))
+                            Button(
+                                ButtonProps::builder()
+                                    .children("Anchored Info Popover")
+                                    .on_click(move || popover_open.update(|v| *v = !*v))
+                                    .build(),
+                            )
                         }
                     >
                         <Box border=BorderStyle::Single border_color=Color::White padding=Padding::all(1) gap=1>
                             <Text color=Color::White bold=true>"Popover Details"</Text>
                             <Text color=Color::DarkGrey>"Anchored to trigger element."</Text>
                             <Button
-                                variant=ButtonVariant::Outline
                                 on_click={move || {
                                     action_log.set(String::from("Popover action confirmed."));
                                     popover_open.set(false);
@@ -84,7 +86,6 @@ fn DialogDemo() -> impl IntoNode {
                         <Box height=1 />
                         <Box flex_direction=FlexDirection::Row gap=1 justify_content=Justify::End>
                             <Button
-                                variant=ButtonVariant::Outline
                                 on_click={move || {
                                     action_log.set(String::from("Deployment cancelled."));
                                     dialog_open.set(false);
@@ -93,7 +94,6 @@ fn DialogDemo() -> impl IntoNode {
                                 "Cancel"
                             </Button>
                             <Button
-                                variant=ButtonVariant::Danger
                                 on_click={move || {
                                     action_log.set(String::from("Cluster deployment started successfully."));
                                     dialog_open.set(false);

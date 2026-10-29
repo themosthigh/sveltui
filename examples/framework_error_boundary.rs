@@ -1,4 +1,5 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[derive(Props)]
 struct FlakyWidgetProps {
@@ -37,13 +38,11 @@ fn ErrorBoundaryDemo() -> impl IntoNode {
 
                 <Box flex_direction=FlexDirection::Row gap=1 align_items=Align::Center>
                     <Button
-                        variant=if should_crash.get() { ButtonVariant::Primary } else { ButtonVariant::Outline }
                         on_click={move || should_crash.set(true)}
                     >
                         "Trigger Panic"
                     </Button>
                     <Button
-                        variant=if !should_crash.get() { ButtonVariant::Primary } else { ButtonVariant::Outline }
                         on_click={move || should_crash.set(false)}
                     >
                         "Recover Normal State"

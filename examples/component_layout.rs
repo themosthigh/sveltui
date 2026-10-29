@@ -1,11 +1,10 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[component]
 fn LayoutDemo() -> impl IntoNode {
     let direction = state(FlexDirection::Row);
     let gap = state(2u16);
-
-    let is_row = direction.get() == FlexDirection::Row;
 
     view! {
         <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
@@ -26,19 +25,16 @@ fn LayoutDemo() -> impl IntoNode {
 
                 <Box flex_direction=FlexDirection::Row gap=1>
                     <Button
-                        variant=if is_row { ButtonVariant::Primary } else { ButtonVariant::Outline }
                         on_click={move || direction.set(FlexDirection::Row)}
                     >
                         "Row Direction"
                     </Button>
                     <Button
-                        variant=if !is_row { ButtonVariant::Primary } else { ButtonVariant::Outline }
                         on_click={move || direction.set(FlexDirection::Column)}
                     >
                         "Column Direction"
                     </Button>
                     <Button
-                        variant=ButtonVariant::Secondary
                         on_click={move || gap.update(|g| *g = if *g >= 4 { 0 } else { *g + 1 })}
                     >
                         {format!("Cycle Gap ({})", gap.get())}

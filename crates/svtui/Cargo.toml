@@ -8,10 +8,12 @@ svtui-reactive = { path = "../svtui-reactive" }
 svtui-layout = { path = "../svtui-layout" }
 svtui-terminal = { path = "../svtui-terminal" }
 svtui-element = { path = "../svtui-element" }
-svtui-components = { path = "../svtui-components" }
 svtui-macros = { path = "../svtui-macros" }
 crossterm = "0.28"
 notify = "6.1"
+
+[dev-dependencies]
+svtui-components = { path = "../svtui-components" }
 
 [[example]]
 name = "hello_world"
@@ -82,3 +84,8 @@ path = "../../examples/component_interactive.rs"
 [[example]]
 name = "component_keyboard"
 path = "../../examples/component_keyboard.rs"
+
+
+[[example]]
+name = "counter"
+path = "../../examples/counter.rs"

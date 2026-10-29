@@ -11,8 +11,8 @@ pub mod text_area;
 pub mod text_buffer;
 pub mod text_input;
 
-pub use badge::Badge;
-pub use button::{Button, ButtonVariant};
+pub use badge::{Badge, BadgeProps};
+pub use button::{Button, ButtonProps};
 pub use checkbox::Checkbox;
 pub use dialog::Dialog;
 pub use divider::Divider;

@@ -1,4 +1,5 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[derive(Clone)]
 struct ProjectItem {
@@ -52,7 +53,6 @@ fn SnippetsDemo() -> impl IntoNode {
     view! {
         <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
             <Box width=74 gap=1>
-                <Text color=Color::White bold=true>"framework_snippets: Reusable Template Blocks"</Text>
                 <CardGrid title="Featured Projects" items=projects>
                     {#snippet card(project: ProjectItem)}
                         <Box
@@ -64,7 +64,7 @@ fn SnippetsDemo() -> impl IntoNode {
                         >
                             <Text color=Color::White bold=true>{project.name.clone()}</Text>
                             <Text color=Color::DarkGrey>{format!("Stars: *{}", project.stars)}</Text>
-                            <Badge label=project.language.clone() />
+                            <Badge bg=Color::Green fg=Color::DarkGreen>{project.language.clone()}</Badge>
                         </Box>
                     {/snippet}
                 </CardGrid>

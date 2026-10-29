@@ -1,4 +1,5 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[derive(Clone, Default)]
 #[allow(dead_code)]
@@ -95,10 +96,10 @@ fn FormDemo() -> impl IntoNode {
                 <Divider />
 
                 <Box flex_direction=FlexDirection::Row gap=1>
-                    <Button variant=ButtonVariant::Primary on_click={on_submit}>
+                    <Button on_click={on_submit}>
                         "Submit Registration"
                     </Button>
-                    <Button variant=ButtonVariant::Outline on_click={on_clear}>
+                    <Button on_click={on_clear}>
                         "Clear"
                     </Button>
                 </Box>

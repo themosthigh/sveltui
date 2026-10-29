@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-svtui-layout = { path = "../svtui-layout" }
-svtui-terminal = { path = "../svtui-terminal" }
+svtui = { path = "../svtui" }
 svtui-element = { path = "../svtui-element" }
+svtui-layout = { path = "../svtui-layout" }
 svtui-reactive = { path = "../svtui-reactive" }
 svtui-macros = { path = "../svtui-macros" }
 crossterm = "0.28"

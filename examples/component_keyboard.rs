@@ -1,5 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use svtui::prelude::*;
+use svtui_components::*;
 
 fn format_key(key: KeyEvent) -> (String, String) {
     let code_str = match key.code {

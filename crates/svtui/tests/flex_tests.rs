@@ -3,6 +3,7 @@ use svtui::{
     Buffer,
     element::{get_scroll, measure_node, render_node_interactive},
 };
+use svtui_components::*;
 
 fn render(node: &VNode, width: u16, height: u16) -> (Buffer, HitMap) {
     let mut buffer = Buffer::new(width, height);

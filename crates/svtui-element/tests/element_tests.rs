@@ -370,3 +370,46 @@ fn test_overlay_rendering_and_hit_targets() {
     ));
     assert!(closed.load(Ordering::SeqCst));
 }
+
+#[test]
+fn test_snippet_string_children() {
+    use svtui_element::{Snippet, VNode};
+
+    // Direct closure returning string literal
+    let s1 = Snippet::new(|_| "Hello World");
+    assert!(matches!(s1.render(()), VNode::Text(t) if t.content == "Hello World"));
+
+    // From &'static str
+    let s2: Snippet = "Static String".into();
+    assert!(matches!(s2.render(()), VNode::Text(t) if t.content == "Static String"));
+
+    // From owned String
+    let s3: Snippet = String::from("Owned String").into();
+    assert!(matches!(s3.render(()), VNode::Text(t) if t.content == "Owned String"));
+
+    // is_some and is_none
+    assert!(s1.is_some());
+    assert!(!s1.is_none());
+
+    let empty: Snippet = Snippet::none();
+    assert!(!empty.is_some());
+    assert!(empty.is_none());
+    assert!(matches!(empty.render(()), VNode::Empty));
+
+    let default_snippet: Snippet = Snippet::default();
+    assert!(!default_snippet.is_some());
+    assert!(default_snippet.is_none());
+    assert!(matches!(default_snippet.render(()), VNode::Empty));
+
+    // OptionSnippetExt
+    use svtui_element::OptionSnippetExt;
+    let some_snippet: Option<Snippet> = Some(s1);
+    assert!(some_snippet.is_some());
+    assert!(!some_snippet.is_none());
+    assert!(matches!(some_snippet.render(()), VNode::Text(t) if t.content == "Hello World"));
+
+    let none_snippet: Option<Snippet> = None;
+    assert!(!none_snippet.is_some());
+    assert!(none_snippet.is_none());
+    assert!(matches!(none_snippet.render(()), VNode::Empty));
+}

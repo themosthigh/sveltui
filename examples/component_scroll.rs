@@ -1,4 +1,5 @@
 use svtui::prelude::*;
+use svtui_components::*;
 
 #[component]
 fn ScrollDemo() -> impl IntoNode {
@@ -41,13 +42,11 @@ fn ScrollDemo() -> impl IntoNode {
 
                 <Box flex_direction=FlexDirection::Row gap=1 align_items=Align::Center>
                     <Button
-                        variant=ButtonVariant::Primary
                         on_click={move || lines_count.update(|c| *c += 5)}
                     >
                         "+ Add 5 Lines"
                     </Button>
                     <Button
-                        variant=ButtonVariant::Secondary
                         on_click={move || lines_count.set(10)}
                     >
                         "Reset Lines"

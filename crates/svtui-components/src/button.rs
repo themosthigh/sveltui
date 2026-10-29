@@ -1,129 +1,71 @@
 use crossterm::style::Color;
 use std::rc::Rc;
-use svtui_element::{Activation, Role, Semantics};
-use svtui_element::{BoxElement, FocusId, IntoNode, TextElement, VNode, use_focus};
-use svtui_layout::{Align, BorderStyle, Justify, Padding, Size};
+use svtui::prelude::*;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-pub enum ButtonVariant {
-    #[default]
-    Primary,
-    Secondary,
-    Outline,
-    Danger,
-    Success,
+#[derive(Props)]
+pub struct ButtonProps {
+    #[prop(optional)]
+    pub id: Option<FocusId>,
+    #[prop(default = false)]
+    pub disabled: bool,
+    #[prop(optional)]
+    pub on_click: Option<Rc<dyn Fn()>>,
+    #[prop(default)]
+    pub width: Size,
+    #[prop(default)]
+    pub height: Size,
+    #[prop(optional)]
+    pub border: Option<BorderStyle>,
+    #[prop(optional)]
+    pub border_color: Option<Color>,
+    #[prop(default)]
+    pub padding: Padding,
+    #[prop(optional)]
+    pub label: Option<String>,
+    #[prop(optional)]
+    pub children: Option<Snippet>,
 }
 
-#[derive(Clone, Default)]
-pub struct Button {
-    label: String,
-    on_click: Option<Rc<dyn Fn()>>,
-    variant: ButtonVariant,
-    disabled: bool,
-    id: Option<FocusId>,
-    width: Size,
-}
+#[component]
+pub fn Button(props: ButtonProps) -> impl IntoNode {
+    let id = props.id.unwrap_or_default();
+    let focus = use_focus(id);
+    let is_active = focus.is_active();
 
-impl Button {
-    pub fn new(label: impl Into<String>) -> Self {
-        Self {
-            label: label.into(),
-            on_click: None,
-            variant: ButtonVariant::Primary,
-            disabled: false,
-            id: None,
-            width: Size::Auto,
-        }
-    }
+    let (default_border_color, default_text_color, default_border_style) = if props.disabled {
+        (Color::DarkGrey, Color::DarkGrey, BorderStyle::Single)
+    } else if is_active {
+        (Color::White, Color::White, BorderStyle::Double)
+    } else {
+        (Color::DarkGrey, Color::White, BorderStyle::Single)
+    };
 
-    pub fn label(mut self, label: impl Into<String>) -> Self {
-        self.label = label.into();
-        self
-    }
+    let border_style = props.border.unwrap_or(default_border_style);
+    let border_color = props.border_color.or(Some(default_border_color));
+    let text_color = default_text_color;
+    let on_click = props.on_click.filter(|_| !props.disabled);
 
-    pub fn child(mut self, child: impl IntoNode) -> Self {
-        if let VNode::Text(t) = child.into_node() {
-            self.label = t.content;
-        }
-        self
-    }
-
-    pub fn on_click(mut self, handler: impl Fn() + 'static) -> Self {
-        self.on_click = Some(Rc::new(handler));
-        self
-    }
-
-    pub fn variant(mut self, variant: ButtonVariant) -> Self {
-        self.variant = variant;
-        self
-    }
-
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
-        self
-    }
-
-    pub fn id(mut self, id: FocusId) -> Self {
-        self.id = Some(id);
-        self
-    }
-
-    pub fn width(mut self, width: impl Into<Size>) -> Self {
-        self.width = width.into();
-        self
-    }
-}
-
-impl IntoNode for Button {
-    fn into_node(self) -> VNode {
-        let id = self.id.unwrap_or_default();
-        let focus = use_focus(id);
-        let is_active = focus.is_active();
-
-        // Base-UI Black & White styling
-        let (border_color, text_color, border_style) = if self.disabled {
-            (Color::DarkGrey, Color::DarkGrey, BorderStyle::Single)
-        } else if is_active {
-            (Color::White, Color::White, BorderStyle::Double)
-        } else {
-            match self.variant {
-                ButtonVariant::Primary => (Color::White, Color::White, BorderStyle::Single),
-                ButtonVariant::Secondary => (Color::DarkGrey, Color::White, BorderStyle::Single),
-                ButtonVariant::Outline => (Color::DarkGrey, Color::DarkGrey, BorderStyle::Single),
-                ButtonVariant::Danger => (Color::White, Color::White, BorderStyle::Single),
-                ButtonVariant::Success => (Color::White, Color::White, BorderStyle::Single),
-            }
-        };
-
-        let displayed_text = if is_active {
-            format!("▶ {} ◀", self.label)
-        } else {
-            format!("  {}  ", self.label)
-        };
-
-        let mut b = BoxElement::new()
-            .border(border_style)
-            .border_color(border_color)
-            .padding(Padding::zero())
-            .width(self.width)
-            .align_items(Align::Center)
-            .justify_content(Justify::Center)
-            .focus_id(id)
-            .tab_stop(true)
-            .disabled(self.disabled)
-            .activation(Activation::Press)
-            .semantics(Semantics::new(Role::Button, self.label.clone()))
-            .child(
-                TextElement::new(displayed_text)
-                    .color(text_color)
-                    .bold(is_active)
-                    .into_node(),
-            );
-
-        if let Some(on_click) = self.on_click.filter(|_| !self.disabled) {
-            b = b.on_click(move || on_click());
-        }
-
-        b.into_node()
+    view! {
+        <Box
+            border=border_style
+            opt_border_color=border_color
+            padding=props.padding
+            width=props.width
+            height=props.height
+            align_items=Align::Center
+            justify_content=Justify::Center
+            focus_id=id
+            tab_stop=true
+            disabled=props.disabled
+            activation=Activation::Press
+            semantics=Semantics::new(Role::Button, "")
+            opt_on_click=on_click
+        >
+            {#if props.children.is_some()}
+                {@render props.children}
+            {:else if let Some(label) = &props.label}
+                <Text fg=text_color bold=is_active>{label.clone()}</Text>
+            {/if}
+        </Box>
     }
 }

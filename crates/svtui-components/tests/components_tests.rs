@@ -1,10 +1,15 @@
-use svtui_components::{Badge, Button, TextArea, get_cursor, set_cursor};
+use svtui::Snippet;
+use svtui_components::{Badge, BadgeProps, Button, ButtonProps, TextArea, get_cursor, set_cursor};
 use svtui_element::{FocusId, IntoNode, VNode, measure_node};
 use svtui_reactive::create_signal;
 
 #[test]
 fn test_button_measurement() {
-    let btn = Button::new("Click Me");
+    let btn = Button(
+        ButtonProps::builder()
+            .children(Snippet::from("Click Me"))
+            .build(),
+    );
     let node = btn.into_node();
     let (w, h) = measure_node(&node, 80, 24);
     assert!(w >= 10);
@@ -13,7 +18,11 @@ fn test_button_measurement() {
 
 #[test]
 fn test_badge_measurement() {
-    let badge = Badge::new("OK");
+    let badge = Badge(
+        BadgeProps::builder()
+            .children(Snippet::new(|_| "Ok"))
+            .build(),
+    );
     let node = badge.into_node();
     let (w, h) = measure_node(&node, 80, 24);
     assert!(w >= 4);
@@ -82,12 +91,20 @@ fn test_text_input_cursor_forward_typing() {
 
 #[test]
 fn test_popover_component_into_node() {
-    use svtui_components::{Button, Popover};
+    use svtui_components::{Button, ButtonProps, Popover};
     use svtui_layout::Placement;
 
     let popover = Popover::new()
-        .trigger(Button::new("Open Menu"))
-        .content(Button::new("Inside Popover"))
+        .trigger(Button(
+            ButtonProps::builder()
+                .children(Snippet::from("Open Menu"))
+                .build(),
+        ))
+        .content(Button(
+            ButtonProps::builder()
+                .children(Snippet::from("Inside Popover"))
+                .build(),
+        ))
         .open(true)
         .placement(Placement::BottomStart)
         .into_node();
@@ -105,12 +122,14 @@ fn test_popover_component_into_node() {
 
 #[test]
 fn test_dialog_component_into_node() {
-    use svtui_components::Dialog;
+    use svtui_components::{Button, ButtonProps, Dialog};
 
     let dialog = Dialog::new()
         .title("Confirm Action")
         .open(true)
-        .child(Button::new("OK"))
+        .child(Button(
+            ButtonProps::builder().children(Snippet::from("OK")).build(),
+        ))
         .into_node();
 
     match dialog {
@@ -126,10 +145,14 @@ fn test_dialog_component_into_node() {
 
 #[test]
 fn test_dropdown_component_into_node() {
-    use svtui_components::{Button, DropdownItem, DropdownMenu};
+    use svtui_components::{Button, ButtonProps, DropdownItem, DropdownMenu};
 
     let dropdown = DropdownMenu::new()
-        .trigger(Button::new("File"))
+        .trigger(Button(
+            ButtonProps::builder()
+                .children(Snippet::from("File"))
+                .build(),
+        ))
         .open(true)
         .item(DropdownItem::new("New File"))
         .item(DropdownItem::new("Save"))
@@ -148,7 +171,7 @@ fn test_dropdown_component_into_node() {
 
 #[test]
 fn test_nested_dropdown_submenus_3_level() {
-    use svtui_components::{Button, DropdownItem, DropdownMenu, DropdownSubmenu};
+    use svtui_components::{Button, ButtonProps, DropdownItem, DropdownMenu, DropdownSubmenu};
 
     // Level 3: Document formats
     let level_3 = DropdownSubmenu::new("Document")
@@ -165,7 +188,11 @@ fn test_nested_dropdown_submenus_3_level() {
 
     // Level 1: Root dropdown menu containing Level 2
     let level_1 = DropdownMenu::new()
-        .trigger(Button::new("File"))
+        .trigger(Button(
+            ButtonProps::builder()
+                .children(Snippet::from("File"))
+                .build(),
+        ))
         .open(true)
         .item(DropdownItem::new("New Project"))
         .item(level_2)

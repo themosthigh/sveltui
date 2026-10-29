@@ -50,7 +50,6 @@ pub mod app;
 pub mod watcher;
 
 // Re-export sub-crates
-pub use svtui_components as components;
 pub use svtui_element as element;
 pub use svtui_layout as layout;
 pub use svtui_reactive as reactive;
@@ -61,15 +60,11 @@ pub use svtui_macros::{Props, component, view};
 
 // Re-export common types
 pub use app::App;
-pub use components::{
-    Badge, Button, ButtonVariant, Checkbox, Dialog, Divider, DropdownItem, DropdownMenu,
-    DropdownSubmenu, Popover, ProgressBar, Switch, TextArea, TextBuffer, TextInput,
-};
 pub use element::collection::*;
 pub use element::interaction::*;
 pub use element::{
-    BoxElement, ErrorBoundary, FocusHandle, FocusId, FocusState, HitMap, IntoNode, OverlayElement,
-    Provider, Snippet, TextElement, VNode, is_focused, use_focus,
+    BoxElement, ErrorBoundary, FocusHandle, FocusId, FocusState, HitMap, IntoNode, IntoPropOption,
+    OptionSnippetExt, OverlayElement, Provider, Snippet, TextElement, VNode, is_focused, use_focus,
 };
 pub use layout::{
     Align, BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, ScrollbarChars,
@@ -85,15 +80,12 @@ pub use terminal::{Buffer, Cell, Terminal, TerminalColor as Color};
 
 pub mod prelude {
     pub use crate::app::App;
-    pub use crate::components::{
-        Badge, Button, ButtonVariant, Checkbox, Dialog, Divider, DropdownItem, DropdownMenu,
-        DropdownSubmenu, Popover, ProgressBar, Switch, TextArea, TextBuffer, TextInput,
-    };
     pub use crate::element::collection::*;
     pub use crate::element::interaction::*;
     pub use crate::element::{
         BoxElement, ErrorBoundary, FocusHandle, FocusId, FocusState, HitMap, IntoNode,
-        OverlayElement, Provider, Snippet, TextElement, VNode, is_focused, use_focus,
+        IntoPropOption, OptionSnippetExt, OverlayElement, Provider, Snippet, TextElement, VNode,
+        is_focused, use_focus,
     };
     pub use crate::layout::{
         Align, BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, ScrollbarChars,
