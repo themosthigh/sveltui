@@ -140,6 +140,18 @@ fn render_single_overlay(
         return;
     }
 
+    let anchor_rect = overlay
+        .anchor
+        .and_then(|id| hit_map.layouts.get(&id))
+        .map(|layout| {
+            Rect::new(
+                layout.x.max(0) as u16,
+                layout.y.max(0) as u16,
+                layout.width,
+                layout.height,
+            )
+        })
+        .or(anchor_rect);
     if overlay.backdrop {
         for cell in &mut buffer.cells {
             cell.fg = Some(Color::DarkGrey);
@@ -306,9 +318,6 @@ fn render_node_offset_internal(
                 let (_, ch) = measure_node(child, width, height);
                 render_node_offset_internal(child, x, curr_y, width, ch.min(height), ctx);
                 curr_y = curr_y.saturating_add(ch as i32);
-                if curr_y >= y + height as i32 {
-                    break;
-                }
             }
         }
         VNode::FlexBox(b) => {
@@ -348,7 +357,7 @@ fn render_node_offset_internal(
                 let draw_ch = |cx: i32, cy: i32, ch: char, buf: &mut Buffer| {
                     if cx >= 0 && cy >= 0 && cx < i32::from(buf.width) && cy < i32::from(buf.height)
                     {
-                        buf.set_char(cx as u16, cy as u16, ch, b.border_color, None, false);
+                        buf.set_char(cx as u16, cy as u16, ch, b.border_color, b.bg, false);
                     }
                 };
 

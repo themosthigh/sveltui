@@ -29,6 +29,7 @@ pub enum EventCommand {
     Focus(FocusId),
     Open(FocusId),
     OpenAt(FocusId, InitialFocus),
+    OpenAtPoint(FocusId, u16, u16),
     Dismiss(FocusId),
     DismissChain,
     Exit,
@@ -57,6 +58,9 @@ impl EventContext {
     pub fn open_at(&mut self, id: FocusId, initial: InitialFocus) {
         self.commands.push(EventCommand::OpenAt(id, initial));
     }
+    pub fn open_at_point(&mut self, id: FocusId, x: u16, y: u16) {
+        self.commands.push(EventCommand::OpenAtPoint(id, x, y));
+    }
     pub fn dismiss(&mut self, id: FocusId) {
         self.commands.push(EventCommand::Dismiss(id));
     }
@@ -82,6 +86,9 @@ pub enum Role {
     Dialog,
     Menu,
     MenuItem,
+    MenuBar,
+    Group,
+    Heading,
     List,
     Listbox,
     Option,
@@ -254,6 +261,24 @@ pub enum Activation {
     Toggle,
 }
 
+/// Menu-specific pointer policy, independent of component rendering.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MenuTriggerKind {
+    Dropdown,
+    Context,
+    Submenu,
+    MenuBar,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MenuInteraction {
+    Item,
+    Trigger {
+        layer: FocusId,
+        kind: MenuTriggerKind,
+    },
+}
+
 /// Stored only when explicitly attached to an element.
 #[derive(Clone, Debug, Default)]
 pub struct Interaction {
@@ -261,6 +286,7 @@ pub struct Interaction {
     pub disabled: bool,
     pub hidden: bool,
     pub activation: Activation,
+    pub menu: Option<MenuInteraction>,
     pub scope: Option<FocusScope>,
     pub group: Option<FocusGroup>,
     pub semantics: Semantics,
@@ -404,6 +430,18 @@ impl InteractionTree {
                 } else {
                     Role::Generic
                 });
+            }
+        }
+        for layer in &tree.layers {
+            let name = layer
+                .opener
+                .and_then(|id| tree.node(id))
+                .map(|n| n.interaction.semantics.label.clone())
+                .unwrap_or_default();
+            if let Some(node) = tree.nodes.iter_mut().find(|n| n.id == layer.id)
+                && node.interaction.semantics.role == Role::Menu
+            {
+                node.interaction.semantics.label = name;
             }
         }
         tree

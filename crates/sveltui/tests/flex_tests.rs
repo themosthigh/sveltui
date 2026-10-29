@@ -336,12 +336,17 @@ fn dropdown_submenu_label_and_arrow_share_one_full_width_row() {
     let leaf = FocusId::new();
     let build = || {
         view! {
-            <DropdownMenu width=24 open=true placement={Placement::Anchor { x: 0, y: 0 }}>
-                <DropdownSubmenu label="Export a very long document label" id=submenu>
-                    <DropdownItem label="PDF" />
-                </DropdownSubmenu>
-                <DropdownItem id=leaf label="Close" />
-            </DropdownMenu>
+            <DropdownMenu::Root open=true>
+                <DropdownMenu::Content width=24 placement={Placement::Anchor { x: 0, y: 0 }}>
+                    <DropdownMenu::Sub>
+                        <DropdownMenu::SubTrigger id=submenu>"Export a very long document label"</DropdownMenu::SubTrigger>
+                        <DropdownMenu::SubContent>
+                            <DropdownMenu::Item>"PDF"</DropdownMenu::Item>
+                        </DropdownMenu::SubContent>
+                    </DropdownMenu::Sub>
+                    <DropdownMenu::Item id=leaf>"Close"</DropdownMenu::Item>
+                </DropdownMenu::Content>
+            </DropdownMenu::Root>
         }
     };
     let initial = build();
@@ -356,7 +361,7 @@ fn dropdown_submenu_label_and_arrow_share_one_full_width_row() {
         sveltui::layout::Rect::new(1, 1, 22, 1)
     );
     assert_eq!(rect(&hits, leaf).y, 2);
-    assert_eq!(buffer.get(21, 1).unwrap().ch, '▶');
+    assert_eq!(buffer.get(21, 1).unwrap().ch, '›');
     for x in 1..=22 {
         assert_eq!(buffer.get(x, 1).unwrap().bg, Some(Color::White));
         assert_eq!(hits.hit_test(x, 1).unwrap().focus_id, Some(submenu));
@@ -424,5 +429,144 @@ fn auto_cross_size_does_not_reserve_scrollbars_for_unsplit_fill_siblings() {
             </FlexBox>
         };
         assert_eq!(measure_node(&node, 80, 80), direction.axes(20, 6));
+    }
+}
+
+#[test]
+fn grouped_menu_rows_fill_the_content_viewport_for_every_menu_kind() {
+    macro_rules! content {
+        ($parts:ident, $width:expr) => {
+            view! {
+                <$parts::Content width={$width} padding={Padding::symmetric(1, 0)}
+                    placement={Placement::Anchor { x: 0, y: 0 }}>
+                    <$parts::Group>
+                        <$parts::GroupHeading>"Files"</$parts::GroupHeading>
+                        <$parts::Item id=FocusId(11)>"Copy"</$parts::Item>
+                        <$parts::Group>
+                            <$parts::Item id=FocusId(12)>"Cut"</$parts::Item>
+                        </$parts::Group>
+                        <$parts::Sub open=true>
+                            <$parts::SubTrigger id=FocusId(13)>"Export"</$parts::SubTrigger>
+                            <$parts::SubContent width={$width} padding={Padding::symmetric(1, 0)}
+                                placement={Placement::Anchor { x: 0, y: 12 }}>
+                                <$parts::Group>
+                                    <$parts::Item id=FocusId(15)>"JSON"</$parts::Item>
+                                </$parts::Group>
+                            </$parts::SubContent>
+                        </$parts::Sub>
+                    </$parts::Group>
+                    <$parts::Separator />
+                    <$parts::Item id=FocusId(14)>"Ungrouped"</$parts::Item>
+                </$parts::Content>
+            }
+        };
+    }
+    for kind in 0..4 {
+        for (menu_width, screen_width) in [(24u16, 80u16), (36, 80), (36, 30)] {
+            let build = || match kind {
+                0 => view! { <Menu::Root open=true>{content!(Menu, menu_width)}</Menu::Root> },
+                1 => {
+                    view! { <DropdownMenu::Root open=true>{content!(DropdownMenu, menu_width)}</DropdownMenu::Root> }
+                }
+                2 => {
+                    view! { <ContextMenu::Root open=true>{content!(ContextMenu, menu_width)}</ContextMenu::Root> }
+                }
+                _ => view! {
+                    <MenuBar::Root default_value="file">
+                        <MenuBar::Menu value="file">{content!(MenuBar, menu_width)}</MenuBar::Menu>
+                    </MenuBar::Root>
+                },
+            };
+            sveltui::element::reset_focus_counter();
+            begin_frame();
+            let initial = build();
+            end_frame();
+            let mut manager = FocusManager::new();
+            manager.reconcile(InteractionTree::from_node(&initial));
+            manager.focus(FocusId(11));
+            sveltui::element::reset_focus_counter();
+            begin_frame();
+            let node = manager.with_context(build);
+            end_frame();
+            let (buffer, hits) = manager.with_context(|| render(&node, screen_width, 24));
+            let expected_width = menu_width.min(screen_width) - 4; // Border + content padding.
+            for id in [11, 12, 13, 14, 15] {
+                let row = rect(&hits, FocusId(id));
+                assert_eq!(row.x, 2, "kind {kind}, item {id}");
+                assert_eq!(row.width, expected_width, "kind {kind}, item {id}");
+                assert_eq!(row.height, 1);
+            }
+            let focused = rect(&hits, FocusId(11));
+            for x in focused.x..focused.x + focused.width {
+                assert_eq!(buffer.get(x, focused.y).unwrap().bg, Some(Color::White));
+                // An open submenu adds a dismiss backdrop over its parent;
+                // menu pointer routing looks through that backdrop.
+                let target = hits
+                    .targets
+                    .iter()
+                    .rev()
+                    .find(|target| target.dismiss.is_none() && target.rect.contains(x, focused.y))
+                    .unwrap();
+                assert_eq!(target.focus_id, Some(FocusId(11)));
+            }
+        }
+    }
+}
+
+#[test]
+fn menu_defaults_blend_borders_and_dim_disabled_custom_children() {
+    for (bg, border_override) in [
+        (Color::Black, None),
+        (Color::DarkBlue, None),
+        (Color::DarkBlue, Some(Color::White)),
+    ] {
+        let node = view! {
+            <Menu::Root open=true>
+                <Menu::Content bg=bg opt_border_color=border_override width=20
+                    placement={Placement::Anchor { x: 0, y: 0 }}>
+                    <Menu::Item disabled=true>
+                        <FlexBox flex_direction=FlexDirection::Row>
+                            <TextSpan fg=Color::White bold=true>"Disabled"</TextSpan>
+                            <FlexBox><TextSpan fg=Color::Red bold=true>"Nested"</TextSpan></FlexBox>
+                        </FlexBox>
+                    </Menu::Item>
+                    <Menu::Sub>
+                        <Menu::SubTrigger disabled=true>
+                            <TextSpan fg=Color::White bold=true>"Unavailable"</TextSpan>
+                        </Menu::SubTrigger>
+                        <Menu::SubContent />
+                    </Menu::Sub>
+                </Menu::Content>
+            </Menu::Root>
+        };
+        let (buffer, hits) = render(&node, 80, 24);
+        assert_eq!(
+            buffer.get(0, 0).unwrap().fg,
+            Some(border_override.unwrap_or(bg))
+        );
+        assert_eq!(buffer.get(0, 0).unwrap().bg, Some(bg));
+        for node in hits
+            .interactions
+            .nodes()
+            .iter()
+            .filter(|node| node.interaction.disabled)
+        {
+            let row = rect(&hits, node.id);
+            for x in row.x..row.x + row.width {
+                let cell = buffer.get(x, row.y).unwrap();
+                if cell.ch != ' ' {
+                    assert_eq!(cell.fg, Some(Color::DarkGrey));
+                    assert!(!cell.bold);
+                }
+            }
+        }
+        assert_eq!(buffer.get(17, 2).unwrap().ch, '›');
+        let trigger = hits
+            .interactions
+            .nodes()
+            .iter()
+            .find(|node| node.interaction.semantics.label == "Unavailable")
+            .unwrap();
+        assert!(trigger.interaction.disabled);
     }
 }

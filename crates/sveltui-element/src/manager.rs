@@ -2,7 +2,7 @@
 use crate::FocusId;
 use crate::interaction::{
     Activation, EventCommand, EventContext, EventResult, Focusability, InitialFocus,
-    InteractionTree, Orientation, TabDismiss,
+    InteractionTree, MenuInteraction, MenuTriggerKind, Orientation, Role, TabDismiss,
 };
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use std::collections::{HashMap, HashSet};
@@ -29,6 +29,8 @@ pub struct FocusManager {
     modal_scope: Option<FocusId>,
     requested_initial: HashMap<FocusId, InitialFocus>,
     requested_focus: Option<FocusId>,
+    anchors: HashMap<FocusId, (u16, u16)>,
+    hovered: Option<FocusId>,
 }
 
 impl FocusManager {
@@ -51,7 +53,7 @@ impl FocusManager {
         self.open.contains(&id)
     }
     pub fn with_context<T>(&self, f: impl FnOnce() -> T) -> T {
-        crate::focus::with_context(self.focused, &self.tree, &self.open, f)
+        crate::focus::with_context(self.focused, &self.tree, &self.open, &self.anchors, f)
     }
     pub fn focus(&mut self, id: FocusId) -> bool {
         if self.eligible(id) && self.allowed(id) {
@@ -225,6 +227,12 @@ impl FocusManager {
                 self.open.remove(&layer.id);
             }
         }
+        self.anchors.retain(|id, _| {
+            tree.layers
+                .iter()
+                .any(|layer| layer.id == *id && layer.active)
+        });
+        self.hovered = self.hovered.filter(|id| tree.node(*id).is_some());
         self.tree = tree;
         self.modal_scope = self
             .active_layers
@@ -293,7 +301,7 @@ impl FocusManager {
                     }),
                 InitialFocus::Last => self.initial_last(id),
                 InitialFocus::Container => Some(id),
-                InitialFocus::Preserve => self.focused.filter(|&f| self.tree.contains(f, id)),
+                InitialFocus::Preserve => self.focused,
                 InitialFocus::First => self
                     .tab_order()
                     .into_iter()
@@ -344,8 +352,76 @@ impl FocusManager {
             .filter(|&id| self.tree.contains(focused, id))
             .collect()
     }
+    fn close_branch(&mut self, id: FocusId) {
+        let closing: Vec<_> = self
+            .active_layers
+            .iter()
+            .rev()
+            .copied()
+            .filter(|&child| child == id || self.tree.contains(child, id))
+            .collect();
+        for child in closing {
+            self.dismiss(child);
+        }
+    }
+    fn close_competing(&mut self, item: FocusId) {
+        let group = self.tree.group(item).map(|g| g.id);
+        let closing: Vec<_> = self
+            .active_layers
+            .iter()
+            .copied()
+            .filter(|&id| {
+                self.tree
+                    .layers
+                    .iter()
+                    .find(|l| l.id == id)
+                    .is_some_and(|l| {
+                        l.config.chain
+                            && l.opener.is_some_and(|opener| {
+                                opener != item
+                                    && group.is_some()
+                                    && self.tree.group(opener).map(|g| g.id) == group
+                            })
+                    })
+            })
+            .collect();
+        let bar_switch = self
+            .tree
+            .group(item)
+            .is_some_and(|g| g.interaction.semantics.role == Role::MenuBar);
+        for id in closing {
+            if bar_switch {
+                // The bar's new value closes the previous root atomically.
+                // Only descendants need separate close notifications.
+                let children: Vec<_> = self
+                    .active_layers
+                    .iter()
+                    .rev()
+                    .copied()
+                    .filter(|&child| child != id && self.tree.contains(child, id))
+                    .collect();
+                for child in children {
+                    self.dismiss(child);
+                }
+            } else {
+                self.close_branch(id);
+            }
+        }
+    }
     fn open_layer(&mut self, id: FocusId) {
+        let opener = self
+            .tree
+            .layers
+            .iter()
+            .find(|l| l.id == id)
+            .and_then(|l| l.opener);
+        if let Some(opener) = opener {
+            self.close_competing(opener);
+        }
         if let Some(layer) = self.tree.layers.iter().find(|l| l.id == id) {
+            if layer.active || self.open.contains(&id) {
+                return;
+            }
             let callback = layer.on_open.clone();
             self.open.insert(id);
             if let Some(callback) = callback {
@@ -536,10 +612,40 @@ impl FocusManager {
                 }
                 EventCommand::Open(id) => self.open_layer(id),
                 EventCommand::OpenAt(id, initial) => {
+                    // Keyboard invocation replaces any previous pointer anchor.
+                    self.anchors.remove(&id);
                     self.open_layer(id);
-                    self.requested_initial.insert(id, initial);
+                    if self.active_layers.contains(&id) {
+                        let target = match initial {
+                            InitialFocus::Last => self.initial_last(id),
+                            InitialFocus::First => self
+                                .tab_order()
+                                .into_iter()
+                                .find(|&n| self.tree.contains(n, id)),
+                            _ => None,
+                        };
+                        if let Some(target) = target {
+                            self.focus(target);
+                        }
+                    } else {
+                        self.requested_initial.insert(id, initial);
+                    }
                 }
-                EventCommand::Dismiss(id) => self.dismiss(id),
+                EventCommand::OpenAtPoint(id, x, y) => {
+                    self.anchors.insert(id, (x, y));
+                    self.open_layer(id);
+                    if self.active_layers.contains(&id) {
+                        let target = self
+                            .tab_order()
+                            .into_iter()
+                            .find(|&n| self.tree.contains(n, id))
+                            .unwrap_or(id);
+                        self.focus(target);
+                    } else {
+                        self.requested_initial.insert(id, InitialFocus::First);
+                    }
+                }
+                EventCommand::Dismiss(id) => self.close_branch(id),
                 EventCommand::DismissChain => {
                     let owners = self.owning_layers();
                     let closing: Vec<_> = if owners.first().is_some_and(|id| {
@@ -586,9 +692,52 @@ impl FocusManager {
         }
         if let Some(id) = target.dismiss {
             let mut context = EventContext::default();
-            context.dismiss(id);
+            let root = self
+                .tree
+                .layers
+                .iter()
+                .find(|l| l.id == id)
+                .filter(|l| l.config.chain)
+                .map(|_| {
+                    self.active_layers
+                        .iter()
+                        .copied()
+                        .find(|&ancestor| {
+                            self.tree
+                                .layers
+                                .iter()
+                                .any(|l| l.id == ancestor && l.config.chain)
+                                && self.tree.contains(id, ancestor)
+                        })
+                        .unwrap_or(id)
+                })
+                .unwrap_or(id);
+            context.dismiss(root);
             let mut outcome = self.apply(context);
             outcome.handled = true;
+            return outcome;
+        }
+        if let Some(id) = target.focus_id
+            && let Some(MenuInteraction::Trigger { layer, kind }) =
+                self.tree.node(id).and_then(|n| n.interaction.menu)
+        {
+            let before = self.focused;
+            self.focus(id);
+            if kind == MenuTriggerKind::Context {
+                return DispatchOutcome {
+                    handled: true,
+                    changed: before != self.focused,
+                    exit: false,
+                };
+            }
+            let mut context = self.event_context();
+            if self.active_layers.contains(&layer) {
+                context.dismiss(layer);
+            } else {
+                context.open_at(layer, InitialFocus::First);
+            }
+            let mut outcome = self.apply(context);
+            outcome.changed |= before != self.focused;
             return outcome;
         }
         let mut outcome = DispatchOutcome {
@@ -626,6 +775,197 @@ impl FocusManager {
         outcome
     }
 
+    fn switch_bar(&mut self, layer_id: FocusId, key: KeyEvent) -> bool {
+        if key
+            .modifiers
+            .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT)
+        {
+            return false;
+        }
+        let Some(layer) = self
+            .tree
+            .layers
+            .iter()
+            .find(|l| l.id == layer_id && l.active)
+        else {
+            return false;
+        };
+        let Some(opener) = layer.opener else {
+            return false;
+        };
+        let Some(group) = self
+            .tree
+            .group(opener)
+            .filter(|g| g.interaction.semantics.role == Role::MenuBar)
+            .map(|g| g.id)
+        else {
+            return false;
+        };
+        self.focus(opener);
+        self.navigate(group, key);
+        let Some(next) = self.focused else {
+            return false;
+        };
+        let Some(MenuInteraction::Trigger { layer, .. }) =
+            self.tree.node(next).and_then(|n| n.interaction.menu)
+        else {
+            return false;
+        };
+        if layer != layer_id {
+            self.open_layer(layer);
+            self.requested_initial.insert(layer, InitialFocus::First);
+        }
+        true
+    }
+
+    /// The top painted surface wins. Dismiss backdrops are transparent only to
+    /// menu pointer routing, allowing travel back into an ancestor menu.
+    fn menu_pointer_target(&self, hits: &crate::HitMap, x: u16, y: u16) -> Option<FocusId> {
+        let target = hits
+            .targets
+            .iter()
+            .rev()
+            .find(|t| t.rect.contains(x, y) && t.dismiss.is_none())?;
+        if !target
+            .layer
+            .or(target.focus_id)
+            .is_none_or(|id| self.allowed(id))
+        {
+            return None;
+        }
+        let mut current = target.focus_id;
+        while let Some(id) = current {
+            let node = self.tree.node(id)?;
+            if node.interaction.menu.is_some() {
+                return Some(id);
+            }
+            if node.interaction.scope.is_some() {
+                return None;
+            }
+            current = node.parent;
+        }
+        // A content surface or unrelated control blocks underlying menus.
+        None
+    }
+
+    pub fn pointer_down_at(&mut self, hits: &crate::HitMap, x: u16, y: u16) -> DispatchOutcome {
+        if let Some(id) = self.menu_pointer_target(hits, x, y)
+            && let Some(target) = hits
+                .targets
+                .iter()
+                .rev()
+                .find(|t| t.focus_id == Some(id) && t.rect.contains(x, y))
+        {
+            if self
+                .tree
+                .node(id)
+                .is_some_and(|node| !node.interaction.disabled)
+            {
+                self.close_competing(id);
+            }
+            return self.pointer_down(target, x, y);
+        }
+        hits.hit_test(x, y)
+            .map(|target| self.pointer_down(target, x, y))
+            .unwrap_or_default()
+    }
+
+    pub fn pointer_move(&mut self, hits: &crate::HitMap, x: u16, y: u16) -> DispatchOutcome {
+        let next = self.menu_pointer_target(hits, x, y);
+        if self.hovered == next {
+            return DispatchOutcome::default();
+        }
+        self.hovered = next;
+        let Some(id) = next else {
+            return DispatchOutcome::default();
+        };
+        let Some(node) = self.tree.node(id) else {
+            return DispatchOutcome::default();
+        };
+        if node.interaction.disabled {
+            return DispatchOutcome::default();
+        }
+        let policy = node.interaction.menu;
+        let before = self.focused;
+        match policy {
+            Some(MenuInteraction::Item) => {
+                self.close_competing(id);
+                self.focus(id);
+            }
+            Some(MenuInteraction::Trigger {
+                layer,
+                kind: MenuTriggerKind::Submenu,
+            }) => {
+                self.close_competing(id);
+                self.focus(id);
+                if !self.active_layers.contains(&layer) {
+                    self.open_layer(layer);
+                    self.requested_initial.insert(layer, InitialFocus::Preserve);
+                    return DispatchOutcome {
+                        handled: true,
+                        changed: true,
+                        exit: false,
+                    };
+                }
+            }
+            Some(MenuInteraction::Trigger {
+                layer,
+                kind: MenuTriggerKind::MenuBar,
+            }) => {
+                let bar = self.tree.group(id).map(|g| g.id);
+                let any_open = self.active_layers.iter().any(|&active| {
+                    self.tree
+                        .layers
+                        .iter()
+                        .find(|l| l.id == active)
+                        .and_then(|l| l.opener)
+                        .and_then(|opener| self.tree.group(opener))
+                        .map(|g| g.id)
+                        == bar
+                });
+                if any_open && !self.active_layers.contains(&layer) {
+                    self.focus(id);
+                    self.open_layer(layer);
+                    self.requested_initial.insert(layer, InitialFocus::Preserve);
+                    return DispatchOutcome {
+                        handled: true,
+                        changed: true,
+                        exit: false,
+                    };
+                }
+            }
+            _ => {}
+        }
+        DispatchOutcome {
+            handled: true,
+            changed: before != self.focused || next.is_some(),
+            exit: false,
+        }
+    }
+
+    pub fn context_menu(&mut self, hits: &crate::HitMap, x: u16, y: u16) -> DispatchOutcome {
+        let Some(id) = self.menu_pointer_target(hits, x, y) else {
+            return DispatchOutcome::default();
+        };
+        let Some(node) = self.tree.node(id) else {
+            return DispatchOutcome::default();
+        };
+        if node.interaction.disabled {
+            return DispatchOutcome::default();
+        }
+        let Some(MenuInteraction::Trigger {
+            layer,
+            kind: MenuTriggerKind::Context,
+        }) = node.interaction.menu
+        else {
+            return DispatchOutcome::default();
+        };
+        self.focus(id);
+        let mut context = self.event_context();
+        context.open_at_point(layer, x, y);
+        self.apply(context)
+    }
+
     pub fn scroll(&mut self, target: &crate::HitTarget, dx: i16, dy: i16) -> DispatchOutcome {
         if self.pointer_allowed(target)
             && let Some(action) = &target.on_scroll
@@ -644,6 +984,7 @@ impl FocusManager {
         if key.kind == KeyEventKind::Release {
             return DispatchOutcome::default();
         }
+        self.hovered = None;
         let before = self.focused;
         let mut context = self.event_context();
         let mut handled = false;
@@ -690,7 +1031,8 @@ impl FocusManager {
                     handled = true;
                     break;
                 }
-                if matches!(key.code, KeyCode::Down | KeyCode::Up)
+                if node.interaction.menu.is_none()
+                    && matches!(key.code, KeyCode::Down | KeyCode::Up)
                     && let Some(layer) = self.tree.layers.iter().find(|l| {
                         l.opener == Some(id)
                             && l.config.tab == TabDismiss::Any
@@ -746,6 +1088,25 @@ impl FocusManager {
                 }
             }
             if node.interaction.group.is_some() && self.navigate(id, key) {
+                if node.interaction.semantics.role == Role::MenuBar {
+                    let open = self.tree.layers.iter().any(|layer| {
+                        layer.active
+                            && layer
+                                .opener
+                                .and_then(|opener| self.tree.group(opener))
+                                .is_some_and(|group| group.id == id)
+                    });
+                    if open
+                        && let Some(MenuInteraction::Trigger { layer, .. }) = self
+                            .focused
+                            .and_then(|focused| self.tree.node(focused))
+                            .and_then(|n| n.interaction.menu)
+                        && !self.active_layers.contains(&layer)
+                    {
+                        self.open_layer(layer);
+                        self.requested_initial.insert(layer, InitialFocus::First);
+                    }
+                }
                 handled = true;
                 break;
             }
@@ -763,6 +1124,10 @@ impl FocusManager {
                     || (key.code == KeyCode::Left && layer.config.dismiss_on_left))
             {
                 context.dismiss(id);
+                handled = true;
+                break;
+            }
+            if matches!(key.code, KeyCode::Left | KeyCode::Right) && self.switch_bar(id, key) {
                 handled = true;
                 break;
             }

@@ -401,3 +401,32 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
 
     TokenStream::from(expanded)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn qualified_tags_resolve_props_and_defer_children() {
+        let tree = syn::parse2::<ViewTree>(quote! {
+            <widgets::DropdownMenu::Root>
+                <widgets::DropdownMenu::Item>"Copy"</widgets::DropdownMenu::Item>
+                <widgets::DropdownMenu::Separator />
+            </widgets::DropdownMenu::Root>
+        })
+        .expect("qualified tags should parse");
+        let generated = codegen_node(&tree.root).to_string();
+        assert!(generated.contains("widgets :: DropdownMenu :: RootProps :: builder"));
+        assert!(generated.contains("widgets :: DropdownMenu :: ItemProps :: builder"));
+        assert!(generated.contains("slot_children (:: sveltui :: element :: Snippet :: new"));
+    }
+
+    #[test]
+    fn closing_tags_match_the_entire_path() {
+        let result = syn::parse2::<ViewTree>(quote! {
+            <DropdownMenu::Root></ContextMenu::Root>
+        });
+        let error = result.err().expect("different namespaces must not match");
+        assert!(error.to_string().contains("Expected closing tag"));
+    }
+}

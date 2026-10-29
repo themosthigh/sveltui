@@ -25,12 +25,12 @@
 //! key, including Ctrl+C, reaches the focused control and its scopes first.
 //!
 //! Dialogs and popovers contain Tab and Shift+Tab until dismissed. Menus close
-//! on Tab. Popover/Menu state is managed by the core by default;
+//! on Tab. Popover state is managed by the core by default;
 //! supplying `.open(bool)` makes it controlled, with `.on_open`/`.on_close`
 //! callbacks for state requests. Rejected dismissals retain popup focus.
 //!
 //! Allocate persistent `FocusId`s outside the view for reordered controls and
-//! layers; pass both `id` and `layer_id` to dynamic submenus. Static JSX uses
+//! layers; pass IDs to both menu roots and their triggers when reordering. Static JSX uses
 //! deterministic frame-local IDs. `use_focus` reads the currently bound App;
 //! standalone renderers/tests bind a `FocusManager::with_context` explicitly.
 //!

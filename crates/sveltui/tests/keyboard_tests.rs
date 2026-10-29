@@ -14,7 +14,9 @@ fn key(code: KeyCode) -> KeyEvent {
 fn render(manager: &mut FocusManager, build: impl Fn() -> VNode) -> (Buffer, HitMap) {
     for _ in 0..5 {
         reset_focus_counter();
+        begin_frame();
         let tree = manager.with_context(&build);
+        end_frame();
         let mut buffer = Buffer::new(80, 24);
         let mut hits = HitMap::new();
         manager.with_context(|| {
@@ -64,14 +66,19 @@ fn dropdown_nested_navigation_escape_and_tab_are_scoped_inside_dialog() {
         view! {
             <Dialog id=FocusId(100100) open=true title="Dialog">
                 <Button id=FocusId(100001)>"Menu opener"</Button>
-                <DropdownMenu id=FocusId(100101) open={open.get()} on_close={move || set_open.set(false)}>
-                    <DropdownItem id=FocusId(100002) label="First" />
-                    <DropdownSubmenu id=FocusId(100003) layer_id=FocusId(100102) label="More">
-                        <DropdownItem id=FocusId(100004) label="Nested first" />
-                        <DropdownItem id=FocusId(100005) label="Nested second" />
-                    </DropdownSubmenu>
-                    <DropdownItem id=FocusId(100006) label="Last" />
-                </DropdownMenu>
+                <DropdownMenu::Root id=FocusId(100101) open={open.get()} on_open_change={move |next| set_open.set(next)}>
+                    <DropdownMenu::Content>
+                        <DropdownMenu::Item id=FocusId(100002)>"First"</DropdownMenu::Item>
+                        <DropdownMenu::Sub id=FocusId(100102)>
+                            <DropdownMenu::SubTrigger id=FocusId(100003)>"More"</DropdownMenu::SubTrigger>
+                            <DropdownMenu::SubContent>
+                                <DropdownMenu::Item id=FocusId(100004)>"Nested first"</DropdownMenu::Item>
+                                <DropdownMenu::Item id=FocusId(100005)>"Nested second"</DropdownMenu::Item>
+                            </DropdownMenu::SubContent>
+                        </DropdownMenu::Sub>
+                        <DropdownMenu::Item id=FocusId(100006)>"Last"</DropdownMenu::Item>
+                    </DropdownMenu::Content>
+                </DropdownMenu::Root>
                 <Button id=FocusId(100007)>"After menu"</Button>
             </Dialog>
         }
@@ -245,9 +252,11 @@ fn selecting_a_menu_item_closes_the_menu_without_dismissing_its_dialog() {
     let build = || {
         view! {
             <Dialog id=FocusId(100100) open={dialog.get()} on_close={move || set_dialog.set(false)}>
-                <DropdownMenu id=FocusId(100101) open={menu.get()} on_close={move || set_menu.set(false)}>
-                    <DropdownItem id=FocusId(100001) label="Action" />
-                </DropdownMenu>
+                <DropdownMenu::Root id=FocusId(100101) open={menu.get()} on_open_change={move |next| set_menu.set(next)}>
+                    <DropdownMenu::Content>
+                        <DropdownMenu::Item id=FocusId(100001)>"Action"</DropdownMenu::Item>
+                    </DropdownMenu::Content>
+                </DropdownMenu::Root>
             </Dialog>
         }
     };
@@ -263,11 +272,15 @@ fn selecting_a_menu_item_closes_the_menu_without_dismissing_its_dialog() {
 fn rejected_controlled_tab_dismissal_keeps_focus_in_the_popup() {
     let build = || {
         view! {
-            <FlexBox><DropdownMenu id=FocusId(100100) open=true
-                trigger={view! { <Button id=FocusId(100001)>"Open"</Button> }}>
+                    <FlexBox>
+        <DropdownMenu::Root id=FocusId(100100) open=true>
+            <DropdownMenu::Trigger id=FocusId(100001)>"Open"</DropdownMenu::Trigger>
+            <DropdownMenu::Content>
                 <Button id=FocusId(100002)>"Stay"</Button>
-            </DropdownMenu><Button id=FocusId(100003)>"After"</Button></FlexBox>
-        }
+            </DropdownMenu::Content>
+        </DropdownMenu::Root>
+        <Button id=FocusId(100003)>"After"</Button></FlexBox>
+                }
     };
     let mut manager = FocusManager::new();
     render(&mut manager, build);
@@ -305,12 +318,14 @@ fn passive_popover_focuses_container_and_escape_restores_trigger() {
 fn dialog_within_menu_has_its_own_tab_sequence() {
     let build = || {
         view! {
-            <DropdownMenu id=FocusId(100100) open=true>
-                <DropdownItem id=FocusId(100001) label="Menu item" />
-                <Dialog id=FocusId(100101) open=true>
+            <DropdownMenu::Root id=FocusId(100100) open=true>
+                <DropdownMenu::Content>
+                    <DropdownMenu::Item id=FocusId(100001)>"Menu item"</DropdownMenu::Item>
+                    <Dialog id=FocusId(100101) open=true>
                     <Button id=FocusId(100002)>"A"</Button><Button id=FocusId(100003)>"B"</Button>
-                </Dialog>
-            </DropdownMenu>
+                    </Dialog>
+                </DropdownMenu::Content>
+            </DropdownMenu::Root>
         }
     };
     let mut manager = FocusManager::new();
@@ -353,11 +368,13 @@ fn core_only_custom_control_has_the_same_focus_and_activation_capabilities() {
 fn uncontrolled_menu_opens_with_keyboard_and_up_selects_the_last_item() {
     let build = || {
         view! {
-            <DropdownMenu id=FocusId(100100)
-                trigger={view! { <Button id=FocusId(100001)>"Open"</Button> }}>
-                <DropdownItem id=FocusId(100002) label="First" />
-                <DropdownItem id=FocusId(100003) label="Last" />
-            </DropdownMenu>
+            <DropdownMenu::Root id=FocusId(100100)>
+                <DropdownMenu::Trigger id=FocusId(100001)>"Open"</DropdownMenu::Trigger>
+                <DropdownMenu::Content>
+                    <DropdownMenu::Item id=FocusId(100002)>"First"</DropdownMenu::Item>
+                    <DropdownMenu::Item id=FocusId(100003)>"Last"</DropdownMenu::Item>
+                </DropdownMenu::Content>
+            </DropdownMenu::Root>
         }
     };
     let mut manager = FocusManager::new();
@@ -381,12 +398,16 @@ fn controlled_submenu_uses_core_open_and_close_requests() {
     let (open, set_open) = create_signal(false);
     let build = || {
         view! {
-            <DropdownMenu id=FocusId(100100) open=true>
-                <DropdownSubmenu id=FocusId(100001) layer_id=FocusId(100101) open={open.get()} label="More"
-                    on_open={move || set_open.set(true)} on_close={move || set_open.set(false)}>
-                    <DropdownItem id=FocusId(100002) label="Nested" />
-                </DropdownSubmenu>
-            </DropdownMenu>
+            <DropdownMenu::Root id=FocusId(100100) open=true>
+                <DropdownMenu::Content>
+                    <DropdownMenu::Sub open={open.get()} on_open_change={move |next| set_open.set(next)} id=FocusId(100101)>
+                        <DropdownMenu::SubTrigger id=FocusId(100001)>"More"</DropdownMenu::SubTrigger>
+                        <DropdownMenu::SubContent>
+                            <DropdownMenu::Item id=FocusId(100002)>"Nested"</DropdownMenu::Item>
+                        </DropdownMenu::SubContent>
+                    </DropdownMenu::Sub>
+                </DropdownMenu::Content>
+            </DropdownMenu::Root>
         }
     };
     let mut manager = FocusManager::new();
@@ -474,18 +495,26 @@ fn queued_focus_can_target_a_control_mounted_by_the_same_event() {
 fn menu_arrows_cycle_only_the_current_list_and_traverse_submenus_horizontally() {
     let build = || {
         view! {
-            <DropdownMenu id=FocusId(100100) open=true>
-                <DropdownItem id=FocusId(100001) label="First" />
-                <DropdownSubmenu id=FocusId(100002) layer_id=FocusId(100101) label="More">
-                    <DropdownItem id=FocusId(100004) label="Nested first" />
-                    <DropdownSubmenu id=FocusId(100005) layer_id=FocusId(100102) label="Deeper">
-                        <DropdownItem id=FocusId(100007) label="Deep first" />
-                        <DropdownItem id=FocusId(100008) label="Deep last" />
-                    </DropdownSubmenu>
-                    <DropdownItem id=FocusId(100006) label="Nested last" />
-                </DropdownSubmenu>
-                <DropdownItem id=FocusId(100003) label="Last" />
-            </DropdownMenu>
+            <DropdownMenu::Root id=FocusId(100100) open=true>
+                <DropdownMenu::Content>
+                    <DropdownMenu::Item id=FocusId(100001)>"First"</DropdownMenu::Item>
+                    <DropdownMenu::Sub id=FocusId(100101)>
+                        <DropdownMenu::SubTrigger id=FocusId(100002)>"More"</DropdownMenu::SubTrigger>
+                        <DropdownMenu::SubContent>
+                            <DropdownMenu::Item id=FocusId(100004)>"Nested first"</DropdownMenu::Item>
+                            <DropdownMenu::Sub id=FocusId(100102)>
+                                <DropdownMenu::SubTrigger id=FocusId(100005)>"Deeper"</DropdownMenu::SubTrigger>
+                                <DropdownMenu::SubContent>
+                                    <DropdownMenu::Item id=FocusId(100007)>"Deep first"</DropdownMenu::Item>
+                                    <DropdownMenu::Item id=FocusId(100008)>"Deep last"</DropdownMenu::Item>
+                                </DropdownMenu::SubContent>
+                            </DropdownMenu::Sub>
+                            <DropdownMenu::Item id=FocusId(100006)>"Nested last"</DropdownMenu::Item>
+                        </DropdownMenu::SubContent>
+                    </DropdownMenu::Sub>
+                    <DropdownMenu::Item id=FocusId(100003)>"Last"</DropdownMenu::Item>
+                </DropdownMenu::Content>
+            </DropdownMenu::Root>
         }
     };
     let mut manager = FocusManager::new();

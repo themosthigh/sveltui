@@ -93,3 +93,11 @@ path = "../../examples/component_keyboard.rs"
 [[example]]
 name = "counter"
 path = "../../examples/counter.rs"
+
+[[example]]
+name = "component_context_menu"
+path = "../../examples/component_context_menu.rs"
+
+[[example]]
+name = "component_menu_bar"
+path = "../../examples/component_menu_bar.rs"

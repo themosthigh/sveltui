@@ -251,9 +251,10 @@ pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
 
 fn codegen_custom_component(
     el: &Element,
-    tag: &syn::Ident,
+    tag_path: &syn::Path,
     root: &proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
+    let tag = quote!(#tag_path).to_string();
     let mut prop_setters = Vec::new();
     let mut attr_names = std::collections::HashSet::with_capacity(el.attributes.len());
 
@@ -331,7 +332,7 @@ fn codegen_custom_component(
 
     let children_setter = if !meaningful_children.is_empty() {
         let body_ts = codegen_node_refs(&meaningful_children);
-        if tag == "ErrorBoundary" || tag == "ContextProvider" {
+        if tag == "ErrorBoundary" || tag == "ContextProvider" || tag_path.segments.len() > 1 {
             Some(quote! {
                 .slot_children(#root::Snippet::new(move |_| { #body_ts }))
             })
@@ -344,11 +345,13 @@ fn codegen_custom_component(
         None
     };
 
-    let tag_props = quote::format_ident!("{}Props", tag);
+    let mut tag_props = tag_path.clone();
+    let segment = tag_props.segments.last_mut().expect("component path");
+    segment.ident = quote::format_ident!("{}Props", segment.ident);
 
     quote! {
         #root::IntoNode::into_node(
-            #tag(
+            #tag_path(
                 #tag_props::builder()
                     #(#prop_setters)*
                     #(#snippet_setters)*

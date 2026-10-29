@@ -17,7 +17,7 @@ pub struct Attribute {
 }
 
 pub struct Element {
-    pub name: Ident,
+    pub name: syn::Path,
     pub attributes: Vec<Attribute>,
     pub children: Vec<Node>,
 }

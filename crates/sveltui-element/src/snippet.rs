@@ -296,3 +296,24 @@ impl IntoPropOption<usize> for usize {
         Some(self)
     }
 }
+
+impl<T: 'static, F: Fn(T) + 'static> IntoPropOption<Rc<dyn Fn(T)>> for F {
+    fn into_prop_option(self) -> Option<Rc<dyn Fn(T)>> {
+        Some(Rc::new(self))
+    }
+}
+impl<T: 'static> IntoPropOption<Rc<dyn Fn(T)>> for Rc<dyn Fn(T)> {
+    fn into_prop_option(self) -> Option<Rc<dyn Fn(T)>> {
+        Some(self)
+    }
+}
+impl IntoPropOption<Option<String>> for Option<String> {
+    fn into_prop_option(self) -> Option<Option<String>> {
+        Some(self)
+    }
+}
+impl IntoPropOption<sveltui_layout::Placement> for sveltui_layout::Placement {
+    fn into_prop_option(self) -> Option<sveltui_layout::Placement> {
+        Some(self)
+    }
+}

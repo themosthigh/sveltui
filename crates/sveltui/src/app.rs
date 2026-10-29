@@ -150,9 +150,15 @@ where
                 match event::read()? {
                     Event::Mouse(mouse) => {
                         let outcome = match mouse.kind {
-                            MouseEventKind::Down(MouseButton::Left) => hit_map
-                                .hit_test(mouse.column, mouse.row)
-                                .map(|target| focus.pointer_down(target, mouse.column, mouse.row)),
+                            MouseEventKind::Moved => {
+                                Some(focus.pointer_move(&hit_map, mouse.column, mouse.row))
+                            }
+                            MouseEventKind::Down(MouseButton::Right) => {
+                                Some(focus.context_menu(&hit_map, mouse.column, mouse.row))
+                            }
+                            MouseEventKind::Down(MouseButton::Left) => {
+                                Some(focus.pointer_down_at(&hit_map, mouse.column, mouse.row))
+                            }
                             MouseEventKind::ScrollDown
                             | MouseEventKind::ScrollUp
                             | MouseEventKind::ScrollLeft

@@ -5,6 +5,7 @@ use crate::ast::{
 use proc_macro2::TokenStream;
 use syn::ext::IdentExt;
 use syn::parse::{Parse, ParseStream, Parser};
+use syn::spanned::Spanned;
 use syn::{Expr, Ident, LitStr, Pat, Result, Token};
 
 pub fn parse_attr_value(input: ParseStream) -> Result<Expr> {
@@ -417,7 +418,7 @@ fn parse_brace_node(input: ParseStream) -> Result<Node> {
 impl Parse for Element {
     fn parse(input: ParseStream) -> Result<Self> {
         input.parse::<Token![<]>()?;
-        let name: Ident = input.parse()?;
+        let name = input.call(syn::Path::parse_mod_style)?;
 
         let mut attributes = Vec::new();
         while !input.peek(Token![>]) && !input.peek(Token![/]) {
@@ -441,13 +442,17 @@ impl Parse for Element {
         // Parse closing tag </Name>
         input.parse::<Token![<]>()?;
         input.parse::<Token![/]>()?;
-        let close_name: Ident = input.parse()?;
+        let close_name = input.call(syn::Path::parse_mod_style)?;
         input.parse::<Token![>]>()?;
 
         if name != close_name {
             return Err(syn::Error::new(
                 close_name.span(),
-                format!("Expected closing tag </{}>, found </{}>", name, close_name),
+                format!(
+                    "Expected closing tag </{}>, found </{}>",
+                    quote::quote!(#name),
+                    quote::quote!(#close_name)
+                ),
             ));
         }
 

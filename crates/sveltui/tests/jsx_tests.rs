@@ -33,18 +33,15 @@ fn test_jsx_overlay_components_expansion() {
 
     let _node: VNode = view! {
         <FlexBox width=80 height=24>
-            <DropdownMenu
-                open={is_open.get()}
-                placement=Placement::BottomStart
-                on_close={move || set_open.set(false)}
-            >
-                {#snippet trigger()}
-                    <Button>"Actions"</Button>
-                {/snippet}
-                <DropdownItem label="Cut" />
-                <DropdownItem label="Copy" />
-                <DropdownItem label="Paste" />
-            </DropdownMenu>
+            <DropdownMenu::Root open={is_open.get()} on_open_change={move |next| set_open.set(next)}>
+                <DropdownMenu::Trigger>"Actions"</DropdownMenu::Trigger>
+                <DropdownMenu::Content placement=Placement::BottomStart>
+
+                    <DropdownMenu::Item>"Cut"</DropdownMenu::Item>
+                    <DropdownMenu::Item>"Copy"</DropdownMenu::Item>
+                    <DropdownMenu::Item>"Paste"</DropdownMenu::Item>
+                </DropdownMenu::Content>
+            </DropdownMenu::Root>
 
             <Dialog
                 open={modal_open.get()}

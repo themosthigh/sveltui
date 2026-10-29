@@ -471,6 +471,8 @@ impl TextElement {
 pub struct OverlayElement {
     pub id: FocusId,
     pub opener: Option<FocusId>,
+    /// Layout identity used for positioning, independently of focus restoration.
+    pub anchor: Option<FocusId>,
     pub layer: DismissLayer,
     pub focus_group: Option<FocusGroup>,
     pub managed: bool,
@@ -511,6 +513,10 @@ impl OverlayElement {
     }
     pub fn opener(mut self, id: FocusId) -> Self {
         self.opener = Some(id);
+        self
+    }
+    pub fn anchor(mut self, id: FocusId) -> Self {
+        self.anchor = Some(id);
         self
     }
     pub fn layer(mut self, layer: DismissLayer) -> Self {
@@ -1284,6 +1290,8 @@ pub fn Paragraph(props: ParagraphProps) -> TextElement {
 pub struct OverlayProps {
     pub id: Option<FocusId>,
     pub opener: Option<FocusId>,
+    /// Layout identity used for positioning, independently of focus restoration.
+    pub anchor: Option<FocusId>,
     pub layer: Option<DismissLayer>,
     pub focus_group: Option<FocusGroup>,
     pub managed: bool,
@@ -1322,6 +1330,10 @@ impl OverlayPropsBuilder {
     }
     pub fn opt_opener(mut self, opener: Option<FocusId>) -> Self {
         self.props.opener = opener;
+        self
+    }
+    pub fn anchor(mut self, id: FocusId) -> Self {
+        self.props.anchor = Some(id);
         self
     }
     pub fn layer(mut self, layer: DismissLayer) -> Self {
@@ -1419,6 +1431,9 @@ pub fn Overlay(props: OverlayProps) -> OverlayElement {
     }
     if let Some(opener) = props.opener {
         el = el.opener(opener);
+    }
+    if let Some(anchor) = props.anchor {
+        el = el.anchor(anchor);
     }
     if let Some(layer) = props.layer {
         el = el.layer(layer);

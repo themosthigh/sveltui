@@ -8,7 +8,7 @@ fn DropdownDemo() -> impl IntoNode {
 
     let is_open = menu_open.get();
 
-    let select = |name: &'static str| {
+    let select = move |name: &'static str| {
         move || {
             selected_action.set(String::from(name));
             menu_open.set(false);
@@ -34,29 +34,31 @@ fn DropdownDemo() -> impl IntoNode {
                 <FlexBox height=1 />
 
                 <FlexBox flex_direction=FlexDirection::Row gap=2 align_items=Align::Center>
-                    <DropdownMenu
-                        open=is_open
-                        placement=Placement::BottomStart
-                        width=24
-                        on_close={move || menu_open.set(false)}
-                    >
-                        {#snippet trigger()}
-                            <Button on_click={move || menu_open.update(|v| *v = !*v)}>
-                                "File Menu ▾"
-                            </Button>
-                        {/snippet}
-                        <DropdownItem label="New File" on_select={select("New File")} />
-                        <DropdownItem label="Open Project..." on_select={select("Open Project")} />
-                        <DropdownSubmenu label="Export" width=22>
-                            <DropdownItem label="Export to PDF" on_select={select("Export PDF")} />
-                            <DropdownItem label="Export to JSON" on_select={select("Export JSON")} />
-                            <DropdownSubmenu label="Archive Format" width=22>
-                                <DropdownItem label="Tarball (.tar.gz)" on_select={select("Archive .tar.gz")} />
-                                <DropdownItem label="Zip Archive (.zip)" on_select={select("Archive .zip")} />
-                            </DropdownSubmenu>
-                        </DropdownSubmenu>
-                        <DropdownItem label="Settings" on_select={select("Settings")} />
-                    </DropdownMenu>
+                    <DropdownMenu::Root open=is_open on_open_change={move |next| menu_open.set(next)}>
+                        <DropdownMenu::Trigger>
+                            "File Menu ▾"
+                        </DropdownMenu::Trigger>
+                        <DropdownMenu::Content placement=Placement::BottomStart width=24>
+
+                            <DropdownMenu::Item on_select={select("New File")}>"New File"</DropdownMenu::Item>
+                            <DropdownMenu::Item on_select={select("Open Project")}>"Open Project..."</DropdownMenu::Item>
+                            <DropdownMenu::Sub>
+                                <DropdownMenu::SubTrigger>"Export"</DropdownMenu::SubTrigger>
+                                <DropdownMenu::SubContent width=22>
+                                    <DropdownMenu::Item on_select={select("Export PDF")}>"Export to PDF"</DropdownMenu::Item>
+                                    <DropdownMenu::Item on_select={select("Export JSON")}>"Export to JSON"</DropdownMenu::Item>
+                                    <DropdownMenu::Sub>
+                                        <DropdownMenu::SubTrigger>"Archive Format"</DropdownMenu::SubTrigger>
+                                        <DropdownMenu::SubContent width=22>
+                                            <DropdownMenu::Item on_select={select("Archive .tar.gz")}>"Tarball (.tar.gz)"</DropdownMenu::Item>
+                                            <DropdownMenu::Item on_select={select("Archive .zip")}>"Zip Archive (.zip)"</DropdownMenu::Item>
+                                        </DropdownMenu::SubContent>
+                                    </DropdownMenu::Sub>
+                                </DropdownMenu::SubContent>
+                            </DropdownMenu::Sub>
+                            <DropdownMenu::Item on_select={select("Settings")}>"Settings"</DropdownMenu::Item>
+                        </DropdownMenu::Content>
+                    </DropdownMenu::Root>
                 </FlexBox>
 
                 <FlexBox height=1 />

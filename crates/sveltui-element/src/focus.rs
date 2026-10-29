@@ -1,9 +1,12 @@
 use crate::interaction::InteractionTree;
 use std::cell::{Cell, RefCell};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-static USER_FOCUS_COUNTER: AtomicUsize = AtomicUsize::new(100_000);
+// Allocated identities use the upper half; frame-local and conventional
+// explicit numeric IDs use the lower half. Components can retain allocated IDs
+// across frames without colliding with either of those sources.
+static USER_FOCUS_COUNTER: AtomicUsize = AtomicUsize::new(1 << (usize::BITS - 1));
 thread_local! {
     static VIEW_CONTEXT: RefCell<Option<ViewContext>> = const { RefCell::new(None) };
     static RENDER_FOCUS_COUNTER: Cell<usize> = const { Cell::new(0) };
@@ -41,6 +44,7 @@ struct ViewContext {
     focused: Option<FocusId>,
     ancestors: HashSet<FocusId>,
     open: HashSet<FocusId>,
+    anchors: HashMap<FocusId, (u16, u16)>,
 }
 struct RestoreContext(Option<ViewContext>);
 impl Drop for RestoreContext {
@@ -53,6 +57,7 @@ pub(crate) fn with_context<T>(
     focused: Option<FocusId>,
     tree: &InteractionTree,
     open: &HashSet<FocusId>,
+    anchors: &HashMap<FocusId, (u16, u16)>,
     f: impl FnOnce() -> T,
 ) -> T {
     let ancestors = focused
@@ -64,6 +69,7 @@ pub(crate) fn with_context<T>(
             focused,
             ancestors,
             open: open.clone(),
+            anchors: anchors.clone(),
         }))
     });
     let _restore = RestoreContext(previous);
@@ -143,4 +149,14 @@ impl Default for FocusHandle {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Last pointer anchor for an open context menu in the currently bound App.
+pub fn layer_anchor(id: FocusId) -> Option<(u16, u16)> {
+    VIEW_CONTEXT.with(|context| {
+        context
+            .borrow()
+            .as_ref()
+            .and_then(|view| view.anchors.get(&id).copied())
+    })
 }

@@ -1,10 +1,9 @@
 use sveltui::Snippet;
 use sveltui_components::{
-    Badge, BadgeProps, Button, ButtonProps, Dialog, DialogProps, DropdownItem, DropdownItemProps,
-    DropdownMenu, DropdownMenuProps, DropdownSubmenu, DropdownSubmenuProps, Popover, PopoverProps,
-    TextArea, TextAreaProps, get_cursor, set_cursor,
+    Badge, BadgeProps, Button, ButtonProps, Dialog, DialogProps, DropdownMenu, Popover,
+    PopoverProps, TextArea, TextAreaProps, get_cursor, set_cursor,
 };
-use sveltui_element::{FlexBox, FlexBoxProps, FocusId, IntoNode, VNode, measure_node};
+use sveltui_element::{FocusId, IntoNode, VNode, measure_node};
 use sveltui_layout::Placement;
 use sveltui_macros::view;
 use sveltui_reactive::create_signal;
@@ -163,96 +162,64 @@ fn test_dialog_component_into_node() {
 
 #[test]
 fn test_dropdown_component_into_node() {
-    let dropdown = DropdownMenu(
-        DropdownMenuProps::builder()
-            .open(true)
-            .slot_trigger(Snippet::from(
-                Button(
-                    ButtonProps::builder()
-                        .children(Snippet::from("File"))
-                        .build(),
-                )
-                .into_node(),
-            ))
-            .children(Snippet::from(view! {
-                <FlexBox>
-                    <DropdownItem label="New File" />
-                    <DropdownItem label="Save" />
-                </FlexBox>
-            }))
-            .build(),
-    )
-    .into_node();
-
-    match dropdown {
-        VNode::Overlay(overlay) => {
-            assert!(overlay.open);
-            assert!(!overlay.modal);
-            assert!(overlay.trigger.is_some());
-            assert!(overlay.content.is_some());
-        }
-        _ => panic!("Expected VNode::Overlay"),
-    }
+    let dropdown = view! {
+        <DropdownMenu::Root open=true>
+            <DropdownMenu::Trigger>"File"</DropdownMenu::Trigger>
+            <DropdownMenu::Content>
+                <DropdownMenu::Item>"New File"</DropdownMenu::Item>
+                <DropdownMenu::Item>"Save"</DropdownMenu::Item>
+            </DropdownMenu::Content>
+        </DropdownMenu::Root>
+    };
+    let tree = sveltui_element::InteractionTree::from_node(&dropdown);
+    assert_eq!(tree.layers().len(), 1);
+    assert!(tree.layers()[0].active);
+    assert!(tree.layers()[0].opener.is_some());
+    assert_eq!(
+        tree.nodes()
+            .iter()
+            .filter(|n| n.interaction.semantics.role == sveltui_element::Role::MenuItem)
+            .count(),
+        2
+    );
 }
 
 #[test]
 fn test_nested_dropdown_submenus_3_level() {
-    // Level 3: Document formats
-    let level_3 = DropdownSubmenu(
-        DropdownSubmenuProps::builder()
-            .label("Document")
-            .open(true)
-            .children(Snippet::from(view! {
-                <FlexBox>
-                    <DropdownItem label="PDF Document (*.pdf)" />
-                    <DropdownItem label="Markdown (*.md)" />
-                </FlexBox>
-            }))
-            .build(),
+    let node = view! {
+        <DropdownMenu::Root open=true>
+            <DropdownMenu::Trigger>"File"</DropdownMenu::Trigger>
+            <DropdownMenu::Content>
+                <DropdownMenu::Item>"New Project"</DropdownMenu::Item>
+                <DropdownMenu::Sub open=true>
+                    <DropdownMenu::SubTrigger>"Export As"</DropdownMenu::SubTrigger>
+                    <DropdownMenu::SubContent>
+                        <DropdownMenu::Item>"Image (PNG)"</DropdownMenu::Item>
+                        <DropdownMenu::Sub open=true>
+                            <DropdownMenu::SubTrigger>"Document"</DropdownMenu::SubTrigger>
+                            <DropdownMenu::SubContent>
+                                <DropdownMenu::Item>"PDF Document (*.pdf)"</DropdownMenu::Item>
+                                <DropdownMenu::Item>"Markdown (*.md)"</DropdownMenu::Item>
+                            </DropdownMenu::SubContent>
+                        </DropdownMenu::Sub>
+                    </DropdownMenu::SubContent>
+                </DropdownMenu::Sub>
+            </DropdownMenu::Content>
+        </DropdownMenu::Root>
+    };
+    let tree = sveltui_element::InteractionTree::from_node(&node);
+    assert_eq!(tree.layers().len(), 3);
+    assert!(tree.layers().iter().all(|layer| layer.active));
+    let pdf = tree
+        .nodes()
+        .iter()
+        .find(|n| n.interaction.semantics.label == "PDF Document (*.pdf)")
+        .unwrap();
+    assert_eq!(
+        tree.layers()
+            .iter()
+            .filter(|layer| tree.contains(pdf.id, layer.id))
+            .count(),
+        3
     );
-
-    // Level 2: Export submenu containing Level 3
-    let level_2 = DropdownSubmenu(
-        DropdownSubmenuProps::builder()
-            .label("Export As")
-            .open(true)
-            .children(Snippet::from(view! {
-                <FlexBox>
-                    <DropdownItem label="Image (PNG)" />
-                    {level_3}
-                    <DropdownItem label="Archive (*.zip)" />
-                </FlexBox>
-            }))
-            .build(),
-    );
-
-    // Level 1: Root dropdown menu containing Level 2
-    let level_1 = DropdownMenu(
-        DropdownMenuProps::builder()
-            .open(true)
-            .slot_trigger(Snippet::from(
-                Button(
-                    ButtonProps::builder()
-                        .children(Snippet::from("File"))
-                        .build(),
-                )
-                .into_node(),
-            ))
-            .children(Snippet::from(view! {
-                <FlexBox>
-                    <DropdownItem label="New Project" />
-                    {level_2}
-                </FlexBox>
-            }))
-            .build(),
-    )
-    .into_node();
-
-    match level_1 {
-        VNode::Overlay(overlay) => {
-            assert!(overlay.open);
-            assert!(overlay.content.is_some());
-        }
-        _ => panic!("Expected root VNode::Overlay"),
-    }
 }
