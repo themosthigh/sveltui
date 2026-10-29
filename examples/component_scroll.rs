@@ -1,5 +1,5 @@
-use svtui::prelude::*;
-use svtui_components::*;
+use sveltui::prelude::*;
+use sveltui_components::*;
 
 #[component]
 fn ScrollDemo() -> impl IntoNode {
@@ -84,6 +84,6 @@ fn ScrollDemo() -> impl IntoNode {
 
 fn main() -> std::io::Result<()> {
     App::new(|| view! { <ScrollDemo /> })
-        .on_key(svtui::app::exit_shortcuts)
+        .on_key(sveltui::app::exit_shortcuts)
         .run()
 }

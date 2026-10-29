@@ -1,4 +1,4 @@
-use svtui_layout::{BorderStyle, Placement, Rect, Size, clamp_dimension, compute_popover_rect};
+use sveltui_layout::{BorderStyle, Placement, Rect, Size, clamp_dimension, compute_popover_rect};
 
 #[test]
 fn test_rect_inner() {
@@ -87,7 +87,7 @@ fn test_compute_popover_rect_clamping() {
 
 #[test]
 fn fill_allocations_conserve_space_across_minimums_and_caps() {
-    use svtui_layout::{FlexItem, resolve_flex_sizes};
+    use sveltui_layout::{FlexItem, resolve_flex_sizes};
     for available in 0..=24 {
         for min_a in [0, 3, 9] {
             for min_b in [0, 4, 12] {

@@ -1,5 +1,5 @@
 use crossterm::style::Color;
-use svtui::prelude::*;
+use sveltui::prelude::*;
 
 #[derive(Props)]
 pub struct DividerProps {

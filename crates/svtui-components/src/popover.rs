@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use svtui::prelude::*;
+use sveltui::prelude::*;
 
 #[derive(Props)]
 pub struct PopoverProps {

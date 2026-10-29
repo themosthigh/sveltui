@@ -1,6 +1,6 @@
 use std::time::Duration;
-use svtui::prelude::*;
-use svtui_components::*;
+use sveltui::prelude::*;
+use sveltui_components::*;
 
 async fn fetch_server_stats(endpoint: String) -> Result<String, String> {
     spawn_blocking(move || {
@@ -69,6 +69,6 @@ fn AsyncDemo() -> impl IntoNode {
 
 fn main() -> std::io::Result<()> {
     App::new(|| view! { <AsyncDemo /> })
-        .on_key(svtui::app::exit_shortcuts)
+        .on_key(sveltui::app::exit_shortcuts)
         .run()
 }

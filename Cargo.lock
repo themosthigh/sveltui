@@ -315,50 +315,50 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8"
 
 [[package]]
-name = "svtui"
+name = "sveltui"
 version = "0.1.0"
 dependencies = [
  "crossterm",
  "notify",
- "svtui-components",
- "svtui-element",
- "svtui-layout",
- "svtui-macros",
- "svtui-reactive",
- "svtui-terminal",
+ "sveltui-components",
+ "sveltui-element",
+ "sveltui-layout",
+ "sveltui-macros",
+ "sveltui-reactive",
+ "sveltui-terminal",
 ]
 
 [[package]]
-name = "svtui-components"
+name = "sveltui-components"
 version = "0.1.0"
 dependencies = [
  "crossterm",
- "svtui",
- "svtui-element",
- "svtui-layout",
- "svtui-macros",
- "svtui-reactive",
+ "sveltui",
+ "sveltui-element",
+ "sveltui-layout",
+ "sveltui-macros",
+ "sveltui-reactive",
 ]
 
 [[package]]
-name = "svtui-element"
+name = "sveltui-element"
 version = "0.1.0"
 dependencies = [
  "crossterm",
- "svtui-layout",
- "svtui-reactive",
- "svtui-terminal",
+ "sveltui-layout",
+ "sveltui-reactive",
+ "sveltui-terminal",
 ]
 
 [[package]]
-name = "svtui-layout"
+name = "sveltui-layout"
 version = "0.1.0"
 dependencies = [
  "crossterm",
 ]
 
 [[package]]
-name = "svtui-macros"
+name = "sveltui-macros"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",
@@ -367,15 +367,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "svtui-reactive"
+name = "sveltui-reactive"
 version = "0.1.0"
 
 [[package]]
-name = "svtui-terminal"
+name = "sveltui-terminal"
 version = "0.1.0"
 dependencies = [
  "crossterm",
- "svtui-layout",
+ "sveltui-layout",
 ]
 
 [[package]]

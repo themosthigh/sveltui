@@ -1,6 +1,6 @@
 use crate::cell::Cell;
 use crossterm::style::Color;
-use svtui_layout::{BorderChars, Rect};
+use sveltui_layout::{BorderChars, Rect};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Buffer {

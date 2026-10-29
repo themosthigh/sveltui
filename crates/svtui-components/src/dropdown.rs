@@ -1,7 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use crossterm::style::Color;
 use std::rc::Rc;
-use svtui::prelude::*;
+use sveltui::prelude::*;
 
 #[derive(Props)]
 pub struct DropdownItemProps {

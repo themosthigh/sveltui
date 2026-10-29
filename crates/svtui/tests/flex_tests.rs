@@ -1,23 +1,23 @@
-use svtui::prelude::*;
-use svtui::{
+use sveltui::prelude::*;
+use sveltui::{
     Buffer,
     element::{get_scroll, measure_node, render_node_interactive},
 };
-use svtui_components::*;
+use sveltui_components::*;
 
 fn render(node: &VNode, width: u16, height: u16) -> (Buffer, HitMap) {
     let mut buffer = Buffer::new(width, height);
     let mut hits = HitMap::new();
     render_node_interactive(
         node,
-        svtui::layout::Rect::new(0, 0, width, height),
+        sveltui::layout::Rect::new(0, 0, width, height),
         &mut buffer,
         &mut hits,
     );
     (buffer, hits)
 }
 
-fn rect(hits: &HitMap, id: FocusId) -> svtui::layout::Rect {
+fn rect(hits: &HitMap, id: FocusId) -> sveltui::layout::Rect {
     hits.targets
         .iter()
         .find(|t| t.focus_id == Some(id))
@@ -64,7 +64,7 @@ fn justification_and_cross_alignment_work_on_both_axes() {
                 let (_, hits) = render(&node, 20, 20);
                 for (id, main) in ids.into_iter().zip(positions) {
                     let (x, y) = direction.axes(main, cross);
-                    assert_eq!(rect(&hits, id), svtui::layout::Rect::new(x, y, cw, ch));
+                    assert_eq!(rect(&hits, id), sveltui::layout::Rect::new(x, y, cw, ch));
                 }
                 assert_eq!(hits.focusable_ids(), ids);
             }
@@ -123,7 +123,7 @@ fn fill_remainders_go_to_earlier_siblings_after_gaps() {
     };
     let (_, hits) = render(&node, 10, 2);
     for (id, (x, w)) in ids.into_iter().zip([(0, 3), (4, 3), (8, 2)]) {
-        assert_eq!(rect(&hits, id), svtui::layout::Rect::new(x, 0, w, 1));
+        assert_eq!(rect(&hits, id), sveltui::layout::Rect::new(x, 0, w, 1));
     }
 }
 
@@ -247,8 +247,8 @@ fn overlay_trigger_keeps_its_allocated_percentage_size_and_anchor() {
         </FlexBox>
     };
     let (_, hits) = render(&node, 80, 24);
-    assert_eq!(rect(&hits, trigger), svtui::layout::Rect::new(10, 0, 20, 2));
-    assert_eq!(rect(&hits, popup), svtui::layout::Rect::new(10, 2, 5, 1));
+    assert_eq!(rect(&hits, trigger), sveltui::layout::Rect::new(10, 0, 20, 2));
+    assert_eq!(rect(&hits, popup), sveltui::layout::Rect::new(10, 2, 5, 1));
 }
 
 #[test]
@@ -320,8 +320,8 @@ fn scrolled_hit_targets_match_visible_cells_and_keep_local_click_coordinates() {
         </FlexBox>
     };
     let (_, hits) = render(&node, 20, 5);
-    assert_eq!(rect(&hits, first), svtui::layout::Rect::new(0, 0, 2, 1));
-    assert_eq!(rect(&hits, second), svtui::layout::Rect::new(2, 0, 8, 1));
+    assert_eq!(rect(&hits, first), sveltui::layout::Rect::new(0, 0, 2, 1));
+    assert_eq!(rect(&hits, second), sveltui::layout::Rect::new(2, 0, 8, 1));
     hits.hit_test(0, 0).unwrap().on_click_at.as_ref().unwrap()(0, 0);
     assert_eq!(clicked.get(), Some((6, 0)));
     assert_ne!(hits.hit_test(10, 0).and_then(|t| t.focus_id), Some(second));
@@ -348,7 +348,7 @@ fn dropdown_submenu_label_and_arrow_share_one_full_width_row() {
     let node = manager.with_context(build);
 
     let (buffer, hits) = manager.with_context(|| render(&node, 80, 24));
-    assert_eq!(rect(&hits, submenu), svtui::layout::Rect::new(1, 1, 22, 1));
+    assert_eq!(rect(&hits, submenu), sveltui::layout::Rect::new(1, 1, 22, 1));
     assert_eq!(rect(&hits, leaf).y, 2);
     assert_eq!(buffer.get(21, 1).unwrap().ch, '▶');
     for x in 1..=22 {
@@ -391,7 +391,7 @@ fn percentage_full_width_is_distinct_from_sharing_remaining_space() {
     };
     let (_, hits) = render(&node, 30, 4);
     assert_eq!(rect(&hits, percentage).width, 20);
-    assert_eq!(rect(&hits, fill), svtui::layout::Rect::new(20, 0, 3, 1));
+    assert_eq!(rect(&hits, fill), sveltui::layout::Rect::new(20, 0, 3, 1));
 }
 
 #[test]

@@ -1,6 +1,6 @@
 use crate::node::VNode;
 use crate::snippet::Snippet;
-use svtui_reactive::provide_context;
+use sveltui_reactive::provide_context;
 
 pub struct ContextProviderProps<T: 'static> {
     pub value: Option<T>,

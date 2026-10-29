@@ -1,5 +1,5 @@
-use svtui::prelude::*;
-use svtui_components::*;
+use sveltui::prelude::*;
+use sveltui_components::*;
 
 #[derive(Clone)]
 struct ProjectItem {
@@ -35,7 +35,7 @@ fn CardGrid(props: CardGridProps) -> impl IntoNode {
 fn SnippetsDemo() -> impl IntoNode {
     let projects = vec![
         ProjectItem {
-            name: String::from("svtui"),
+            name: String::from("sveltui"),
             stars: 1240,
             language: String::from("Rust"),
         },
@@ -76,6 +76,6 @@ fn SnippetsDemo() -> impl IntoNode {
 
 fn main() -> std::io::Result<()> {
     App::new(|| view! { <SnippetsDemo /> })
-        .on_key(svtui::app::exit_shortcuts)
+        .on_key(sveltui::app::exit_shortcuts)
         .run()
 }

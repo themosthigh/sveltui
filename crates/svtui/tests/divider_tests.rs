@@ -1,6 +1,6 @@
-use svtui::prelude::*;
-use svtui::{Buffer, element::render_node, layout::Rect};
-use svtui_components::*;
+use sveltui::prelude::*;
+use sveltui::{Buffer, element::render_node, layout::Rect};
+use sveltui_components::*;
 
 fn render(node: &VNode, width: u16, height: u16) -> Buffer {
     let mut buffer = Buffer::new(width, height);
@@ -144,5 +144,5 @@ fn text_fill_uses_allocated_width_without_inflating_intrinsic_measurement() {
     assert_eq!(line(&buffer, 1, 0, 6), "x.....");
     assert_eq!(line(&buffer, 2, 0, 6), "      ");
     let filled_text = view! { <Paragraph fill='.'>"ab"</Paragraph> };
-    assert_eq!(svtui::element::measure_node(&filled_text, 80, 24), (2, 1));
+    assert_eq!(sveltui::element::measure_node(&filled_text, 80, 24), (2, 1));
 }

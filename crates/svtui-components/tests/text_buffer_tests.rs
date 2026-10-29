@@ -1,4 +1,4 @@
-use svtui_components::TextBuffer;
+use sveltui_components::TextBuffer;
 
 #[test]
 fn test_text_buffer_insert_and_cursor() {

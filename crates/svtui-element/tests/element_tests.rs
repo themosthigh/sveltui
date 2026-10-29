@@ -1,11 +1,11 @@
 use std::rc::Rc;
-use svtui_element::{
+use sveltui_element::{
     FlexBoxElement, FocusId, FocusManager, HitMap, HitTarget, InteractionTree, IntoNode,
     TextElement, get_scroll, is_focused, measure_node, next_render_focus_id,
     render_node_interactive, reset_focus_counter, use_focus,
 };
-use svtui_layout::{BorderStyle, Overflow, Rect};
-use svtui_terminal::Buffer;
+use sveltui_layout::{BorderStyle, Overflow, Rect};
+use sveltui_terminal::Buffer;
 
 #[test]
 fn test_measure_text() {
@@ -329,8 +329,8 @@ fn test_render_node_cursor_offset() {
 #[test]
 fn test_overlay_rendering_and_hit_targets() {
     use std::sync::atomic::{AtomicBool, Ordering};
-    use svtui_element::OverlayElement;
-    use svtui_layout::Placement;
+    use sveltui_element::OverlayElement;
+    use sveltui_layout::Placement;
 
     let closed = Rc::new(AtomicBool::new(false));
     let closed_clone = closed.clone();
@@ -376,7 +376,7 @@ fn test_overlay_rendering_and_hit_targets() {
 
 #[test]
 fn test_snippet_string_children() {
-    use svtui_element::{Snippet, VNode};
+    use sveltui_element::{Snippet, VNode};
 
     // Direct closure returning string literal
     let s1 = Snippet::new(|_| "Hello World");
@@ -405,7 +405,7 @@ fn test_snippet_string_children() {
     assert!(matches!(default_snippet.render(()), VNode::Empty));
 
     // OptionSnippetExt
-    use svtui_element::OptionSnippetExt;
+    use sveltui_element::OptionSnippetExt;
     let some_snippet: Option<Snippet> = Some(s1);
     assert!(some_snippet.is_some());
     assert!(!some_snippet.is_none());

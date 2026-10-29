@@ -7,8 +7,8 @@ use crate::node::{OverlayElement, VNode};
 use crate::scroll::{get_scroll, set_scroll};
 use crossterm::style::Color;
 use std::rc::Rc;
-use svtui_layout::{BorderStyle, Overflow, Rect, compute_popover_rect};
-use svtui_terminal::Buffer;
+use sveltui_layout::{BorderStyle, Overflow, Rect, compute_popover_rect};
+use sveltui_terminal::Buffer;
 
 struct RenderContext<'a> {
     buffer: &'a mut Buffer,

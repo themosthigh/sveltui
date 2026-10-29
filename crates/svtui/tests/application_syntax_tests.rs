@@ -1,14 +1,14 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use svtui::prelude::*;
-use svtui_components::*;
+use sveltui::prelude::*;
+use sveltui_components::*;
 
 // Section 1: Application Setup
 #[component]
 fn Application() -> impl IntoNode {
     view! {
         <FlexBox border=BorderStyle::Single padding=Padding::all(1)>
-            <TextSpan>"Hello, svtui"</TextSpan>
+            <TextSpan>"Hello, sveltui"</TextSpan>
         </FlexBox>
     }
 }

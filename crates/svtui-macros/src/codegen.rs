@@ -7,9 +7,9 @@ use syn::spanned::Spanned;
 
 fn element_root() -> proc_macro2::TokenStream {
     match std::env::var("CARGO_PKG_NAME").as_deref() {
-        Ok("svtui-components") => quote! { ::svtui_element },
-        Ok("svtui-element") => quote! { crate },
-        _ => quote! { ::svtui::element },
+        Ok("sveltui-components") => quote! { ::sveltui_element },
+        Ok("sveltui-element") => quote! { crate },
+        _ => quote! { ::sveltui::element },
     }
 }
 
@@ -221,17 +221,17 @@ fn codegen_await(await_node: &AwaitNode) -> proc_macro2::TokenStream {
 
     quote! {
         {
-            let __state = ::svtui::reactive::use_async_state(#future);
+            let __state = ::sveltui::reactive::use_async_state(#future);
             match __state {
-                ::svtui::reactive::AsyncState::Loading => #root::IntoNode::into_node(#loading_ts),
-                ::svtui::reactive::AsyncState::Resolved(__val) => {
+                ::sveltui::reactive::AsyncState::Loading => #root::IntoNode::into_node(#loading_ts),
+                ::sveltui::reactive::AsyncState::Resolved(__val) => {
                     #root::IntoNode::into_node({
                         let __val = Some(__val);
                         let __err: Option<String> = None;
                         #then_body
                     })
                 }
-                ::svtui::reactive::AsyncState::Rejected(__err) => {
+                ::sveltui::reactive::AsyncState::Rejected(__err) => {
                     #root::IntoNode::into_node({
                         let __val: Option<()> = None;
                         let __err = Some(__err);

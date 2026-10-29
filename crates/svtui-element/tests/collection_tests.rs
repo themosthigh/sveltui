@@ -1,5 +1,5 @@
 use std::time::Duration;
-use svtui_element::*;
+use sveltui_element::*;
 
 fn item(id: usize, label: &str) -> CollectionItem {
     CollectionItem {

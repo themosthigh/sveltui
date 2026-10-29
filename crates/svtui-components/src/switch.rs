@@ -1,6 +1,6 @@
 use crossterm::style::Color;
 use std::rc::Rc;
-use svtui::prelude::*;
+use sveltui::prelude::*;
 
 #[derive(Clone, Copy)]
 pub enum SwitchBinding {

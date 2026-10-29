@@ -1,5 +1,5 @@
-use svtui_layout::{BorderStyle, Rect};
-use svtui_terminal::Buffer;
+use sveltui_layout::{BorderStyle, Rect};
+use sveltui_terminal::Buffer;
 
 #[test]
 fn test_buffer_set_string() {

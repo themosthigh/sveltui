@@ -1,5 +1,5 @@
-use svtui::prelude::*;
-use svtui_components::*;
+use sveltui::prelude::*;
+use sveltui_components::*;
 
 #[test]
 fn test_jsx_custom_components_expansion() {

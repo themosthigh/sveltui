@@ -1,5 +1,5 @@
-use svtui::{app, prelude::*};
-use svtui_components::*;
+use sveltui::{app, prelude::*};
+use sveltui_components::*;
 
 fn main() -> std::io::Result<()> {
     App::new(|| {
@@ -34,13 +34,13 @@ fn CounterApp() -> impl IntoNode {
                 gap=4
             >
 
-                 <Button on_click={move || count.set(count.get() - 1)}>
+                 <Button on_click={move || count.set(count.get() - 1)} padding=Padding::symmetric(3, 0)>
                      "-"
                  </Button>
 
                  <TextSpan>{count.get().to_string()}</TextSpan>
 
-                 <Button on_click={move || count.set(count.get() + 1)}>
+                 <Button on_click={move || count.set(count.get() + 1)} padding=Padding::symmetric(3, 0)>
                      "+"
                  </Button>
 

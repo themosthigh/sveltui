@@ -1,5 +1,5 @@
 use crate::node::{FlexBoxElement, VNode};
-use svtui_layout::{
+use sveltui_layout::{
     BorderStyle, FlexDirection, FlexItem, ScrollbarVisibility, Size, resolve_flex_sizes,
 };
 

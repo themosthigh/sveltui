@@ -1,8 +1,8 @@
 [package]
-name = "svtui-terminal"
+name = "sveltui-terminal"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 crossterm = "0.28"
-svtui-layout = { path = "../svtui-layout" }
+sveltui-layout = { path = "../sveltui-layout" }

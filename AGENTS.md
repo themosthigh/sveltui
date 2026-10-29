@@ -1,6 +1,6 @@
 # AGENTS.md — Guidelines for AI Coding Agents
 
-Welcome to the **svtui** codebase. This document outlines architectural rules, workflows, and mandatory verification steps for any AI coding agent modifying or extending this repository.
+Welcome to the **sveltui** codebase. This document outlines architectural rules, workflows, and mandatory verification steps for any AI coding agent modifying or extending this repository.
 
 ---
 
@@ -40,21 +40,21 @@ If any step in `make verify` fails, use the individual commands below to diagnos
 
 ## 2. Workspace & Architecture Overview
 
-`svtui` is a declarative, reactive Terminal User Interface (TUI) framework built from scratch on top of `crossterm`. It is structured as a Cargo workspace:
+`sveltui` is a declarative, reactive Terminal User Interface (TUI) framework built from scratch on top of `crossterm`. It is structured as a Cargo workspace:
 
 ```
-svtui/
+sveltui/
 ├── Cargo.toml                  # Workspace root manifest
 ├── Makefile                    # Standard developer & agent targets
 ├── AGENTS.md                   # Instructions and standards for agents
 ├── crates/
-│   ├── svtui/                  # Main facade crate, App runtime, file watcher, prelude
-│   ├── svtui-components/       # Built-in components (Button, TextInput, Switch, Checkbox, etc.)
-│   ├── svtui-element/          # VNodes, FlexBoxElement, TextElement, layout execution, hit testing, focus
-│   ├── svtui-layout/           # Flex layout, BorderStyle, Padding, Size, Rect geometry
-│   ├── svtui-macros/           # Declarative JSX macro (`view! { ... }`)
-│   ├── svtui-reactive/         # Fine-grained reactive signals (`create_signal`, `Runtime`)
-│   └── svtui-terminal/         # Double-buffering, terminal rendering, raw mode
+│   ├── sveltui/                  # Main facade crate, App runtime, file watcher, prelude
+│   ├── sveltui-components/       # Built-in components (Button, TextInput, Switch, Checkbox, etc.)
+│   ├── sveltui-element/          # VNodes, FlexBoxElement, TextElement, layout execution, hit testing, focus
+│   ├── sveltui-layout/           # Flex layout, BorderStyle, Padding, Size, Rect geometry
+│   ├── sveltui-macros/           # Declarative JSX macro (`view! { ... }`)
+│   ├── sveltui-reactive/         # Fine-grained reactive signals (`create_signal`, `Runtime`)
+│   └── sveltui-terminal/         # Double-buffering, terminal rendering, raw mode
 └── examples/                   # Framework and component examples
 ```
 
@@ -76,7 +76,7 @@ svtui/
   }
   ```
 - **Do not** use raw block expressions (`{ Component::new(...).into_node() }`) for components when standard JSX tags (`<Component ... />`) are available.
-- All components in `svtui-components` implement:
+- All components in `sveltui-components` implement:
   - `Default` (required for macro tag instantiation)
   - Builder setters returning `Self`
   - `IntoNode` (rendering into `VNode`)

@@ -25,10 +25,10 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let fn_name = &input_fn.sig.ident;
 
     let pkg = std::env::var("CARGO_PKG_NAME").unwrap_or_default();
-    let root = if pkg == "svtui-reactive" {
+    let root = if pkg == "sveltui-reactive" {
         quote! { crate }
     } else {
-        quote! { ::svtui::reactive }
+        quote! { ::sveltui::reactive }
     };
 
     let props_ident = quote::format_ident!("{}Props", fn_name);
@@ -117,10 +117,10 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
     let builder_name = quote::format_ident!("{}Builder", struct_name);
 
     let pkg = std::env::var("CARGO_PKG_NAME").unwrap_or_default();
-    let root = if pkg == "svtui-element" {
+    let root = if pkg == "sveltui-element" {
         quote! { crate }
     } else {
-        quote! { ::svtui }
+        quote! { ::sveltui }
     };
 
     let fields = match &input.data {

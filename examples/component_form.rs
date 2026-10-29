@@ -1,5 +1,5 @@
-use svtui::prelude::*;
-use svtui_components::*;
+use sveltui::prelude::*;
+use sveltui_components::*;
 
 #[derive(Clone, Default)]
 #[allow(dead_code)]
@@ -123,6 +123,6 @@ fn FormDemo() -> impl IntoNode {
 
 fn main() -> std::io::Result<()> {
     App::new(|| view! { <FormDemo /> })
-        .on_key(svtui::app::exit_shortcuts)
+        .on_key(sveltui::app::exit_shortcuts)
         .run()
 }

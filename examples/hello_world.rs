@@ -1,6 +1,6 @@
 use std::io::Result;
-use svtui::app::{App, exit_shortcuts};
-use svtui::prelude::*;
+use sveltui::app::{App, exit_shortcuts};
+use sveltui::prelude::*;
 
 fn main() -> Result<()> {
     App::new(|| {

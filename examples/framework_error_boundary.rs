@@ -1,5 +1,5 @@
-use svtui::prelude::*;
-use svtui_components::*;
+use sveltui::prelude::*;
+use sveltui_components::*;
 
 #[derive(Props)]
 struct FlakyWidgetProps {
@@ -75,6 +75,6 @@ fn ErrorBoundaryDemo() -> impl IntoNode {
 
 fn main() -> std::io::Result<()> {
     App::new(|| view! { <ErrorBoundaryDemo /> })
-        .on_key(svtui::app::exit_shortcuts)
+        .on_key(sveltui::app::exit_shortcuts)
         .run()
 }

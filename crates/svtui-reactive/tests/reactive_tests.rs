@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use svtui_reactive::{
+use sveltui_reactive::{
     ComponentScope, Runtime, batch, create_signal, derived, effect, on_destroy, on_mount,
     provide_context, spawn_blocking, spawn_task, state, use_context,
 };

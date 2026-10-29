@@ -1,12 +1,12 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use std::{cell::Cell, rc::Rc};
-use svtui::{
+use sveltui::{
     Buffer,
     element::{render_node_interactive, reset_focus_counter},
     layout::Rect,
     prelude::*,
 };
-use svtui_components::*;
+use sveltui_components::*;
 
 fn key(code: KeyCode) -> KeyEvent {
     KeyEvent::new(code, KeyModifiers::NONE)
@@ -194,7 +194,7 @@ fn offscreen_focus_is_registered_and_revealed_by_its_scroll_owner() {
     assert!(manager.tab_order().contains(&last));
     assert!(manager.focus(last));
     let (buffer, hits) = render(&mut manager, build);
-    assert!(svtui::element::get_scroll(scroll).1 > 0);
+    assert!(sveltui::element::get_scroll(scroll).1 > 0);
     let target = hits
         .targets
         .iter()

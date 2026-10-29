@@ -2,7 +2,7 @@ use crate::focus::FocusId;
 use crate::interaction::{FocusManager, InteractionTree, KeyHandler};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
-use svtui_layout::Rect;
+use sveltui_layout::Rect;
 
 #[derive(Clone)]
 pub struct HitTarget {

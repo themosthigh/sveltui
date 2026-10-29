@@ -1,12 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/svtui-reactive",
-    "crates/svtui-layout",
-    "crates/svtui-terminal",
-    "crates/svtui-element",
-    "crates/svtui-components",
-    "crates/svtui-macros",
-    "crates/svtui",
+    "crates/sveltui-reactive",
+    "crates/sveltui-layout",
+    "crates/sveltui-terminal",
+    "crates/sveltui-element",
+    "crates/sveltui-components",
+    "crates/sveltui-macros",
+    "crates/sveltui",
 ]
-default-members = ["crates/svtui"]
+default-members = ["crates/sveltui"]

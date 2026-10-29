@@ -207,8 +207,8 @@ impl IntoPropOption<crate::focus::FocusId> for crate::focus::FocusId {
     }
 }
 
-impl IntoPropOption<svtui_layout::BorderStyle> for svtui_layout::BorderStyle {
-    fn into_prop_option(self) -> Option<svtui_layout::BorderStyle> {
+impl IntoPropOption<sveltui_layout::BorderStyle> for sveltui_layout::BorderStyle {
+    fn into_prop_option(self) -> Option<sveltui_layout::BorderStyle> {
         Some(self)
     }
 }
@@ -219,38 +219,38 @@ impl IntoPropOption<crossterm::style::Color> for crossterm::style::Color {
     }
 }
 
-impl IntoPropOption<svtui_layout::Size> for svtui_layout::Size {
-    fn into_prop_option(self) -> Option<svtui_layout::Size> {
+impl IntoPropOption<sveltui_layout::Size> for sveltui_layout::Size {
+    fn into_prop_option(self) -> Option<sveltui_layout::Size> {
         Some(self)
     }
 }
 
-impl IntoPropOption<svtui_layout::Size> for u16 {
-    fn into_prop_option(self) -> Option<svtui_layout::Size> {
-        Some(svtui_layout::Size::Fixed(self))
+impl IntoPropOption<sveltui_layout::Size> for u16 {
+    fn into_prop_option(self) -> Option<sveltui_layout::Size> {
+        Some(sveltui_layout::Size::Fixed(self))
     }
 }
 
-impl IntoPropOption<svtui_layout::Size> for i32 {
-    fn into_prop_option(self) -> Option<svtui_layout::Size> {
-        Some(svtui_layout::Size::Fixed(self as u16))
+impl IntoPropOption<sveltui_layout::Size> for i32 {
+    fn into_prop_option(self) -> Option<sveltui_layout::Size> {
+        Some(sveltui_layout::Size::Fixed(self as u16))
     }
 }
 
-impl IntoPropOption<svtui_layout::Padding> for u16 {
-    fn into_prop_option(self) -> Option<svtui_layout::Padding> {
-        Some(svtui_layout::Padding::all(self))
+impl IntoPropOption<sveltui_layout::Padding> for u16 {
+    fn into_prop_option(self) -> Option<sveltui_layout::Padding> {
+        Some(sveltui_layout::Padding::all(self))
     }
 }
 
-impl IntoPropOption<svtui_layout::Padding> for i32 {
-    fn into_prop_option(self) -> Option<svtui_layout::Padding> {
-        Some(svtui_layout::Padding::all(self as u16))
+impl IntoPropOption<sveltui_layout::Padding> for i32 {
+    fn into_prop_option(self) -> Option<sveltui_layout::Padding> {
+        Some(sveltui_layout::Padding::all(self as u16))
     }
 }
 
-impl IntoPropOption<svtui_layout::Padding> for svtui_layout::Padding {
-    fn into_prop_option(self) -> Option<svtui_layout::Padding> {
+impl IntoPropOption<sveltui_layout::Padding> for sveltui_layout::Padding {
+    fn into_prop_option(self) -> Option<sveltui_layout::Padding> {
         Some(self)
     }
 }

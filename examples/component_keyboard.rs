@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use svtui::prelude::*;
-use svtui_components::*;
+use sveltui::prelude::*;
+use sveltui_components::*;
 
 fn format_key(key: KeyEvent) -> (String, String) {
     let code_str = match key.code {
@@ -112,7 +112,7 @@ fn main() -> std::io::Result<()> {
         if key.code == KeyCode::Esc
             || (key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL))
         {
-            return svtui::app::exit_shortcuts(key, context);
+            return sveltui::app::exit_shortcuts(key, context);
         }
 
         let (code, mods) = format_key(key);

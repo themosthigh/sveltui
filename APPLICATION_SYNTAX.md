@@ -1,11 +1,11 @@
 ### Application Setup
 
 ```rust
-use svtui::prelude::*;
+use sveltui::prelude::*;
 
 fn main() -> std::io::Result<()> {
     App::new(|| view! { <Application /> })
-        .on_key(svtui::app::exit_shortcuts)
+        .on_key(sveltui::app::exit_shortcuts)
         .run()
 }
 
@@ -13,7 +13,7 @@ fn main() -> std::io::Result<()> {
 fn Application() -> impl IntoNode {
     view! {
         <FlexBox border=BorderStyle::Single padding=Padding::all(1)>
-            <TextSpan>"Hello, svtui"</TextSpan>
+            <TextSpan>"Hello, sveltui"</TextSpan>
         </FlexBox>
     }
 }
@@ -185,7 +185,7 @@ fn Greetings() -> impl IntoNode {
 
 ### Children & Snippets
 
-Component children and snippets share a unified syntax via [`Snippet`](file:///Users/themosthigh/Projects/experimental/svtui/crates/svtui-element/src/snippet.rs), governed by the **One-Way Rule**:
+Component children and snippets share a unified syntax via [`Snippet`](file:///Users/themosthigh/Projects/experimental/sveltui/crates/sveltui-element/src/snippet.rs), governed by the **One-Way Rule**:
 - **Primary Children (1 Way)**: Must be placed directly inside the element body (`<Component> ... </Component>`). Passing `children=...` as a prop attribute or declaring `{#snippet children}` is prohibited and rejected at compile time.
 - **Custom Named Slots (1 Way)**: Must be declared via block macro syntax inside the element body (`{#snippet slot_name} ... {/snippet}`). Passing snippets as regular prop attributes is prohibited.
 - **Explicit Snippet Attributes**:

@@ -2,7 +2,7 @@ use crate::text_input::TextInputBinding;
 use crossterm::event::KeyEvent;
 use crossterm::style::Color;
 use std::rc::Rc;
-use svtui::prelude::*;
+use sveltui::prelude::*;
 
 #[derive(Props)]
 pub struct TextAreaProps {

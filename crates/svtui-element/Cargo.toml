@@ -1,10 +1,10 @@
 [package]
-name = "svtui-element"
+name = "sveltui-element"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 crossterm = "0.28"
-svtui-layout = { path = "../svtui-layout" }
-svtui-terminal = { path = "../svtui-terminal" }
-svtui-reactive = { path = "../svtui-reactive" }
+sveltui-layout = { path = "../sveltui-layout" }
+sveltui-terminal = { path = "../sveltui-terminal" }
+sveltui-reactive = { path = "../sveltui-reactive" }

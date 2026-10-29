@@ -1,12 +1,12 @@
 [package]
-name = "svtui-components"
+name = "sveltui-components"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-svtui = { path = "../svtui" }
-svtui-element = { path = "../svtui-element" }
-svtui-layout = { path = "../svtui-layout" }
-svtui-reactive = { path = "../svtui-reactive" }
-svtui-macros = { path = "../svtui-macros" }
+sveltui = { path = "../sveltui" }
+sveltui-element = { path = "../sveltui-element" }
+sveltui-layout = { path = "../sveltui-layout" }
+sveltui-reactive = { path = "../sveltui-reactive" }
+sveltui-macros = { path = "../sveltui-macros" }
 crossterm = "0.28"

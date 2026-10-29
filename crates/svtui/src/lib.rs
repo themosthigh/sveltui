@@ -5,7 +5,7 @@
 //! using the same core APIs available to custom components:
 //!
 //! ```
-//! use svtui::prelude::*;
+//! use sveltui::prelude::*;
 //! let control = view! {
 //!     <FlexBox tab_stop=true activation=Activation::Press
 //!         semantics={Semantics::new(Role::Button, "Custom action")}
@@ -21,7 +21,7 @@
 //! group has one external Tab stop and navigates its members with arrows.
 //!
 //! `App` reserves no exit or save keys. Explicitly opt into the example policy
-//! with `.on_key(svtui::app::exit_shortcuts)`, or supply your own handler. Every
+//! with `.on_key(sveltui::app::exit_shortcuts)`, or supply your own handler. Every
 //! key, including Ctrl+C, reaches the focused control and its scopes first.
 //!
 //! Dialogs and popovers contain Tab and Shift+Tab until dismissed. Menus close
@@ -44,19 +44,19 @@
 //! custom control. Collection/grid/tree selection helpers are available for
 //! composing future widgets; this release migrates the existing component set.
 
-extern crate self as svtui;
+extern crate self as sveltui;
 
 pub mod app;
 pub mod watcher;
 
 // Re-export sub-crates
-pub use svtui_element as element;
-pub use svtui_layout as layout;
-pub use svtui_reactive as reactive;
-pub use svtui_terminal as terminal;
+pub use sveltui_element as element;
+pub use sveltui_layout as layout;
+pub use sveltui_reactive as reactive;
+pub use sveltui_terminal as terminal;
 
 // Re-export proc-macros
-pub use svtui_macros::{Props, component, view};
+pub use sveltui_macros::{Props, component, view};
 
 // Re-export common types
 pub use app::App;

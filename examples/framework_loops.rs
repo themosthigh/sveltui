@@ -1,5 +1,5 @@
-use svtui::prelude::*;
-use svtui_components::*;
+use sveltui::prelude::*;
+use sveltui_components::*;
 
 #[derive(Clone, PartialEq, Eq)]
 struct Task {
@@ -13,7 +13,7 @@ fn LoopsDemo() -> impl IntoNode {
     let tasks = state(vec![
         Task {
             id: 1,
-            title: String::from("Initialize svtui application"),
+            title: String::from("Initialize sveltui application"),
             done: true,
         },
         Task {
@@ -107,6 +107,6 @@ fn LoopsDemo() -> impl IntoNode {
 
 fn main() -> std::io::Result<()> {
     App::new(|| view! { <LoopsDemo /> })
-        .on_key(svtui::app::exit_shortcuts)
+        .on_key(sveltui::app::exit_shortcuts)
         .run()
 }

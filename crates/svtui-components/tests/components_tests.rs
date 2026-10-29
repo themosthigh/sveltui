@@ -1,13 +1,13 @@
-use svtui::Snippet;
-use svtui_components::{
+use sveltui::Snippet;
+use sveltui_components::{
     Badge, BadgeProps, Button, ButtonProps, Dialog, DialogProps, DropdownItem, DropdownItemProps,
     DropdownMenu, DropdownMenuProps, DropdownSubmenu, DropdownSubmenuProps, Popover, PopoverProps,
     TextArea, TextAreaProps, get_cursor, set_cursor,
 };
-use svtui_element::{FlexBox, FlexBoxProps, FocusId, IntoNode, VNode, measure_node};
-use svtui_layout::Placement;
-use svtui_macros::view;
-use svtui_reactive::create_signal;
+use sveltui_element::{FlexBox, FlexBoxProps, FocusId, IntoNode, VNode, measure_node};
+use sveltui_layout::Placement;
+use sveltui_macros::view;
+use sveltui_reactive::create_signal;
 
 #[test]
 fn test_button_measurement() {

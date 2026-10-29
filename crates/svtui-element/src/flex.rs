@@ -1,6 +1,6 @@
 use crate::measure::{Bounds, child_box, children, in_flow, limits, measure, resolve_main_sizes};
 use crate::node::{FlexBoxElement, VNode};
-use svtui_layout::{Align, Rect, ScrollbarVisibility, Size, place_flex_children};
+use sveltui_layout::{Align, Rect, ScrollbarVisibility, Size, place_flex_children};
 
 pub(crate) struct ChildLayout<'a> {
     pub node: &'a VNode,

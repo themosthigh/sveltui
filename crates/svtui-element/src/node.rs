@@ -8,7 +8,7 @@ use crossterm::event::KeyEvent;
 use crossterm::style::Color;
 use std::fmt;
 use std::rc::Rc;
-use svtui_layout::{
+use sveltui_layout::{
     Align, BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, ScrollbarStyle,
     ScrollbarVisibility, Size,
 };
@@ -611,7 +611,7 @@ impl OverlayElement {
     }
 }
 
-// FlexBoxElement is the fundamental layout container in svtui; keeping it unboxed in VNode
+// FlexBoxElement is the fundamental layout container in sveltui; keeping it unboxed in VNode
 // avoids unnecessary heap allocation indirection on every node creation and pattern match.
 #[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
