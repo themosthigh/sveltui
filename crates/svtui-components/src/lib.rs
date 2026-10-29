@@ -13,13 +13,16 @@ pub mod text_input;
 
 pub use badge::{Badge, BadgeProps};
 pub use button::{Button, ButtonProps};
-pub use checkbox::Checkbox;
-pub use dialog::Dialog;
-pub use divider::Divider;
-pub use dropdown::{DropdownItem, DropdownMenu, DropdownSubmenu};
-pub use popover::Popover;
-pub use progress_bar::ProgressBar;
-pub use switch::Switch;
-pub use text_area::TextArea;
-pub use text_buffer::TextBuffer;
-pub use text_input::{TextInput, get_cursor, set_cursor};
+pub use checkbox::{Checkbox, CheckboxBinding, CheckboxProps};
+pub use dialog::{Dialog, DialogProps};
+pub use divider::{Divider, DividerProps};
+pub use dropdown::{
+    DropdownItem, DropdownItemProps, DropdownMenu, DropdownMenuProps, DropdownSubmenu,
+    DropdownSubmenuProps,
+};
+pub use popover::{Popover, PopoverProps};
+pub use progress_bar::{ProgressBar, ProgressBarProps};
+pub use switch::{Switch, SwitchBinding, SwitchProps};
+pub use text_area::{TextArea, TextAreaProps};
+pub use text_buffer::*;
+pub use text_input::{TextInput, TextInputBinding, TextInputProps, get_cursor, set_cursor};

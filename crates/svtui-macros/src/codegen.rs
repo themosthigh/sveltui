@@ -243,173 +243,10 @@ fn codegen_await(await_node: &AwaitNode) -> proc_macro2::TokenStream {
     }
 }
 
-fn codegen_builder_element(
-    el: &Element,
-    tag: &syn::Ident,
-    constructor: proc_macro2::TokenStream,
-    root: &proc_macro2::TokenStream,
-) -> proc_macro2::TokenStream {
-    let mut setter_calls = Vec::new();
-    for attr in &el.attributes {
-        let attr_name = &attr.name;
-        if attr_name == "children" {
-            return syn::Error::new(
-                attr_name.span(),
-                format!(
-                    "Cannot pass 'children' as an attribute prop on `<{}>`. Place children inside the element body: `<{}>...</{}>`",
-                    tag, tag, tag
-                ),
-            )
-            .to_compile_error();
-        }
-        let attr_val = &attr.value;
-        setter_calls.push(quote! {
-            .#attr_name(#attr_val)
-        });
-    }
-
-    let mut child_calls = Vec::new();
-    for child in &el.children {
-        if let Node::Snippet(s) = child {
-            return syn::Error::new(
-                s.name.span(),
-                format!(
-                    "Component `<{}>` does not support snippet slots. Use standard children or attributes.",
-                    tag
-                ),
-            )
-            .to_compile_error();
-        }
-        let child_stream = codegen_node(child);
-        child_calls.push(quote! {
-            .child(#child_stream)
-        });
-    }
-
-    quote! {
-        #root::IntoNode::into_node(
-            #constructor
-                #(#setter_calls)*
-                #(#child_calls)*
-        )
-    }
-}
-
 pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
     let root = element_root();
     let tag = &el.name;
-    let tag_str = tag.to_string();
-
-    match tag_str.as_str() {
-        "Box" => codegen_builder_element(el, tag, quote! { #root::BoxElement::default() }, &root),
-        "Overlay" => {
-            codegen_builder_element(el, tag, quote! { #root::OverlayElement::default() }, &root)
-        }
-        "Text" => {
-            let mut setter_calls = Vec::new();
-            for attr in &el.attributes {
-                let attr_name = &attr.name;
-                let attr_val = &attr.value;
-                setter_calls.push(quote! {
-                    .#attr_name(#attr_val)
-                });
-            }
-
-            let mut text_arg = quote! { "" };
-            let mut extra_children = Vec::new();
-
-            for (i, child) in el.children.iter().enumerate() {
-                if i == 0 {
-                    match child {
-                        Node::Text(lit) => {
-                            text_arg = quote! { #lit };
-                        }
-                        Node::Block(expr) => {
-                            text_arg = quote! { #expr };
-                        }
-                        _ => {
-                            let child_stream = codegen_node(child);
-                            extra_children.push(quote! {
-                                .child(#child_stream)
-                            });
-                        }
-                    }
-                } else {
-                    let child_stream = codegen_node(child);
-                    extra_children.push(quote! {
-                        .child(#child_stream)
-                    });
-                }
-            }
-
-            quote! {
-                #root::TextElement::new(#text_arg)
-                    #(#setter_calls)*
-                    #(#extra_children)*
-                    .into_node()
-            }
-        }
-        "Provider" => {
-            let mut val_expr = quote! { () };
-            for attr in &el.attributes {
-                if attr.name == "value" {
-                    let v = &attr.value;
-                    val_expr = quote! { #v };
-                }
-            }
-
-            let children_ts = codegen_nodes(&el.children);
-            quote! {
-                #root::Provider::new(#val_expr)
-                    .snippet(#root::Snippet::new(move |_| {
-                        #children_ts
-                    }))
-                    .into_node()
-            }
-        }
-        "ErrorBoundary" => {
-            let mut fallback_ts = None;
-            let mut regular_children = Vec::new();
-
-            for child in &el.children {
-                if let Node::Snippet(s) = child
-                    && s.name == "fallback"
-                {
-                    let snippet_ts = codegen_snippet(s);
-                    fallback_ts = Some(quote! {
-                        .fallback(#snippet_ts)
-                    });
-                    continue;
-                }
-                regular_children.push(child);
-            }
-
-            let children_ts = codegen_node_refs(&regular_children);
-            quote! {
-                #root::ErrorBoundary::new()
-                    #fallback_ts
-                    .render_child(move || {
-                        #children_ts
-                    })
-                    .into_node()
-            }
-        }
-        "TextInput" | "TextArea" | "Checkbox" | "Switch" | "Divider" | "ProgressBar"
-        | "DropdownMenu" | "DropdownItem" | "DropdownSubmenu" | "Popover" => {
-            codegen_builder_element(el, tag, quote! { #tag::default() }, &root)
-        }
-        "Dialog" => {
-            let has_snippets = el.children.iter().any(|c| matches!(c, Node::Snippet(_)));
-            if has_snippets {
-                // Component Dialog from APPLICATION_SYNTAX.md
-                codegen_custom_component(el, tag, &root)
-            } else {
-                // Built-in Dialog widget
-                codegen_builder_element(el, tag, quote! { #tag::default() }, &root)
-            }
-        }
-        _ => codegen_custom_component(el, tag, &root),
-    }
+    codegen_custom_component(el, tag, &root)
 }
 
 fn codegen_custom_component(
@@ -494,40 +331,30 @@ fn codegen_custom_component(
 
     let children_setter = if !meaningful_children.is_empty() {
         let body_ts = codegen_node_refs(&meaningful_children);
-        Some(quote! {
-            .slot_children(#root::Snippet::new(move |_| {
-                #body_ts
-            }))
-        })
+        if tag == "ErrorBoundary" || tag == "ContextProvider" {
+            Some(quote! {
+                .slot_children(#root::Snippet::new(move |_| { #body_ts }))
+            })
+        } else {
+            Some(quote! {
+                .slot_children(#body_ts)
+            })
+        }
     } else {
         None
     };
 
     let tag_props = quote::format_ident!("{}Props", tag);
 
-    let has_props = !prop_setters.is_empty()
-        || !snippet_setters.is_empty()
-        || children_setter.is_some()
-        || tag == "Button"
-        || tag == "Badge";
-
-    if has_props {
-        quote! {
-            #root::IntoNode::into_node(
-                #tag(
-                    #tag_props::builder()
-                        #(#prop_setters)*
-                        #(#snippet_setters)*
-                        #children_setter
-                        .build()
-                )
+    quote! {
+        #root::IntoNode::into_node(
+            #tag(
+                #tag_props::builder()
+                    #(#prop_setters)*
+                    #(#snippet_setters)*
+                    #children_setter
+                    .build()
             )
-        }
-    } else {
-        quote! {
-            #root::IntoNode::into_node(
-                #tag()
-            )
-        }
+        )
     }
 }

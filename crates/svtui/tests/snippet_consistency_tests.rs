@@ -22,8 +22,8 @@ struct UserTableProps<T: 'static> {
 #[component]
 fn UserTable<T: Clone + 'static>(props: UserTableProps<T>) -> impl IntoNode {
     view! {
-        <Box border=BorderStyle::Single padding=Padding::all(1) gap=1>
-            <Text bold=true>{props.title.clone()}</Text>
+        <FlexBox border=BorderStyle::Single padding=Padding::all(1) gap=1>
+            <TextSpan bold=true>{props.title.clone()}</TextSpan>
             {#if props.header.is_snippet_present()}
                 {@render props.header}
                 <Divider />
@@ -35,7 +35,7 @@ fn UserTable<T: Clone + 'static>(props: UserTableProps<T>) -> impl IntoNode {
                 <Divider />
                 {@render props.footer}
             {/if}
-        </Box>
+        </FlexBox>
     }
 }
 
@@ -51,15 +51,15 @@ struct CardLayoutProps {
 #[component]
 fn CardLayout(props: CardLayoutProps) -> impl IntoNode {
     view! {
-        <Box border=BorderStyle::Double padding=Padding::all(1)>
-            <Text bold=true>{props.title.clone()}</Text>
+        <FlexBox border=BorderStyle::Double padding=Padding::all(1)>
+            <TextSpan bold=true>{props.title.clone()}</TextSpan>
             <Divider />
-            <Box>{@render props.children}</Box>
+            <FlexBox>{@render props.children}</FlexBox>
             {#if props.actions.is_snippet_present()}
                 <Divider />
                 {@render props.actions}
             {/if}
-        </Box>
+        </FlexBox>
     }
 }
 
@@ -79,23 +79,23 @@ fn test_generic_parameterized_and_optional_snippets() {
     let node = view! {
         <UserTable title="Team" items=users>
             {#snippet header}
-                <Text>"Active Members"</Text>
+                <TextSpan>"Active Members"</TextSpan>
             {/snippet}
 
             {#snippet row(u: UserItem)}
-                <Box flex_direction=FlexDirection::Row gap=2>
-                    <Text>{u.name.clone()}</Text>
-                    <Text>{u.role.clone()}</Text>
-                </Box>
+                <FlexBox flex_direction=FlexDirection::Row gap=2>
+                    <TextSpan>{u.name.clone()}</TextSpan>
+                    <TextSpan>{u.role.clone()}</TextSpan>
+                </FlexBox>
             {/snippet}
 
             {#snippet footer}
-                <Text>"End of List"</Text>
+                <TextSpan>"End of List"</TextSpan>
             {/snippet}
         </UserTable>
     };
 
-    assert!(matches!(node, VNode::Box(_)));
+    assert!(matches!(node, VNode::FlexBox(_)));
 }
 
 #[test]
@@ -109,20 +109,20 @@ fn test_generic_snippets_with_omitted_optional_slots() {
     let node = view! {
         <UserTable title="Team" items=users>
             {#snippet row(u: UserItem)}
-                <Text>{u.name.clone()}</Text>
+                <TextSpan>{u.name.clone()}</TextSpan>
             {/snippet}
         </UserTable>
     };
 
-    assert!(matches!(node, VNode::Box(_)));
+    assert!(matches!(node, VNode::FlexBox(_)));
 }
 
 #[test]
 fn test_multi_slot_card_layout_with_regular_children_and_named_snippet() {
     let node = view! {
         <CardLayout title="Delete Item">
-            <Text>"Are you sure you want to delete this resource?"</Text>
-            <Text>"This cannot be undone."</Text>
+            <TextSpan>"Are you sure you want to delete this resource?"</TextSpan>
+            <TextSpan>"This cannot be undone."</TextSpan>
 
             {#snippet actions}
                 <Button label="Cancel" />
@@ -131,7 +131,7 @@ fn test_multi_slot_card_layout_with_regular_children_and_named_snippet() {
         </CardLayout>
     };
 
-    assert!(matches!(node, VNode::Box(_)));
+    assert!(matches!(node, VNode::FlexBox(_)));
 }
 
 #[test]
@@ -160,5 +160,5 @@ fn test_whitespace_only_children_does_not_suppress_label_fallback() {
         <Button label="Fallback Label">"   "</Button>
     };
 
-    assert!(matches!(btn, VNode::Box(_)));
+    assert!(matches!(btn, VNode::FlexBox(_)));
 }

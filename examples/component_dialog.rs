@@ -11,24 +11,24 @@ fn DialogDemo() -> impl IntoNode {
     let is_pop = popover_open.get();
 
     view! {
-        <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
-            <Box
+        <FlexBox width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
+            <FlexBox
                 width=68
                 border=BorderStyle::Double
                 border_color=Color::DarkGrey
                 padding=Padding::all(1)
                 gap=1
             >
-                <Text color=Color::White bold=true>"component_dialog: Modals, Popovers & Scoped Traps"</Text>
+                <TextSpan color=Color::White bold=true>"component_dialog: Modals, Popovers & Scoped Traps"</TextSpan>
                 <Divider />
 
-                <Text color=Color::DarkGrey>
+                <TextSpan color=Color::DarkGrey>
                     "Dialogs contain keyboard navigation until dismissed with Escape or Action buttons."
-                </Text>
+                </TextSpan>
 
-                <Box height=1 />
+                <FlexBox height=1 />
 
-                <Box flex_direction=FlexDirection::Row gap=2>
+                <FlexBox flex_direction=FlexDirection::Row gap=2>
                     <Button
                         on_click={move || dialog_open.set(true)}
                     >
@@ -39,18 +39,15 @@ fn DialogDemo() -> impl IntoNode {
                         open=is_pop
                         placement=Placement::BottomStart
                         on_close={move || popover_open.set(false)}
-                        trigger={
-                            Button(
-                                ButtonProps::builder()
-                                    .children("Anchored Info Popover")
-                                    .on_click(move || popover_open.update(|v| *v = !*v))
-                                    .build(),
-                            )
-                        }
                     >
-                        <Box border=BorderStyle::Single border_color=Color::White padding=Padding::all(1) gap=1>
-                            <Text color=Color::White bold=true>"Popover Details"</Text>
-                            <Text color=Color::DarkGrey>"Anchored to trigger element."</Text>
+                        {#snippet trigger()}
+                            <Button on_click={move || popover_open.update(|v| *v = !*v)}>
+                                "Anchored Info Popover"
+                            </Button>
+                        {/snippet}
+                        <FlexBox border=BorderStyle::Single border_color=Color::White padding=Padding::all(1) gap=1>
+                            <TextSpan color=Color::White bold=true>"Popover Details"</TextSpan>
+                            <TextSpan color=Color::DarkGrey>"Anchored to trigger element."</TextSpan>
                             <Button
                                 on_click={move || {
                                     action_log.set(String::from("Popover action confirmed."));
@@ -59,17 +56,17 @@ fn DialogDemo() -> impl IntoNode {
                             >
                                 "Dismiss Popover"
                             </Button>
-                        </Box>
+                        </FlexBox>
                     </Popover>
-                </Box>
+                </FlexBox>
 
-                <Box height=1 />
+                <FlexBox height=1 />
                 <Divider />
 
-                <Box border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1)>
-                    <Text color=Color::White>{format!("Status: {}", action_log.get())}</Text>
-                    <Text color=Color::DarkGrey>"Escape: Dismiss top-layer | Tab: Navigate inside trap"</Text>
-                </Box>
+                <FlexBox border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1)>
+                    <TextSpan color=Color::White>{format!("Status: {}", action_log.get())}</TextSpan>
+                    <TextSpan color=Color::DarkGrey>"Escape: Dismiss top-layer | Tab: Navigate inside trap"</TextSpan>
+                </FlexBox>
 
                 // Modal Dialog Overlay
                 <Dialog
@@ -80,11 +77,11 @@ fn DialogDemo() -> impl IntoNode {
                     width=48
                     on_close={move || dialog_open.set(false)}
                 >
-                    <Box padding=Padding::all(1) gap=1>
-                        <Text color=Color::White>"Proceed with irreversible cluster deployment?"</Text>
-                        <Text color=Color::DarkGrey>"This will overwrite current staging replicas."</Text>
-                        <Box height=1 />
-                        <Box flex_direction=FlexDirection::Row gap=1 justify_content=Justify::End>
+                    <FlexBox padding=Padding::all(1) gap=1>
+                        <TextSpan color=Color::White>"Proceed with irreversible cluster deployment?"</TextSpan>
+                        <TextSpan color=Color::DarkGrey>"This will overwrite current staging replicas."</TextSpan>
+                        <FlexBox height=1 />
+                        <FlexBox flex_direction=FlexDirection::Row gap=1 justify_content=Justify::End>
                             <Button
                                 on_click={move || {
                                     action_log.set(String::from("Deployment cancelled."));
@@ -101,11 +98,11 @@ fn DialogDemo() -> impl IntoNode {
                             >
                                 "Deploy Now"
                             </Button>
-                        </Box>
-                    </Box>
+                        </FlexBox>
+                    </FlexBox>
                 </Dialog>
-            </Box>
-        </Box>
+            </FlexBox>
+        </FlexBox>
     }
 }
 

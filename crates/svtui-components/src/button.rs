@@ -46,7 +46,7 @@ pub fn Button(props: ButtonProps) -> impl IntoNode {
     let on_click = props.on_click.filter(|_| !props.disabled);
 
     view! {
-        <Box
+        <FlexBox
             border=border_style
             opt_border_color=border_color
             padding=props.padding
@@ -64,8 +64,8 @@ pub fn Button(props: ButtonProps) -> impl IntoNode {
             {#if props.children.is_some()}
                 {@render props.children}
             {:else if let Some(label) = &props.label}
-                <Text fg=text_color bold=is_active>{label.clone()}</Text>
+                <TextSpan fg=text_color bold=is_active>{label.clone()}</TextSpan>
             {/if}
-        </Box>
+        </FlexBox>
     }
 }

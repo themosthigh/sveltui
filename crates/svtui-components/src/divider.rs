@@ -1,97 +1,49 @@
 use crossterm::style::Color;
-use svtui_element::{BoxElement, IntoNode, TextElement, VNode};
-use svtui_element::{Role, Semantics};
-use svtui_layout::{Align, BorderStyle, Overflow, Padding, Size};
+use svtui::prelude::*;
 
-/// A one-line rule that fills its allocated width, including after resizing.
-/// Width defaults to Fill; fixed/percentage sizes and min/max bounds are supported.
-#[derive(Clone)]
-pub struct Divider {
-    title: Option<String>,
-    color: Option<Color>,
-    width: Size,
-    min_width: Option<Size>,
-    max_width: Option<Size>,
+#[derive(Props)]
+pub struct DividerProps {
+    #[prop(optional)]
+    pub title: Option<String>,
+    #[prop(optional)]
+    pub color: Option<Color>,
+    #[prop(default = Size::Fill)]
+    pub width: Size,
+    #[prop(optional)]
+    pub min_width: Option<Size>,
+    #[prop(optional)]
+    pub max_width: Option<Size>,
+    #[snippet(optional)]
+    pub children: Option<Snippet>,
 }
 
-impl Default for Divider {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+#[component]
+pub fn Divider(props: DividerProps) -> impl IntoNode {
+    let color = props.color.unwrap_or(Color::DarkGrey);
+    let title = props.title.unwrap_or_default();
+    let text = if !title.is_empty() {
+        format!("─── {title} ")
+    } else {
+        String::new()
+    };
 
-impl Divider {
-    pub fn new() -> Self {
-        Self {
-            title: None,
-            color: Some(Color::DarkGrey),
-            width: Size::Fill,
-            min_width: None,
-            max_width: None,
-        }
-    }
-
-    pub fn title(mut self, title: impl Into<String>) -> Self {
-        self.title = Some(title.into());
-        self
-    }
-
-    pub fn child(mut self, child: impl IntoNode) -> Self {
-        if let VNode::Text(t) = child.into_node() {
-            self.title = Some(t.content);
-        }
-        self
-    }
-
-    pub fn color(mut self, color: Color) -> Self {
-        self.color = Some(color);
-        self
-    }
-
-    pub fn width(mut self, width: impl Into<Size>) -> Self {
-        self.width = width.into();
-        self
-    }
-
-    pub fn min_width(mut self, width: impl Into<Size>) -> Self {
-        self.min_width = Some(width.into());
-        self
-    }
-
-    pub fn max_width(mut self, width: impl Into<Size>) -> Self {
-        self.max_width = Some(width.into());
-        self
-    }
-}
-
-impl IntoNode for Divider {
-    fn into_node(self) -> VNode {
-        let semantics = Semantics::new(Role::Separator, self.title.clone().unwrap_or_default());
-        let text = self
-            .title
-            .filter(|title| !title.is_empty())
-            .map_or_else(String::new, |title| format!("─── {title} "));
-
-        let mut element = BoxElement::new()
-            .semantics(semantics)
-            .border(BorderStyle::None)
-            .padding(Padding::zero())
-            .width(self.width)
-            .height(1)
-            .overflow(Overflow::Hidden)
-            .align_items(Align::Stretch)
-            .child(
-                TextElement::new(text)
-                    .fill('─')
-                    .color(self.color.unwrap_or(Color::DarkGrey))
-                    .into_node(),
-            );
-        if let Some(min) = self.min_width {
-            element = element.min_width(min);
-        }
-        if let Some(max) = self.max_width {
-            element = element.max_width(max);
-        }
-        element.into_node()
+    view! {
+        <FlexBox
+            semantics=Semantics::new(Role::Separator, title)
+            border=BorderStyle::None
+            padding=Padding::zero()
+            width=props.width
+            height=1
+            overflow=Overflow::Hidden
+            align_items=Align::Stretch
+            opt_min_width=props.min_width
+            opt_max_width=props.max_width
+        >
+            {#if props.children.is_some()}
+                {@render props.children}
+            {:else}
+                <Paragraph fill='─' fg=color>{text}</Paragraph>
+            {/if}
+        </FlexBox>
     }
 }

@@ -37,11 +37,11 @@ fn existing_controls_declare_focus_semantics_and_disabled_activation() {
     let (checked, set_checked) = create_signal(false);
     let build = || {
         view! {
-            <Box>
+            <FlexBox>
                 <Button id=FocusId(100001) on_click={{let action=action.clone();move || action.set(action.get()+1)}}>"Action"</Button>
                 <Button id=FocusId(100002) disabled=true>"Unavailable"</Button>
                 <Checkbox id=FocusId(100003) checked=checked set_checked=set_checked label="Choice" />
-            </Box>
+            </FlexBox>
         }
     };
     render(&mut manager, build);
@@ -103,13 +103,13 @@ fn popover_traps_tab_in_both_directions_and_restores_on_escape() {
     let (open, set_open) = create_signal(true);
     let build = || {
         view! {
-            <Box>
+            <FlexBox>
                 <Popover id=FocusId(100100) open={open.get()} on_close={move || set_open.set(false)}
                     trigger={view! { <Button id=FocusId(100001)>"Open"</Button> }}>
-                    <Box><Button id=FocusId(100002)>"One"</Button><Button id=FocusId(100003)>"Two"</Button></Box>
+                    <FlexBox><Button id=FocusId(100002)>"One"</Button><Button id=FocusId(100003)>"Two"</Button></FlexBox>
                 </Popover>
                 <Button id=FocusId(100004)>"After"</Button>
-            </Box>
+            </FlexBox>
         }
     };
     let mut manager = FocusManager::new();
@@ -134,8 +134,8 @@ fn editor_owns_noop_edits_but_releases_shortcuts_and_tab() {
     let (value, set_value) = create_signal(String::new());
     let build = || {
         view! {
-            <Box><TextInput id=FocusId(100001) value=value set_value=set_value />
-                <Button id=FocusId(100002)>"Next"</Button></Box>
+            <FlexBox><TextInput id=FocusId(100001) value=value set_value=set_value />
+                <Button id=FocusId(100002)>"Next"</Button></FlexBox>
         }
     };
     let mut manager = FocusManager::new();
@@ -165,8 +165,8 @@ fn editor_owns_noop_edits_but_releases_shortcuts_and_tab() {
 fn textarea_yields_tab_without_inserting_indentation() {
     let (value, set_value) = create_signal(String::from("text"));
     let build = || {
-        view! { <Box><TextArea id=FocusId(100001) value=value set_value=set_value />
-        <Button id=FocusId(100002)>"Next"</Button></Box> }
+        view! { <FlexBox><TextArea id=FocusId(100001) value=value set_value=set_value />
+        <Button id=FocusId(100002)>"Next"</Button></FlexBox> }
     };
     let mut manager = FocusManager::new();
     render(&mut manager, build);
@@ -182,11 +182,11 @@ fn offscreen_focus_is_registered_and_revealed_by_its_scroll_owner() {
     let last = FocusId(100003);
     let build = || {
         view! {
-            <Box width=20 height=4 overflow_y=Overflow::Auto focus_id=scroll>
+            <FlexBox width=20 height=4 overflow_y=Overflow::Auto focus_id=scroll>
                 <Button id=FocusId(100001)>"First"</Button>
                 <Button id=FocusId(100002)>"Second"</Button>
                 <Button id=last>"Last"</Button>
-            </Box>
+            </FlexBox>
         }
     };
     let mut manager = FocusManager::new();
@@ -210,10 +210,10 @@ fn pointer_activation_and_wheel_do_not_reach_modal_background() {
     let click = count.clone();
     let build = || {
         view! {
-            <Box>
+            <FlexBox>
                 <Button id=FocusId(100001) on_click={{let click=click.clone();move || click.set(click.get()+1)}}>"Background"</Button>
                 <Dialog id=FocusId(100100) open=true title="Modal"><Button id=FocusId(100002)>"Inside"</Button></Dialog>
-            </Box>
+            </FlexBox>
         }
     };
     let mut manager = FocusManager::new();
@@ -263,10 +263,10 @@ fn selecting_a_menu_item_closes_the_menu_without_dismissing_its_dialog() {
 fn rejected_controlled_tab_dismissal_keeps_focus_in_the_popup() {
     let build = || {
         view! {
-            <Box><DropdownMenu id=FocusId(100100) open=true
+            <FlexBox><DropdownMenu id=FocusId(100100) open=true
                 trigger={view! { <Button id=FocusId(100001)>"Open"</Button> }}>
                 <Button id=FocusId(100002)>"Stay"</Button>
-            </DropdownMenu><Button id=FocusId(100003)>"After"</Button></Box>
+            </DropdownMenu><Button id=FocusId(100003)>"After"</Button></FlexBox>
         }
     };
     let mut manager = FocusManager::new();
@@ -283,7 +283,7 @@ fn passive_popover_focuses_container_and_escape_restores_trigger() {
         view! {
             <Popover id=FocusId(100100) open={open.get()} on_close={move || set_open.set(false)}
                 trigger={view! { <Button id=FocusId(100001)>"Info"</Button> }}>
-                <Text>"Explanation"</Text>
+                <TextSpan>"Explanation"</TextSpan>
             </Popover>
         }
     };
@@ -328,11 +328,11 @@ fn core_only_custom_control_has_the_same_focus_and_activation_capabilities() {
     let action = count.clone();
     let build = || {
         view! {
-            <Box width=10 height=1 focus_id=FocusId(100001) tab_stop=true activation=Activation::Press
+            <FlexBox width=10 height=1 focus_id=FocusId(100001) tab_stop=true activation=Activation::Press
                 semantics={Semantics::new(Role::Button,"Core action")}
                 on_click={{let action=action.clone();move || action.set(action.get()+1)}}>
-                <Text>"Core action"</Text>
-            </Box>
+                <TextSpan>"Core action"</TextSpan>
+            </FlexBox>
         }
     };
     let mut manager = FocusManager::new();
@@ -405,7 +405,7 @@ fn controlled_submenu_uses_core_open_and_close_requests() {
 fn modal_scope_can_explicitly_override_ctrl_c() {
     let build = || {
         view! {
-            <Dialog id=FocusId(100100) open=true on_key={|key,context| {
+            <Dialog id=FocusId(100100) open=true on_key={|key: KeyEvent, context: &mut EventContext| {
                 if key.code==KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
                     context.exit();EventResult::Handled
                 } else { EventResult::Ignored }
@@ -427,15 +427,15 @@ fn missing_opener_restores_to_the_nearest_surviving_scope() {
     let (trigger, set_trigger) = create_signal(true);
     let build = || {
         view! {
-            <Box>
+            <FlexBox>
                 <Button id=FocusId(100000)>"Outside"</Button>
-                <Box focus_id=FocusId(100010) focus_scope=FocusScope::default()>
+                <FlexBox focus_id=FocusId(100010) focus_scope=FocusScope::default()>
                     <Popover id=FocusId(100100) open={open.get()}
                         trigger={if trigger.get() { Some(view! { <Button id=FocusId(100001)>"Open"</Button> }) } else { None }}>
                         <Button id=FocusId(100002)>"Inside"</Button>
                     </Popover>
-                </Box>
-            </Box>
+                </FlexBox>
+            </FlexBox>
         }
     };
     let mut manager = FocusManager::new();
@@ -452,14 +452,14 @@ fn queued_focus_can_target_a_control_mounted_by_the_same_event() {
     let (show, set_show) = create_signal(false);
     let build = || {
         view! {
-            <Box>
-                <Box focus_id=FocusId(100001) tab_stop=true on_key={move |key,context| {
+            <FlexBox>
+                <FlexBox focus_id=FocusId(100001) tab_stop=true on_key={move |key: KeyEvent, context: &mut EventContext| {
                     if key.code==KeyCode::Enter {
                         set_show.set(true);context.focus(FocusId(100002));EventResult::Handled
                     } else { EventResult::Ignored }
-                }}><Text>"Reveal"</Text></Box>
+                }}><TextSpan>"Reveal"</TextSpan></FlexBox>
                 {show.get().then(|| view! { <Button id=FocusId(100002)>"New"</Button> })}
-            </Box>
+            </FlexBox>
         }
     };
     let mut manager = FocusManager::new();

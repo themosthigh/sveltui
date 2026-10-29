@@ -205,7 +205,7 @@ fn render_node_offset_internal(
     height: u16,
     ctx: &mut RenderContext,
 ) {
-    if let VNode::Box(b) = node
+    if let VNode::FlexBox(b) = node
         && let Some(id) = b.focus_id
     {
         ctx.hit_map.layouts.insert(
@@ -238,7 +238,7 @@ fn render_node_offset_internal(
         // Out-of-flow overlays still render when their ancestor has no
         // intrinsic size (for example, a root containing only a dialog).
         let children = match node {
-            VNode::Box(b) => Some(&b.children),
+            VNode::FlexBox(b) => Some(&b.children),
             VNode::Fragment(children) => Some(children),
             _ => None,
         };
@@ -253,7 +253,7 @@ fn render_node_offset_internal(
         || y >= ctx.buffer.height as i32
         || x + width as i32 <= 0
         || y + height as i32 <= 0)
-        && !matches!(node, VNode::Box(_) | VNode::Fragment(_))
+        && !matches!(node, VNode::FlexBox(_) | VNode::Fragment(_))
     {
         return;
     }
@@ -315,7 +315,7 @@ fn render_node_offset_internal(
                 }
             }
         }
-        VNode::Box(b) => {
+        VNode::FlexBox(b) => {
             if b.interaction.as_ref().is_some_and(|i| i.hidden) {
                 return;
             }

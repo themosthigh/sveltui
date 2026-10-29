@@ -17,13 +17,13 @@ fn DeepThemedWidget() -> impl IntoNode {
     });
 
     view! {
-        <Box border=theme.border_style border_color=theme.primary_color padding=Padding::all(1) gap=1>
-            <Box flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween>
-                <Text color=theme.primary_color bold=true>"Themed Consumer Box"</Text>
+        <FlexBox border=theme.border_style border_color=theme.primary_color padding=Padding::all(1) gap=1>
+            <FlexBox flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween>
+                <TextSpan color=theme.primary_color bold=true>"Themed Consumer Box"</TextSpan>
                 <Badge label=theme.badge_label />
-            </Box>
-            <Text color=Color::DarkGrey>"Reads theme values injected by ancestor <Provider value=...>"</Text>
-        </Box>
+            </FlexBox>
+            <TextSpan color=Color::DarkGrey>"Reads theme values injected by ancestor <ContextProvider value=...>"</TextSpan>
+        </FlexBox>
     }
 }
 
@@ -48,41 +48,41 @@ fn ContextDemo() -> impl IntoNode {
     });
 
     view! {
-        <Provider value=current_theme.get()>
-            <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
-                <Box
+        <ContextProvider value=current_theme.get()>
+            <FlexBox width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
+                <FlexBox
                     width=66
                     border=BorderStyle::Single
                     border_color=Color::DarkGrey
                     padding=Padding::all(1)
                     gap=1
                 >
-                    <Text color=Color::White bold=true>"framework_context: Context API with <Provider>"</Text>
+                    <TextSpan color=Color::White bold=true>"framework_context: Context API with <ContextProvider>"</TextSpan>
                     <Divider />
 
-                    <Box flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
+                    <FlexBox flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
                         <Switch checked=high_contrast label="Enable High-Contrast Theme" />
-                    </Box>
+                    </FlexBox>
 
                     <Divider />
 
                     <DeepThemedWidget />
 
                     // Local Override with a nested Provider
-                    <Provider value=Theme {
+                    <ContextProvider value=Theme {
                         primary_color: Color::White,
                         border_style: BorderStyle::Double,
                         badge_label: "Local Override",
                     }>
-                        <Box padding=Padding::symmetric(0, 1)>
-                            <Text color=Color::DarkGrey>"Below is an isolated sub-tree with an overridden Theme Provider:"</Text>
-                            <Box height=1 />
+                        <FlexBox padding=Padding::symmetric(0, 1)>
+                            <TextSpan color=Color::DarkGrey>"Below is an isolated sub-tree with an overridden Theme Provider:"</TextSpan>
+                            <FlexBox height=1 />
                             <DeepThemedWidget />
-                        </Box>
-                    </Provider>
-                </Box>
-            </Box>
-        </Provider>
+                        </FlexBox>
+                    </ContextProvider>
+                </FlexBox>
+            </FlexBox>
+        </ContextProvider>
     }
 }
 

@@ -305,7 +305,7 @@ impl InteractionTree {
             tree: &mut InteractionTree,
         ) {
             match node {
-                VNode::Box(b) => {
+                VNode::FlexBox(b) => {
                     if b.interaction.as_ref().is_some_and(|i| i.hidden) {
                         return;
                     }
@@ -456,7 +456,7 @@ impl InteractionTree {
 
 fn first_focus(node: &VNode) -> Option<FocusId> {
     match node {
-        VNode::Box(b) => b
+        VNode::FlexBox(b) => b
             .focus_id
             .filter(|_| {
                 b.interaction

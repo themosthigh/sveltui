@@ -16,56 +16,56 @@ fn InteractiveShowcase() -> impl IntoNode {
     };
 
     view! {
-        <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
-            <Box
+        <FlexBox width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
+            <FlexBox
                 width=72
                 border=BorderStyle::Double
                 border_color=Color::DarkGrey
                 padding=Padding::all(1)
                 gap=1
             >
-                <Box flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
-                    <Text color=Color::White bold=true>"component_interactive: Full Widgets Dashboard"</Text>
+                <FlexBox flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
+                    <TextSpan color=Color::White bold=true>"component_interactive: Full Widgets Dashboard"</TextSpan>
                     <Badge label=status_tag.get() />
-                </Box>
+                </FlexBox>
                 <Divider />
 
-                <Text color=Color::DarkGrey>"Progress Bar Component:"</Text>
-                <Box flex_direction=FlexDirection::Row gap=2 align_items=Align::Center>
-                    <Box width=48>
+                <TextSpan color=Color::DarkGrey>"Progress Bar Component:"</TextSpan>
+                <FlexBox flex_direction=FlexDirection::Row gap=2 align_items=Align::Center>
+                    <FlexBox width=48>
                         <ProgressBar ratio={progress.get() / 100.0} />
-                    </Box>
-                    <Text color=Color::White>{format!("{}%", progress.get() as u32)}</Text>
+                    </FlexBox>
+                    <TextSpan color=Color::White>{format!("{}%", progress.get() as u32)}</TextSpan>
                     <Button on_click={advance_progress}>
                         "+15%"
                     </Button>
-                </Box>
+                </FlexBox>
 
                 <Divider />
 
-                <Text color=Color::DarkGrey>"Form & Input Controls:"</Text>
-                <Box flex_direction=FlexDirection::Row gap=2 align_items=Align::Center>
-                    <Text color=Color::DarkGrey>"User:"</Text>
+                <TextSpan color=Color::DarkGrey>"Form & Input Controls:"</TextSpan>
+                <FlexBox flex_direction=FlexDirection::Row gap=2 align_items=Align::Center>
+                    <TextSpan color=Color::DarkGrey>"User:"</TextSpan>
                     <TextInput value=username placeholder="Enter username..." width=32 />
-                </Box>
+                </FlexBox>
 
-                <Box flex_direction=FlexDirection::Row gap=4>
+                <FlexBox flex_direction=FlexDirection::Row gap=4>
                     <Checkbox checked=notifications label="Desktop Notifications" />
                     <Switch checked=auto_save label="Auto-save to disk" />
-                </Box>
+                </FlexBox>
 
                 <Divider />
 
-                <Box flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
-                    <Text color=Color::DarkGrey>"Tab: Navigate | Space/Enter: Toggle | Esc: Quit"</Text>
+                <FlexBox flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
+                    <TextSpan color=Color::DarkGrey>"Tab: Navigate | Space/Enter: Toggle | Esc: Quit"</TextSpan>
                     <Button
                         on_click={move || status_tag.set(String::from("v0.2.0-rc"))}
                     >
                         "Tag Release"
                     </Button>
-                </Box>
-            </Box>
-        </Box>
+                </FlexBox>
+            </FlexBox>
+        </FlexBox>
     }
 }
 

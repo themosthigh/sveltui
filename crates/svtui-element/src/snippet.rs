@@ -183,6 +183,12 @@ impl IntoPropOption<Snippet<()>> for VNode {
     }
 }
 
+impl IntoPropOption<Snippet<()>> for Option<VNode> {
+    fn into_prop_option(self) -> Option<Snippet<()>> {
+        self.map(Snippet::from)
+    }
+}
+
 impl<F: Fn() + 'static> IntoPropOption<Rc<dyn Fn()>> for F {
     fn into_prop_option(self) -> Option<Rc<dyn Fn()>> {
         Some(Rc::new(self))
@@ -219,6 +225,30 @@ impl IntoPropOption<svtui_layout::Size> for svtui_layout::Size {
     }
 }
 
+impl IntoPropOption<svtui_layout::Size> for u16 {
+    fn into_prop_option(self) -> Option<svtui_layout::Size> {
+        Some(svtui_layout::Size::Fixed(self))
+    }
+}
+
+impl IntoPropOption<svtui_layout::Size> for i32 {
+    fn into_prop_option(self) -> Option<svtui_layout::Size> {
+        Some(svtui_layout::Size::Fixed(self as u16))
+    }
+}
+
+impl IntoPropOption<svtui_layout::Padding> for u16 {
+    fn into_prop_option(self) -> Option<svtui_layout::Padding> {
+        Some(svtui_layout::Padding::all(self))
+    }
+}
+
+impl IntoPropOption<svtui_layout::Padding> for i32 {
+    fn into_prop_option(self) -> Option<svtui_layout::Padding> {
+        Some(svtui_layout::Padding::all(self as u16))
+    }
+}
+
 impl IntoPropOption<svtui_layout::Padding> for svtui_layout::Padding {
     fn into_prop_option(self) -> Option<svtui_layout::Padding> {
         Some(self)
@@ -239,6 +269,24 @@ impl IntoPropOption<u32> for u32 {
 
 impl IntoPropOption<i32> for i32 {
     fn into_prop_option(self) -> Option<i32> {
+        Some(self)
+    }
+}
+
+impl IntoPropOption<u16> for u16 {
+    fn into_prop_option(self) -> Option<u16> {
+        Some(self)
+    }
+}
+
+impl IntoPropOption<f32> for f32 {
+    fn into_prop_option(self) -> Option<f32> {
+        Some(self)
+    }
+}
+
+impl IntoPropOption<f64> for f64 {
+    fn into_prop_option(self) -> Option<f64> {
         Some(self)
     }
 }

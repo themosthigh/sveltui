@@ -16,7 +16,7 @@ pub struct BadgeProps {
 #[component]
 pub fn Badge(props: BadgeProps) -> impl IntoNode {
     view! {
-        <Box
+        <FlexBox
             border=BorderStyle::Single
             border_color=props.fg
             bg=props.bg
@@ -27,8 +27,8 @@ pub fn Badge(props: BadgeProps) -> impl IntoNode {
         {#if props.children.is_some()}
             {@render props.children}
         {:else if let Some(label) = &props.label}
-            <Text color=props.fg>{label.clone()}</Text>
+            <TextSpan fg=props.fg>{label.clone()}</TextSpan>
         {/if}
-        </Box>
+        </FlexBox>
     }
 }

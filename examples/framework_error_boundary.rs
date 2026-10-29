@@ -13,10 +13,10 @@ fn FlakyWidget(props: FlakyWidgetProps) -> impl IntoNode {
     }
 
     view! {
-        <Box border=BorderStyle::Single border_color=Color::White padding=Padding::all(1) gap=1>
-            <Text color=Color::White bold=true>"Child Widget: Running Healthy"</Text>
-            <Text color=Color::DarkGrey>"Calculations proceeding normally. Click 'Trigger Panic' below to test isolation."</Text>
-        </Box>
+        <FlexBox border=BorderStyle::Single border_color=Color::White padding=Padding::all(1) gap=1>
+            <TextSpan color=Color::White bold=true>"Child Widget: Running Healthy"</TextSpan>
+            <TextSpan color=Color::DarkGrey>"Calculations proceeding normally. Click 'Trigger Panic' below to test isolation."</TextSpan>
+        </FlexBox>
     }
 }
 
@@ -25,18 +25,18 @@ fn ErrorBoundaryDemo() -> impl IntoNode {
     let should_crash = state(false);
 
     view! {
-        <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
-            <Box
+        <FlexBox width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
+            <FlexBox
                 width=72
                 border=BorderStyle::Double
                 border_color=Color::DarkGrey
                 padding=Padding::all(1)
                 gap=1
             >
-                <Text color=Color::White bold=true>"framework_error_boundary: Crash Isolation & Recovery"</Text>
+                <TextSpan color=Color::White bold=true>"framework_error_boundary: Crash Isolation & Recovery"</TextSpan>
                 <Divider />
 
-                <Box flex_direction=FlexDirection::Row gap=1 align_items=Align::Center>
+                <FlexBox flex_direction=FlexDirection::Row gap=1 align_items=Align::Center>
                     <Button
                         on_click={move || should_crash.set(true)}
                     >
@@ -47,29 +47,29 @@ fn ErrorBoundaryDemo() -> impl IntoNode {
                     >
                         "Recover Normal State"
                     </Button>
-                </Box>
+                </FlexBox>
 
-                <Box height=1 />
+                <FlexBox height=1 />
 
                 // Error boundary isolates panics without crashing the entire terminal app
                 <ErrorBoundary>
                     {#snippet fallback(error)}
-                        <Box
+                        <FlexBox
                             border=BorderStyle::Double
                             border_color=Color::White
                             padding=Padding::all(1)
                             gap=1
                         >
-                            <Text color=Color::White bold=true>"[ErrorBoundary Caught Failure]"</Text>
-                            <Text color=Color::DarkGrey>{format!("Panic payload: {error}")}</Text>
-                            <Text color=Color::DarkGrey>"Outer application remains fully interactive. Click 'Recover' above."</Text>
-                        </Box>
+                            <TextSpan color=Color::White bold=true>"[ErrorBoundary Caught Failure]"</TextSpan>
+                            <TextSpan color=Color::DarkGrey>{format!("Panic payload: {error}")}</TextSpan>
+                            <TextSpan color=Color::DarkGrey>"Outer application remains fully interactive. Click 'Recover' above."</TextSpan>
+                        </FlexBox>
                     {/snippet}
 
                     <FlakyWidget should_crash=should_crash />
                 </ErrorBoundary>
-            </Box>
-        </Box>
+            </FlexBox>
+        </FlexBox>
     }
 }
 

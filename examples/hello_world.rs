@@ -5,7 +5,7 @@ use svtui::prelude::*;
 fn main() -> Result<()> {
     App::new(|| {
         view! {
-            <Text>"Hello, world!"</Text>
+            <TextSpan>"Hello, world!"</TextSpan>
         }
     })
     .on_key(exit_shortcuts)

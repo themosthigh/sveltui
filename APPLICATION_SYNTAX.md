@@ -12,9 +12,9 @@ fn main() -> std::io::Result<()> {
 #[component]
 fn Application() -> impl IntoNode {
     view! {
-        <Box border=BorderStyle::Single padding=Padding::all(1)>
-            <Text>"Hello, svtui"</Text>
-        </Box>
+        <FlexBox border=BorderStyle::Single padding=Padding::all(1)>
+            <TextSpan>"Hello, svtui"</TextSpan>
+        </FlexBox>
     }
 }
 ```
@@ -27,13 +27,13 @@ fn Counter() -> impl IntoNode {
     let count = state(0);
 
     view! {
-        <Box>
-            <Text>{count.get().to_string()}</Text>
+        <FlexBox>
+            <TextSpan>{count.get().to_string()}</TextSpan>
             <Button on_click={move || count.update(|value| *value += 1)}>
                 "Increment"
             </Button>
             <Button on_click={move || count.set(0)}>"Reset"</Button>
-        </Box>
+        </FlexBox>
     }
 }
 ```
@@ -48,12 +48,12 @@ fn Total() -> impl IntoNode {
     let total = derived(move || quantity.get() * unit_price.get());
 
     view! {
-        <Box>
-            <Text>{format!("Total: {}", total.get())}</Text>
+        <FlexBox>
+            <TextSpan>{format!("Total: {}", total.get())}</TextSpan>
             <Button on_click={move || quantity.update(|value| *value += 1)}>
                 "Add one"
             </Button>
-        </Box>
+        </FlexBox>
     }
 }
 ```
@@ -91,7 +91,7 @@ fn Session() -> impl IntoNode {
         let _ = std::fs::remove_file("session.tmp");
     });
 
-    view! { <Text>"Session active"</Text> }
+    view! { <TextSpan>"Session active"</TextSpan> }
 }
 ```
 
@@ -104,7 +104,7 @@ fn Profile() -> impl IntoNode {
     let email = state(String::new());
 
     view! {
-        <Box>
+        <FlexBox>
             <TextInput value=name placeholder="Name" />
             <TextInput value=email placeholder="Email" />
             <Button on_click={move || batch(|| {
@@ -113,7 +113,7 @@ fn Profile() -> impl IntoNode {
             })}>
                 "Clear"
             </Button>
-        </Box>
+        </FlexBox>
     }
 }
 ```
@@ -128,7 +128,7 @@ struct CounterValueProps {
 
 #[component]
 fn CounterValue(props: CounterValueProps) -> impl IntoNode {
-    view! { <Text>{props.count.get().to_string()}</Text> }
+    view! { <TextSpan>{props.count.get().to_string()}</TextSpan> }
 }
 
 #[component]
@@ -136,12 +136,12 @@ fn CounterPanel() -> impl IntoNode {
     let count = state(0);
 
     view! {
-        <Box>
+        <FlexBox>
             <CounterValue count=count />
             <Button on_click={move || count.update(|value| *value += 1)}>
                 "Increment"
             </Button>
-        </Box>
+        </FlexBox>
     }
 }
 ```
@@ -161,12 +161,12 @@ struct GreetingProps {
 #[component]
 fn Greeting(props: GreetingProps) -> impl IntoNode {
     view! {
-        <Box gap={if props.compact { 0 } else { 1 }}>
-            <Text>{format!("Hello, {}", props.name.get())}</Text>
+        <FlexBox gap={if props.compact { 0 } else { 1 }}>
+            <TextSpan>{format!("Hello, {}", props.name.get())}</TextSpan>
             {#if let Some(subtitle) = &props.subtitle}
-                <Text>{subtitle.clone()}</Text>
+                <TextSpan>{subtitle.clone()}</TextSpan>
             {/if}
-        </Box>
+        </FlexBox>
     }
 }
 
@@ -175,10 +175,10 @@ fn Greetings() -> impl IntoNode {
     let name = state(String::from("Ada"));
 
     view! {
-        <Box>
+        <FlexBox>
             <Greeting name=name />
             <Greeting name=name subtitle=Some(String::from("Welcome")) compact=true />
-        </Box>
+        </FlexBox>
     }
 }
 ```
@@ -208,15 +208,15 @@ struct DialogProps {
 #[component]
 fn Dialog(props: DialogProps) -> impl IntoNode {
     view! {
-        <Box border=BorderStyle::Double padding=Padding::all(1)>
-            <Box>{@render props.header}</Box>
+        <FlexBox border=BorderStyle::Double padding=Padding::all(1)>
+            <FlexBox>{@render props.header}</FlexBox>
             <Divider />
-            <Box>{@render props.children}</Box>
+            <FlexBox>{@render props.children}</FlexBox>
             {#if let Some(footer) = &props.footer}
                 <Divider />
-                <Box>{@render footer}</Box>
+                <FlexBox>{@render footer}</FlexBox>
             {/if}
-        </Box>
+        </FlexBox>
     }
 }
 
@@ -225,10 +225,10 @@ fn ConfirmDelete() -> impl IntoNode {
     view! {
         <Dialog>
             {#snippet header}
-                <Text>"Confirm Delete"</Text>
+                <TextSpan>"Confirm Delete"</TextSpan>
             {/snippet}
 
-            <Text>"Are you sure you want to delete this item?"</Text>
+            <TextSpan>"Are you sure you want to delete this item?"</TextSpan>
 
             {#snippet footer}
                 <Button>"Cancel"</Button>
@@ -252,11 +252,11 @@ struct ListViewProps<T: 'static> {
 #[component]
 fn ListView<T: Clone + 'static>(props: ListViewProps<T>) -> impl IntoNode {
     view! {
-        <Box>
+        <FlexBox>
             {#each props.items.get() as item}
                 {@render props.row(item)}
             {/each}
-        </Box>
+        </FlexBox>
     }
 }
 
@@ -267,7 +267,7 @@ fn UserDirectory() -> impl IntoNode {
     view! {
         <ListView items=users>
             {#snippet row(user)}
-                <Text>{user}</Text>
+                <TextSpan>{user}</TextSpan>
             {/snippet}
         </ListView>
     }
@@ -286,15 +286,15 @@ struct ConnectionStatusProps {
 #[component]
 fn ConnectionStatus(props: ConnectionStatusProps) -> impl IntoNode {
     view! {
-        <Box>
+        <FlexBox>
             {#if props.connected.get()}
                 <Badge label="Online" />
             {:else if props.retries.get() > 3}
-                <Text>"Connection failed"</Text>
+                <TextSpan>"Connection failed"</TextSpan>
             {:else}
-                <Text>{format!("Retrying ({})...", props.retries.get())}</Text>
+                <TextSpan>{format!("Retrying ({})...", props.retries.get())}</TextSpan>
             {/if}
-        </Box>
+        </FlexBox>
     }
 }
 ```
@@ -317,16 +317,16 @@ struct TaskListProps {
 #[component]
 fn TaskList(props: TaskListProps) -> impl IntoNode {
     view! {
-        <Box>
+        <FlexBox>
             {#each props.tasks.get() as task (task.id)}
-                <Box flex_direction=FlexDirection::Row gap=1>
+                <FlexBox flex_direction=FlexDirection::Row gap=1>
                     <Checkbox checked=task.done />
-                    <Text>{task.title.clone()}</Text>
-                </Box>
+                    <TextSpan>{task.title.clone()}</TextSpan>
+                </FlexBox>
             {:else}
-                <Text>"No tasks remaining"</Text>
+                <TextSpan>"No tasks remaining"</TextSpan>
             {/each}
-        </Box>
+        </FlexBox>
     }
 }
 ```
@@ -342,12 +342,12 @@ struct StepperProps {
 #[component]
 fn Stepper(props: StepperProps) -> impl IntoNode {
     view! {
-        <Box>
-            <Text>{props.value.get().to_string()}</Text>
+        <FlexBox>
+            <TextSpan>{props.value.get().to_string()}</TextSpan>
             <Button on_click={move || props.value.update(|current| *current += 1)}>
                 "+"
             </Button>
-        </Box>
+        </FlexBox>
     }
 }
 
@@ -363,7 +363,7 @@ fn StepperPanel() -> impl IntoNode {
 
 ```rust
 fn stepper(value: State<i32>) -> impl IntoNode {
-    BoxElement::new()
+    FlexBoxElement::new()
         .child(move || TextElement::new(value.get().to_string()))
         .child(
             Button::new("+")
@@ -393,9 +393,9 @@ fn SessionProvider() -> impl IntoNode {
     };
 
     view! {
-        <Provider value=session>
+        <ContextProvider value=session>
             <SessionName />
-        </Provider>
+        </ContextProvider>
     }
 }
 
@@ -404,10 +404,10 @@ fn SessionName() -> impl IntoNode {
     let session = use_context::<SessionContext>().expect("Session provider required");
 
     view! {
-        <Box>
-            <Text>{session.username.get()}</Text>
+        <FlexBox>
+            <TextSpan>{session.username.get()}</TextSpan>
             <TextInput value=session.username />
-        </Box>
+        </FlexBox>
     }
 }
 ```
@@ -423,14 +423,14 @@ struct ParsedNumberProps {
 #[component]
 fn ParsedNumber(props: ParsedNumberProps) -> impl IntoNode {
     view! {
-        <Text>
+        <TextSpan>
             {props
                 .input
                 .get()
                 .parse::<i32>()
                 .expect("Invalid number")
                 .to_string()}
-        </Text>
+        </TextSpan>
     }
 }
 
@@ -439,16 +439,16 @@ fn NumberEditor() -> impl IntoNode {
     let input = state(String::from("42"));
 
     view! {
-        <Box>
+        <FlexBox>
             <TextInput value=input />
             <ErrorBoundary>
                 {#snippet fallback(error)}
-                    <Text>{format!("Component crashed: {error}")}</Text>
+                    <TextSpan>{format!("Component crashed: {error}")}</TextSpan>
                 {/snippet}
 
                 <ParsedNumber input=input />
             </ErrorBoundary>
-        </Box>
+        </FlexBox>
     }
 }
 ```
@@ -465,16 +465,16 @@ fn Document() -> impl IntoNode {
     let path = state(String::from("notes.txt"));
 
     view! {
-        <Box>
+        <FlexBox>
             <TextInput value=path />
             {#await load_document(path.get())}
-                <Text>"Loading..."</Text>
+                <TextSpan>"Loading..."</TextSpan>
             {:then text}
-                <Text>{text}</Text>
+                <TextSpan>{text}</TextSpan>
             {:catch error}
-                <Text>{format!("Could not load document: {error}")}</Text>
+                <TextSpan>{format!("Could not load document: {error}")}</TextSpan>
             {/await}
-        </Box>
+        </FlexBox>
     }
 }
 ```
@@ -501,6 +501,6 @@ fn BackgroundScan() -> impl IntoNode {
         move || task.abort()
     });
 
-    view! { <Text>{status.get()}</Text> }
+    view! { <TextSpan>{status.get()}</TextSpan> }
 }
 ```

@@ -7,8 +7,8 @@ fn LayoutDemo() -> impl IntoNode {
     let gap = state(2u16);
 
     view! {
-        <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
-            <Box
+        <FlexBox width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
+            <FlexBox
                 width=76
                 height=Size::Fill
                 max_height=30
@@ -17,13 +17,13 @@ fn LayoutDemo() -> impl IntoNode {
                 padding=Padding::all(1)
                 gap=1
             >
-                <Box flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
-                    <Text color=Color::White bold=true>"component_layout: Flexbox Engine"</Text>
-                    <Text color=Color::DarkGrey>{format!("Axis: {:?}", direction.get())}</Text>
-                </Box>
+                <FlexBox flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
+                    <TextSpan color=Color::White bold=true>"component_layout: Flexbox Engine"</TextSpan>
+                    <TextSpan color=Color::DarkGrey>{format!("Axis: {:?}", direction.get())}</TextSpan>
+                </FlexBox>
                 <Divider />
 
-                <Box flex_direction=FlexDirection::Row gap=1>
+                <FlexBox flex_direction=FlexDirection::Row gap=1>
                     <Button
                         on_click={move || direction.set(FlexDirection::Row)}
                     >
@@ -39,12 +39,12 @@ fn LayoutDemo() -> impl IntoNode {
                     >
                         {format!("Cycle Gap ({})", gap.get())}
                     </Button>
-                </Box>
+                </FlexBox>
 
-                <Box height=1 />
+                <FlexBox height=1 />
 
                 // Interactive Flex Container
-                <Box
+                <FlexBox
                     width=Size::Fill
                     height=Size::Fill
                     flex_direction=direction.get()
@@ -54,7 +54,7 @@ fn LayoutDemo() -> impl IntoNode {
                     padding=Padding::all(1)
                     overflow=Overflow::Auto
                 >
-                    <Box
+                    <FlexBox
                         width=Size::Fill
                         height=Size::Fill
                         min_width=16
@@ -63,11 +63,11 @@ fn LayoutDemo() -> impl IntoNode {
                         border_color=Color::White
                         padding=Padding::all(1)
                     >
-                        <Text color=Color::White bold=true>"Child A"</Text>
-                        <Text color=Color::DarkGrey>"Flexible share"</Text>
-                    </Box>
+                        <TextSpan color=Color::White bold=true>"Child A"</TextSpan>
+                        <TextSpan color=Color::DarkGrey>"Flexible share"</TextSpan>
+                    </FlexBox>
 
-                    <Box
+                    <FlexBox
                         width=Size::Fill
                         height=Size::Fill
                         min_width=16
@@ -76,11 +76,11 @@ fn LayoutDemo() -> impl IntoNode {
                         border_color=Color::White
                         padding=Padding::all(1)
                     >
-                        <Text color=Color::White bold=true>"Child B"</Text>
-                        <Text color=Color::DarkGrey>"Shares space"</Text>
-                    </Box>
+                        <TextSpan color=Color::White bold=true>"Child B"</TextSpan>
+                        <TextSpan color=Color::DarkGrey>"Shares space"</TextSpan>
+                    </FlexBox>
 
-                    <Box
+                    <FlexBox
                         width=Size::Fill
                         height=Size::Fill
                         min_width=16
@@ -89,15 +89,15 @@ fn LayoutDemo() -> impl IntoNode {
                         border_color=Color::White
                         padding=Padding::all(1)
                     >
-                        <Text color=Color::White bold=true>"Child C"</Text>
-                        <Text color=Color::DarkGrey>"Even flex split"</Text>
-                    </Box>
-                </Box>
+                        <TextSpan color=Color::White bold=true>"Child C"</TextSpan>
+                        <TextSpan color=Color::DarkGrey>"Even flex split"</TextSpan>
+                    </FlexBox>
+                </FlexBox>
 
                 <Divider />
-                <Text color=Color::DarkGrey>"Tab: Switch controls | Space/Enter: Click | Q/Esc: Quit"</Text>
-            </Box>
-        </Box>
+                <TextSpan color=Color::DarkGrey>"Tab: Switch controls | Space/Enter: Click | Q/Esc: Quit"</TextSpan>
+            </FlexBox>
+        </FlexBox>
     }
 }
 

@@ -52,13 +52,13 @@ fn FormDemo() -> impl IntoNode {
     let sub_opt = submitted.get();
 
     view! {
-        <Box
+        <FlexBox
             width=Size::Fill
             height=Size::Fill
             align_items=Align::Center
             justify_content=Justify::Center
         >
-            <Box
+            <FlexBox
                 border=BorderStyle::Single
                 border_color=Color::DarkGrey
                 title=" Registration Form "
@@ -66,7 +66,7 @@ fn FormDemo() -> impl IntoNode {
                 width=54
                 gap=1
             >
-                <Text color=Color::White bold=true>"Create Account"</Text>
+                <TextSpan color=Color::White bold=true>"Create Account"</TextSpan>
                 <Divider />
 
                 <TextInput
@@ -95,29 +95,29 @@ fn FormDemo() -> impl IntoNode {
 
                 <Divider />
 
-                <Box flex_direction=FlexDirection::Row gap=1>
+                <FlexBox flex_direction=FlexDirection::Row gap=1>
                     <Button on_click={on_submit}>
                         "Submit Registration"
                     </Button>
                     <Button on_click={on_clear}>
                         "Clear"
                     </Button>
-                </Box>
+                </FlexBox>
 
                 {#if sub_opt.is_some()}
-                    <Box
+                    <FlexBox
                         border=BorderStyle::Single
                         border_color=Color::White
                         padding=Padding::all(1)
                     >
-                        <Text color=Color::White bold=true>"[Registration Confirmed]"</Text>
-                        <Text>{format!("Name: {}", sub_opt.as_ref().unwrap().name)}</Text>
-                        <Text color=Color::DarkGrey>{format!("Email: {}", sub_opt.as_ref().unwrap().email)}</Text>
-                        <Text color=Color::DarkGrey>{format!("Newsletter: {}", sub_opt.as_ref().unwrap().newsletter)}</Text>
-                    </Box>
+                        <TextSpan color=Color::White bold=true>"[Registration Confirmed]"</TextSpan>
+                        <TextSpan>{format!("Name: {}", sub_opt.as_ref().unwrap().name)}</TextSpan>
+                        <TextSpan color=Color::DarkGrey>{format!("Email: {}", sub_opt.as_ref().unwrap().email)}</TextSpan>
+                        <TextSpan color=Color::DarkGrey>{format!("Newsletter: {}", sub_opt.as_ref().unwrap().newsletter)}</TextSpan>
+                    </FlexBox>
                 {/if}
-            </Box>
-        </Box>
+            </FlexBox>
+        </FlexBox>
     }
 }
 

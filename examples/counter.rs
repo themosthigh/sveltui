@@ -17,14 +17,14 @@ fn CounterApp() -> impl IntoNode {
 
     view! {
 
-        <Box
+        <FlexBox
             height=Size::Fill
             width=Size::Fill
             align_items=Align::Center
             justify_content=Justify::Center
         >
 
-            <Box
+            <FlexBox
                 flex_direction=FlexDirection::Row
                 align_items=Align::Center
                 justify_content=Justify::Center
@@ -38,14 +38,14 @@ fn CounterApp() -> impl IntoNode {
                      "-"
                  </Button>
 
-                 <Text>{count.get().to_string()}</Text>
+                 <TextSpan>{count.get().to_string()}</TextSpan>
 
                  <Button on_click={move || count.set(count.get() + 1)}>
                      "+"
                  </Button>
 
-            </Box>
+            </FlexBox>
 
-        </Box>
+        </FlexBox>
     }
 }

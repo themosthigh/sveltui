@@ -20,10 +20,9 @@ pub fn view(input: TokenStream) -> TokenStream {
 pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as ItemFn);
     let vis = &input_fn.vis;
-    let sig = &input_fn.sig;
     let block = &input_fn.block;
     let attrs = &input_fn.attrs;
-    let fn_name = &sig.ident;
+    let fn_name = &input_fn.sig.ident;
 
     let pkg = std::env::var("CARGO_PKG_NAME").unwrap_or_default();
     let root = if pkg == "svtui-reactive" {
@@ -32,10 +31,43 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
         quote! { ::svtui::reactive }
     };
 
+    let props_ident = quote::format_ident!("{}Props", fn_name);
+    let builder_ident = quote::format_ident!("{}PropsBuilder", fn_name);
+
+    let (synthesized_props, new_sig) = if input_fn.sig.inputs.is_empty() {
+        let mut new_sig = input_fn.sig.clone();
+        new_sig.inputs.push(syn::parse_quote!(_props: #props_ident));
+
+        let props_def = quote! {
+            #[derive(Clone, Copy, Default)]
+            #vis struct #props_ident;
+
+            #[derive(Clone, Copy, Default)]
+            #vis struct #builder_ident;
+
+            impl #props_ident {
+                pub fn builder() -> #builder_ident {
+                    #builder_ident
+                }
+            }
+
+            impl #builder_ident {
+                pub fn build(self) -> #props_ident {
+                    #props_ident
+                }
+            }
+        };
+        (Some(props_def), new_sig)
+    } else {
+        (None, input_fn.sig.clone())
+    };
+
     let expanded = quote! {
+        #synthesized_props
+
         #(#attrs)*
         #[allow(non_snake_case)]
-        #vis #sig {
+        #vis #new_sig {
             #root::ComponentScope::run_scoped(stringify!(#fn_name), move || {
                 #block
             })
@@ -194,19 +226,69 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
                     });
                 } else if is_snippet {
                     let slot_fn = quote::format_ident!("slot_{}", field_name);
+                    let opt_field = quote::format_ident!("opt_{}", field_name);
                     setters.push(quote! {
                         pub fn #slot_fn(mut self, val: impl #root::IntoPropOption<#inner_ty>) -> Self {
                             self.#field_name = Some(val.into_prop_option());
                             self
                         }
-                    });
-                } else {
-                    setters.push(quote! {
                         pub fn #field_name(mut self, val: impl #root::IntoPropOption<#inner_ty>) -> Self {
                             self.#field_name = Some(val.into_prop_option());
                             self
                         }
+                        pub fn #opt_field(mut self, val: #field_ty) -> Self {
+                            self.#field_name = Some(val);
+                            self
+                        }
                     });
+                } else {
+                    let opt_field = quote::format_ident!("opt_{}", field_name);
+                    let s = quote!(#inner_ty).to_string().replace(" ", "");
+                    if s.contains("Rc<dynFn()") || s.contains("Rc<(dynFn())") {
+                        setters.push(quote! {
+                            pub fn #field_name(mut self, val: impl #root::IntoClickHandler) -> Self {
+                                self.#field_name = Some(Some(val.into_click_handler()));
+                                self
+                            }
+                            pub fn #opt_field(mut self, val: #field_ty) -> Self {
+                                self.#field_name = Some(val);
+                                self
+                            }
+                        });
+                    } else if s.contains("KeyHandler") || s.contains("KeyEvent") {
+                        setters.push(quote! {
+                            pub fn #field_name(mut self, val: impl #root::IntoKeyHandler) -> Self {
+                                self.#field_name = Some(Some(val.into_key_handler()));
+                                self
+                            }
+                            pub fn #opt_field(mut self, val: #field_ty) -> Self {
+                                self.#field_name = Some(val);
+                                self
+                            }
+                        });
+                    } else if s.contains("WriteSignal") || s.contains("ReadSignal") {
+                        setters.push(quote! {
+                            pub fn #field_name(mut self, val: #inner_ty) -> Self {
+                                self.#field_name = Some(Some(val));
+                                self
+                            }
+                            pub fn #opt_field(mut self, val: #field_ty) -> Self {
+                                self.#field_name = Some(val);
+                                self
+                            }
+                        });
+                    } else {
+                        setters.push(quote! {
+                            pub fn #field_name(mut self, val: impl #root::IntoPropOption<#inner_ty>) -> Self {
+                                self.#field_name = Some(val.into_prop_option());
+                                self
+                            }
+                            pub fn #opt_field(mut self, val: #field_ty) -> Self {
+                                self.#field_name = Some(val);
+                                self
+                            }
+                        });
+                    }
                 }
             } else {
                 if field_name == "children" {

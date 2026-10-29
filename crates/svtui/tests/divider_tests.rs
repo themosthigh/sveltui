@@ -15,9 +15,9 @@ fn line(buffer: &Buffer, y: u16, start: u16, end: u16) -> String {
 #[test]
 fn divider_fills_wide_container_content_width() {
     let node = view! {
-        <Box width=80 border=BorderStyle::Single padding=1>
+        <FlexBox width=80 border=BorderStyle::Single padding=1>
             <Divider />
-        </Box>
+        </FlexBox>
     };
     let buffer = render(&node, 100, 10);
     assert_eq!(line(&buffer, 2, 2, 78), "─".repeat(76));
@@ -27,7 +27,7 @@ fn divider_fills_wide_container_content_width() {
 
 #[test]
 fn divider_never_paints_past_a_narrow_allocation() {
-    let node = view! { <Box width=10><Divider /></Box> };
+    let node = view! { <FlexBox width=10><Divider /></FlexBox> };
     let buffer = render(&node, 60, 5);
     assert_eq!(line(&buffer, 0, 0, 10), "─".repeat(10));
     assert_eq!(buffer.get(10, 0).unwrap().ch, ' ');
@@ -35,7 +35,7 @@ fn divider_never_paints_past_a_narrow_allocation() {
 
 #[test]
 fn divider_does_not_force_an_auto_container_to_an_arbitrary_width() {
-    let node = view! { <Box><Text>"Content"</Text><Divider /></Box> };
+    let node = view! { <FlexBox><TextSpan>"Content"</TextSpan><Divider /></FlexBox> };
     let buffer = render(&node, 100, 5);
     assert_eq!(line(&buffer, 1, 0, 7), "─".repeat(7));
     assert_eq!(buffer.get(7, 1).unwrap().ch, ' ');
@@ -53,9 +53,9 @@ fn divider_honors_fixed_percentage_fill_and_width_limits() {
         (Size::Fixed(0), 0, 40, 0),
     ] {
         let node = view! {
-            <Box width=40>
+            <FlexBox width=40>
                 <Divider width=width min_width=min max_width=max />
-            </Box>
+            </FlexBox>
         };
         let buffer = render(&node, 60, 5);
         assert_eq!(
@@ -69,11 +69,11 @@ fn divider_honors_fixed_percentage_fill_and_width_limits() {
 #[test]
 fn divider_fills_its_share_of_a_flex_row() {
     let node = view! {
-        <Box width=50 height=1 flex_direction=FlexDirection::Row gap=1>
-            <Box width=10 height=1><Text>"Fixed"</Text></Box>
+        <FlexBox width=50 height=1 flex_direction=FlexDirection::Row gap=1>
+            <FlexBox width=10 height=1><TextSpan>"Fixed"</TextSpan></FlexBox>
             <Divider />
             <Divider max_width=12 />
-        </Box>
+        </FlexBox>
     };
     let buffer = render(&node, 60, 3);
     assert_eq!(line(&buffer, 0, 11, 37), "─".repeat(26));
@@ -85,9 +85,9 @@ fn divider_fills_its_share_of_a_flex_row() {
 #[test]
 fn titled_dividers_clip_and_fill_after_resizing_the_same_tree() {
     let node = view! {
-        <Box width=Size::Fill height=2>
+        <FlexBox width=Size::Fill height=2>
             <Divider title="Settings" />
-        </Box>
+        </FlexBox>
     };
     for width in [0, 1, 5, 12, 30, 100] {
         let buffer = render(&node, width, 3);
@@ -104,10 +104,10 @@ fn titled_dividers_clip_and_fill_after_resizing_the_same_tree() {
 #[test]
 fn divider_excludes_the_scrollbar_and_preserves_colors() {
     let node = view! {
-        <Box width=10 height=3 overflow=Overflow::Auto bg=Color::White>
+        <FlexBox width=10 height=3 overflow=Overflow::Auto bg=Color::White>
             <Divider color=Color::Black />
-            <Box height=4 />
-        </Box>
+            <FlexBox height=4 />
+        </FlexBox>
     };
     let buffer = render(&node, 20, 5);
     assert_eq!(line(&buffer, 0, 0, 9), "─".repeat(9));
@@ -123,9 +123,9 @@ fn divider_excludes_the_scrollbar_and_preserves_colors() {
 #[test]
 fn divider_fill_does_not_create_horizontal_scroll_content() {
     let node = view! {
-        <Box width=12 height=2 overflow_x=Overflow::Auto>
+        <FlexBox width=12 height=2 overflow_x=Overflow::Auto>
             <Divider />
-        </Box>
+        </FlexBox>
     };
     let buffer = render(&node, 30, 4);
     assert_eq!(line(&buffer, 0, 0, 12), "─".repeat(12));
@@ -135,14 +135,14 @@ fn divider_fill_does_not_create_horizontal_scroll_content() {
 #[test]
 fn text_fill_uses_allocated_width_without_inflating_intrinsic_measurement() {
     let node = view! {
-        <Box width=6 height=3 align_items=Align::Stretch>
-            <Text fill='.'>"ab\nx"</Text>
-        </Box>
+        <FlexBox width=6 height=3 align_items=Align::Stretch>
+            <Paragraph fill='.'>"ab\nx"</Paragraph>
+        </FlexBox>
     };
     let buffer = render(&node, 10, 5);
     assert_eq!(line(&buffer, 0, 0, 6), "ab....");
     assert_eq!(line(&buffer, 1, 0, 6), "x.....");
     assert_eq!(line(&buffer, 2, 0, 6), "      ");
-    let filled_text = view! { <Text fill='.'>"ab"</Text> };
+    let filled_text = view! { <Paragraph fill='.'>"ab"</Paragraph> };
     assert_eq!(svtui::element::measure_node(&filled_text, 80, 24), (2, 1));
 }

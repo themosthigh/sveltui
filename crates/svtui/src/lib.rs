@@ -7,11 +7,11 @@
 //! ```
 //! use svtui::prelude::*;
 //! let control = view! {
-//!     <Box tab_stop=true activation=Activation::Press
+//!     <FlexBox tab_stop=true activation=Activation::Press
 //!         semantics={Semantics::new(Role::Button, "Custom action")}
 //!         on_click={|| { /* perform the action */ }}>
-//!         <Text>"Custom action"</Text>
-//!     </Box>
+//!         <TextSpan>"Custom action"</TextSpan>
+//!     </FlexBox>
 //! };
 //! ```
 //!
@@ -62,9 +62,13 @@ pub use svtui_macros::{Props, component, view};
 pub use app::App;
 pub use element::collection::*;
 pub use element::interaction::*;
+pub use element::text_buffer::*;
 pub use element::{
-    BoxElement, ErrorBoundary, FocusHandle, FocusId, FocusState, HitMap, IntoNode, IntoPropOption,
-    OptionSnippetExt, OverlayElement, Provider, Snippet, TextElement, VNode, is_focused, use_focus,
+    ContextProvider, ContextProviderProps, ErrorBoundary, ErrorBoundaryProps, FlexBox,
+    FlexBoxElement, FlexBoxProps, FocusHandle, FocusId, FocusState, HitMap, IntoClickHandler,
+    IntoClickHandlerAt, IntoKeyHandler, IntoNode, IntoPropOption, IntoScrollHandler,
+    OptionSnippetExt, Overlay, OverlayElement, OverlayProps, Paragraph, ParagraphProps, Snippet,
+    TextElement, TextSpan, TextSpanProps, VNode, is_focused, is_layer_open, use_focus,
 };
 pub use layout::{
     Align, BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, ScrollbarChars,
@@ -82,10 +86,13 @@ pub mod prelude {
     pub use crate::app::App;
     pub use crate::element::collection::*;
     pub use crate::element::interaction::*;
+    pub use crate::element::text_buffer::*;
     pub use crate::element::{
-        BoxElement, ErrorBoundary, FocusHandle, FocusId, FocusState, HitMap, IntoNode,
-        IntoPropOption, OptionSnippetExt, OverlayElement, Provider, Snippet, TextElement, VNode,
-        is_focused, use_focus,
+        ContextProvider, ContextProviderProps, ErrorBoundary, ErrorBoundaryProps, FlexBox,
+        FlexBoxElement, FlexBoxProps, FocusHandle, FocusId, FocusState, HitMap, IntoClickHandler,
+        IntoClickHandlerAt, IntoKeyHandler, IntoNode, IntoPropOption, IntoScrollHandler,
+        OptionSnippetExt, Overlay, OverlayElement, OverlayProps, Paragraph, ParagraphProps,
+        Snippet, TextElement, TextSpan, TextSpanProps, VNode, is_focused, is_layer_open, use_focus,
     };
     pub use crate::layout::{
         Align, BorderStyle, FlexDirection, Justify, Overflow, Padding, Placement, ScrollbarChars,

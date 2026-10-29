@@ -7,7 +7,7 @@ fn test_jsx_custom_components_expansion() {
     let (checked, set_checked) = create_signal(true);
 
     let _node: VNode = view! {
-        <Box
+        <FlexBox
             min_width=20
             max_width=80
             min_height=5
@@ -20,9 +20,9 @@ fn test_jsx_custom_components_expansion() {
             <Checkbox checked=checked set_checked=set_checked label="Accept" />
             <TextInput value=val set_value=set_val placeholder="Type..." title="Input" />
             <Divider title="Separator" />
-            <ProgressBar ratio=0.75 width=20 />
+            <ProgressBar ratio=0.75f32 width=20u16 />
             <Badge bg=Color::Green fg=Color::Black>"Active"</Badge>
-        </Box>
+        </FlexBox>
     };
 }
 
@@ -32,13 +32,15 @@ fn test_jsx_overlay_components_expansion() {
     let (modal_open, set_modal_open) = create_signal(false);
 
     let _node: VNode = view! {
-        <Box width=80 height=24>
+        <FlexBox width=80 height=24>
             <DropdownMenu
                 open={is_open.get()}
                 placement=Placement::BottomStart
                 on_close={move || set_open.set(false)}
-                trigger=Button(ButtonProps::builder().children("Actions").build())
             >
+                {#snippet trigger()}
+                    <Button>"Actions"</Button>
+                {/snippet}
                 <DropdownItem label="Cut" />
                 <DropdownItem label="Copy" />
                 <DropdownItem label="Paste" />
@@ -49,12 +51,12 @@ fn test_jsx_overlay_components_expansion() {
                 title="Confirm Delete"
                 on_close={move || set_modal_open.set(false)}
             >
-                <Text>"Are you sure you want to delete this file?"</Text>
-                <Box justify_content=Justify::End>
+                <TextSpan>"Are you sure you want to delete this file?"</TextSpan>
+                <FlexBox justify_content=Justify::End>
                     <Button on_click={move || set_modal_open.set(false)}>"Cancel"</Button>
                     <Button on_click={move || set_modal_open.set(false)}>"Delete"</Button>
-                </Box>
+                </FlexBox>
             </Dialog>
-        </Box>
+        </FlexBox>
     };
 }

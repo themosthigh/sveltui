@@ -50,7 +50,7 @@ svtui/
 ├── crates/
 │   ├── svtui/                  # Main facade crate, App runtime, file watcher, prelude
 │   ├── svtui-components/       # Built-in components (Button, TextInput, Switch, Checkbox, etc.)
-│   ├── svtui-element/          # VNodes, BoxElement, TextElement, layout execution, hit testing, focus
+│   ├── svtui-element/          # VNodes, FlexBoxElement, TextElement, layout execution, hit testing, focus
 │   ├── svtui-layout/           # Flex layout, BorderStyle, Padding, Size, Rect geometry
 │   ├── svtui-macros/           # Declarative JSX macro (`view! { ... }`)
 │   ├── svtui-reactive/         # Fine-grained reactive signals (`create_signal`, `Runtime`)
@@ -66,13 +66,13 @@ svtui/
 - Components are instantiated via JSX syntax directly inside `view! { ... }`:
   ```rust
   view! {
-      <Box border=BorderStyle::Single title=" Dialog ">
+      <FlexBox border=BorderStyle::Single title=" Dialog ">
           <TextInput value=username set_value=set_username placeholder="User..." />
           <Divider title="Actions" />
           <Button variant=ButtonVariant::Primary on_click={move || submit()}>
               "Submit"
           </Button>
-      </Box>
+      </FlexBox>
   }
   ```
 - **Do not** use raw block expressions (`{ Component::new(...).into_node() }`) for components when standard JSX tags (`<Component ... />`) are available.

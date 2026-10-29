@@ -1,4 +1,4 @@
-use crate::node::{BoxElement, VNode};
+use crate::node::{FlexBoxElement, VNode};
 use svtui_layout::{
     BorderStyle, FlexDirection, FlexItem, ScrollbarVisibility, Size, resolve_flex_sizes,
 };
@@ -48,7 +48,7 @@ fn resolve(
     preferred.clamp(min, max)
 }
 
-pub(crate) fn decoration(b: &BoxElement) -> (u16, u16) {
+pub(crate) fn decoration(b: &FlexBoxElement) -> (u16, u16) {
     let border: u16 = if b.border == BorderStyle::None { 0 } else { 2 };
     (
         border
@@ -65,7 +65,7 @@ pub(crate) fn children(nodes: &[VNode]) -> Vec<&VNode> {
         for node in nodes {
             match node {
                 VNode::Empty => {}
-                VNode::Box(b) if b.interaction.as_ref().is_some_and(|i| i.hidden) => {}
+                VNode::FlexBox(b) if b.interaction.as_ref().is_some_and(|i| i.hidden) => {}
                 VNode::Fragment(items) => collect(items, output),
                 _ => output.push(node),
             }
@@ -84,9 +84,9 @@ pub(crate) fn in_flow(node: &VNode) -> bool {
     }
 }
 
-pub(crate) fn child_box(node: &VNode) -> Option<&BoxElement> {
+pub(crate) fn child_box(node: &VNode) -> Option<&FlexBoxElement> {
     match node {
-        VNode::Box(b) => Some(b),
+        VNode::FlexBox(b) => Some(b),
         VNode::Overlay(overlay) => overlay.trigger.as_deref().and_then(child_box),
         _ => None,
     }
@@ -169,7 +169,7 @@ pub(crate) fn measure(node: &VNode, bounds: Bounds) -> (u16, u16) {
                 .collect();
             content_size(FlexDirection::Column, &sizes, 0)
         }
-        VNode::Box(b) => {
+        VNode::FlexBox(b) => {
             let (extra_w, extra_h) = decoration(b);
             let known_w = definite(b.width, bounds.width).map(|w| {
                 let (min, max) = limits(b.min_width, b.max_width, bounds.width);

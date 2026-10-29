@@ -52,21 +52,21 @@ fn LoopsDemo() -> impl IntoNode {
     };
 
     view! {
-        <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
-            <Box
+        <FlexBox width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
+            <FlexBox
                 width=68
                 border=BorderStyle::Single
                 border_color=Color::DarkGrey
                 padding=Padding::all(1)
                 gap=1
             >
-                <Box flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween>
-                    <Text color=Color::White bold=true>"framework_loops: {#each} List Rendering"</Text>
-                    <Text color=Color::DarkGrey>{format!("Items: {}", tasks.get().len())}</Text>
-                </Box>
+                <FlexBox flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween>
+                    <TextSpan color=Color::White bold=true>"framework_loops: {#each} List Rendering"</TextSpan>
+                    <TextSpan color=Color::DarkGrey>{format!("Items: {}", tasks.get().len())}</TextSpan>
+                </FlexBox>
                 <Divider />
 
-                <Box flex_direction=FlexDirection::Row gap=1>
+                <FlexBox flex_direction=FlexDirection::Row gap=1>
                     <Button on_click={add_task}>
                         "+ Add Task"
                     </Button>
@@ -76,32 +76,32 @@ fn LoopsDemo() -> impl IntoNode {
                     <Button on_click={clear_all}>
                         "Clear All"
                     </Button>
-                </Box>
+                </FlexBox>
 
-                <Box height=1 />
+                <FlexBox height=1 />
 
                 // Render tasks or show empty list fallback
-                <Box gap=1 border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1)>
+                <FlexBox gap=1 border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1)>
                     {#each tasks.get() as task (task.id)}
-                        <Box flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
-                            <Box flex_direction=FlexDirection::Row gap=1>
-                                <Text color=if task.done { Color::DarkGrey } else { Color::White }>
+                        <FlexBox flex_direction=FlexDirection::Row justify_content=Justify::SpaceBetween align_items=Align::Center>
+                            <FlexBox flex_direction=FlexDirection::Row gap=1>
+                                <TextSpan color=if task.done { Color::DarkGrey } else { Color::White }>
                                     {if task.done { "[x]" } else { "[ ]" }}
-                                </Text>
-                                <Text color=if task.done { Color::DarkGrey } else { Color::White }>
+                                </TextSpan>
+                                <TextSpan color=if task.done { Color::DarkGrey } else { Color::White }>
                                     {task.title.clone()}
-                                </Text>
-                            </Box>
-                            <Text color=Color::DarkGrey>{format!("id:{}", task.id)}</Text>
-                        </Box>
+                                </TextSpan>
+                            </FlexBox>
+                            <TextSpan color=Color::DarkGrey>{format!("id:{}", task.id)}</TextSpan>
+                        </FlexBox>
                     {:else}
-                        <Box align_items=Align::Center padding=Padding::symmetric(0, 1)>
-                            <Text color=Color::DarkGrey>"No tasks remaining. Click '+ Add Task' above!"</Text>
-                        </Box>
+                        <FlexBox align_items=Align::Center padding=Padding::symmetric(0, 1)>
+                            <TextSpan color=Color::DarkGrey>"No tasks remaining. Click '+ Add Task' above!"</TextSpan>
+                        </FlexBox>
                     {/each}
-                </Box>
-            </Box>
-        </Box>
+                </FlexBox>
+            </FlexBox>
+        </FlexBox>
     }
 }
 

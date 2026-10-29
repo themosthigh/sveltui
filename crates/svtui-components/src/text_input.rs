@@ -1,12 +1,9 @@
-use crate::text_buffer::{TextBuffer, with_buffer, with_buffer_mut};
 use crossterm::event::{KeyCode, KeyEvent};
 use crossterm::style::Color;
 use std::rc::Rc;
-use svtui_element::{BoxElement, FocusId, IntoNode, TextElement, VNode, is_focused};
-use svtui_element::{EventResult, Role, Semantics};
-use svtui_layout::{Align, BorderStyle, Justify, Padding, Size};
-use svtui_reactive::{ReadSignal, State, WriteSignal};
+use svtui::prelude::*;
 
+#[derive(Clone)]
 pub enum TextInputBinding {
     Read(ReadSignal<String>),
     State(State<String>),
@@ -21,6 +18,24 @@ impl From<ReadSignal<String>> for TextInputBinding {
 impl From<State<String>> for TextInputBinding {
     fn from(s: State<String>) -> Self {
         Self::State(s)
+    }
+}
+
+impl IntoPropOption<TextInputBinding> for TextInputBinding {
+    fn into_prop_option(self) -> Option<TextInputBinding> {
+        Some(self)
+    }
+}
+
+impl IntoPropOption<TextInputBinding> for ReadSignal<String> {
+    fn into_prop_option(self) -> Option<TextInputBinding> {
+        Some(TextInputBinding::Read(self))
+    }
+}
+
+impl IntoPropOption<TextInputBinding> for State<String> {
+    fn into_prop_option(self) -> Option<TextInputBinding> {
+        Some(TextInputBinding::State(self))
     }
 }
 
@@ -39,237 +54,155 @@ pub fn set_cursor(id: FocusId, pos: usize) {
     });
 }
 
-#[derive(Clone, Default)]
-pub struct TextInput {
-    value: Option<ReadSignal<String>>,
-    set_value: Option<WriteSignal<String>>,
-    buffer: Option<ReadSignal<TextBuffer>>,
-    set_buffer: Option<WriteSignal<TextBuffer>>,
-    placeholder: String,
-    width: Size,
-    title: Option<String>,
-    id: Option<FocusId>,
-    on_submit: Option<Rc<dyn Fn(String)>>,
+#[derive(Props)]
+pub struct TextInputProps {
+    #[prop(optional)]
+    pub id: Option<FocusId>,
+    #[prop(optional)]
+    pub value: Option<TextInputBinding>,
+    #[prop(optional)]
+    pub set_value: Option<WriteSignal<String>>,
+    #[prop(optional)]
+    pub buffer: Option<ReadSignal<TextBuffer>>,
+    #[prop(optional)]
+    pub set_buffer: Option<WriteSignal<TextBuffer>>,
+    #[prop(default = String::from("Type here..."))]
+    pub placeholder: String,
+    #[prop(default = Size::Fixed(24))]
+    pub width: Size,
+    #[prop(optional)]
+    pub title: Option<String>,
+    #[prop(optional)]
+    pub on_submit: Option<Rc<dyn Fn(String)>>,
 }
 
-impl TextInput {
-    pub fn new(value: ReadSignal<String>, set_value: WriteSignal<String>) -> Self {
-        Self {
-            value: Some(value),
-            set_value: Some(set_value),
-            buffer: None,
-            set_buffer: None,
-            placeholder: String::from("Type here..."),
-            width: Size::Fixed(24),
-            title: None,
-            id: None,
-            on_submit: None,
-        }
-    }
+#[component]
+pub fn TextInput(props: TextInputProps) -> impl IntoNode {
+    let id = props.id.unwrap_or_default();
+    let focused = is_focused(id);
 
-    pub fn from_buffer(
-        buffer: ReadSignal<TextBuffer>,
-        set_buffer: WriteSignal<TextBuffer>,
-    ) -> Self {
-        Self {
-            value: None,
-            set_value: None,
-            buffer: Some(buffer),
-            set_buffer: Some(set_buffer),
-            placeholder: String::from("Type here..."),
-            width: Size::Fixed(24),
-            title: None,
-            id: None,
-            on_submit: None,
-        }
-    }
+    let border_style = if focused {
+        BorderStyle::Double
+    } else {
+        BorderStyle::Single
+    };
 
-    pub fn value(mut self, value: impl Into<TextInputBinding>) -> Self {
-        match value.into() {
-            TextInputBinding::Read(r) => {
-                self.value = Some(r);
-            }
-            TextInputBinding::State(s) => {
-                self.value = Some(s.read());
-                self.set_value = Some(s.write());
-            }
-        }
-        self
-    }
+    let border_color = if focused {
+        Color::White
+    } else {
+        Color::DarkGrey
+    };
 
-    pub fn set_value(mut self, set_value: WriteSignal<String>) -> Self {
-        self.set_value = Some(set_value);
-        self
-    }
+    let visible_width = match props.width {
+        Size::Fixed(w) => (w.saturating_sub(4)).max(1) as usize,
+        _ => 20,
+    };
 
-    pub fn buffer(mut self, buffer: ReadSignal<TextBuffer>) -> Self {
-        self.buffer = Some(buffer);
-        self
-    }
+    let (val_sig, binding_set_val) = match props.value {
+        Some(TextInputBinding::Read(r)) => (Some(r), None),
+        Some(TextInputBinding::State(s)) => (Some(s.read()), Some(s.write())),
+        None => (None, None),
+    };
 
-    pub fn set_buffer(mut self, set_buffer: WriteSignal<TextBuffer>) -> Self {
-        self.set_buffer = Some(set_buffer);
-        self
-    }
+    let set_value = props.set_value.or(binding_set_val);
 
-    pub fn placeholder(mut self, placeholder: impl Into<String>) -> Self {
-        self.placeholder = placeholder.into();
-        self
-    }
+    let (display_text, text_color, cursor_col) = with_buffer_mut(id, |buf| {
+        buf.set_multiline(false);
 
-    pub fn title(mut self, title: impl Into<String>) -> Self {
-        self.title = Some(title.into());
-        self
-    }
-
-    pub fn width(mut self, width: impl Into<Size>) -> Self {
-        self.width = width.into();
-        self
-    }
-
-    pub fn id(mut self, id: FocusId) -> Self {
-        self.id = Some(id);
-        self
-    }
-
-    pub fn on_submit<F>(mut self, handler: F) -> Self
-    where
-        F: Fn(String) + 'static,
-    {
-        self.on_submit = Some(Rc::new(handler));
-        self
-    }
-}
-
-impl IntoNode for TextInput {
-    fn into_node(self) -> VNode {
-        let id = self.id.unwrap_or_default();
-        let focused = is_focused(id);
-
-        let border_style = if focused {
-            BorderStyle::Double
-        } else {
-            BorderStyle::Single
-        };
-
-        let border_color = if focused {
-            Color::White
-        } else {
-            Color::DarkGrey
-        };
-
-        // Determine visible inner content width: width minus border (2) and padding (2)
-        let visible_width = match self.width {
-            Size::Fixed(w) => (w.saturating_sub(4)).max(1) as usize,
-            _ => 20,
-        };
-
-        // Sync or retrieve TextBuffer for this FocusId
-        let (display_text, text_color, cursor_col) = with_buffer_mut(id, |buf| {
+        if let Some(buf_sig) = props.buffer {
+            *buf = buf_sig.get();
             buf.set_multiline(false);
-
-            if let Some(buf_sig) = self.buffer {
-                *buf = buf_sig.get();
-                buf.set_multiline(false);
-            } else if let Some(val_sig) = self.value {
-                let current_val = val_sig.get();
-                if buf.content() != current_val {
-                    buf.set_content(current_val);
-                }
+        } else if let Some(vs) = val_sig {
+            let current_val = vs.get();
+            if buf.content() != current_val {
+                buf.set_content(current_val);
             }
+        }
 
-            buf.update_viewport(visible_width, 1);
-            let cur_col = (buf.cursor_col.saturating_sub(buf.scroll_col)) as u16;
+        buf.update_viewport(visible_width, 1);
+        let cur_col = (buf.cursor_col.saturating_sub(buf.scroll_col)) as u16;
 
-            if buf.is_empty() {
-                let ph = if self.placeholder.is_empty() {
-                    String::from("Type here...")
-                } else {
-                    self.placeholder.clone()
-                };
-                (ph, Color::DarkGrey, 0u16)
+        if buf.is_empty() {
+            let ph = if props.placeholder.is_empty() {
+                String::from("Type here...")
             } else {
-                let visible = buf.visible_text(visible_width);
-                (visible, Color::White, cur_col)
+                props.placeholder.clone()
+            };
+            (ph, Color::DarkGrey, 0u16)
+        } else {
+            let visible = buf.visible_text(visible_width);
+            (visible, Color::White, cur_col)
+        }
+    });
+
+    let set_buffer = props.set_buffer;
+    let on_submit = props.on_submit;
+
+    let on_click_at: Rc<dyn Fn(u16, u16)> = Rc::new(move |rel_x: u16, _rel_y: u16| {
+        let click_col = rel_x.saturating_sub(2) as usize;
+        with_buffer_mut(id, |buf| {
+            let new_cursor = buf.scroll_col + click_col;
+            buf.set_cursor(new_cursor);
+            if let Some(sb) = set_buffer {
+                sb.set(buf.clone());
             }
         });
+    });
 
-        let set_value = self.set_value;
-        let set_buffer = self.set_buffer;
-        let on_submit = self.on_submit;
-
-        let mut b = BoxElement::new()
-            .border(border_style)
-            .border_color(border_color)
-            .padding(Padding::symmetric(1, 0))
-            .width(self.width)
-            .justify_content(Justify::Center)
-            .align_items(Align::Start)
-            .focus_id(id)
-            .tab_stop(true)
-            .semantics(Semantics::new(
-                Role::Textbox,
-                self.title
-                    .clone()
-                    .unwrap_or_else(|| self.placeholder.clone()),
-            ))
-            .on_click_at(move |rel_x: u16, _rel_y: u16| {
-                // Outer box starts at target.rect.x.
-                // Inner text starts after border(1) + padding(1) = 2.
-                let click_col = rel_x.saturating_sub(2) as usize;
-                with_buffer_mut(id, |buf| {
-                    let new_cursor = buf.scroll_col + click_col;
-                    buf.set_cursor(new_cursor);
-                    if let Some(sb) = set_buffer {
-                        sb.set(buf.clone());
-                    }
-                });
-            })
-            .on_key(move |key: KeyEvent, _ctx| {
-                if key.code == KeyCode::Enter {
-                    if let Some(ref submit) = on_submit {
-                        let text = with_buffer(id, |b| b.content());
-                        submit(text);
-                    }
-                    return if on_submit.is_some() {
-                        EventResult::Handled
-                    } else {
-                        EventResult::Ignored
-                    };
-                }
-
-                if !with_buffer(id, |buf| buf.accepts_key(&key)) {
-                    return EventResult::Ignored;
-                }
-                with_buffer_mut(id, |buf| {
-                    let modified = buf.handle_key(&key);
-                    if modified {
-                        let text = buf.content();
-                        if let Some(sv) = set_value {
-                            sv.set(text);
-                        }
-                        if let Some(sb) = set_buffer {
-                            sb.set(buf.clone());
-                        }
-                    }
-                });
+    let on_key: KeyHandler = Rc::new(move |key: KeyEvent, _ctx: &mut EventContext| {
+        if key.code == KeyCode::Enter {
+            if let Some(ref submit) = on_submit {
+                let text = with_buffer(id, |b| b.content());
+                submit(text);
+            }
+            return if on_submit.is_some() {
                 EventResult::Handled
-            })
-            .child(
-                TextElement::new(display_text)
-                    .color(text_color)
-                    .bold(focused)
-                    .into_node(),
-            );
-
-        if focused {
-            b = b.cursor_offset(cursor_col, 0);
+            } else {
+                EventResult::Ignored
+            };
         }
 
-        if let Some(ref title) = self.title {
-            b = b.title(title.clone());
+        if !with_buffer(id, |buf| buf.accepts_key(&key)) {
+            return EventResult::Ignored;
         }
+        with_buffer_mut(id, |buf| {
+            let modified = buf.handle_key(&key);
+            if modified {
+                let text = buf.content();
+                if let Some(sv) = set_value {
+                    sv.set(text);
+                }
+                if let Some(sb) = set_buffer {
+                    sb.set(buf.clone());
+                }
+            }
+        });
+        EventResult::Handled
+    });
 
-        b.into_node()
+    let cursor_offset = if focused { Some((cursor_col, 0)) } else { None };
+    let title_str = props
+        .title
+        .clone()
+        .unwrap_or_else(|| props.placeholder.clone());
+
+    view! {
+        <FlexBox
+            border=border_style
+            border_color=border_color
+            padding=Padding::symmetric(1, 0)
+            width=props.width
+            justify_content=Justify::Center
+            align_items=Align::Start
+            focus_id=id
+            tab_stop=true
+            semantics=Semantics::new(Role::Textbox, title_str)
+            on_click_at=on_click_at
+            on_key=on_key
+            opt_title=props.title
+            opt_cursor_offset=cursor_offset
+        >
+            <TextSpan fg=text_color bold=focused>{display_text}</TextSpan>
+        </FlexBox>
     }
 }

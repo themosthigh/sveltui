@@ -19,15 +19,15 @@ struct CardGridProps {
 #[component]
 fn CardGrid(props: CardGridProps) -> impl IntoNode {
     view! {
-        <Box border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1) gap=1>
-            <Text color=Color::White bold=true>{props.title.clone()}</Text>
+        <FlexBox border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1) gap=1>
+            <TextSpan color=Color::White bold=true>{props.title.clone()}</TextSpan>
             <Divider />
-            <Box flex_direction=FlexDirection::Row gap=2>
+            <FlexBox flex_direction=FlexDirection::Row gap=2>
                 {#each props.items as item}
                     {@render props.card(item)}
                 {/each}
-            </Box>
-        </Box>
+            </FlexBox>
+        </FlexBox>
     }
 }
 
@@ -52,25 +52,25 @@ fn SnippetsDemo() -> impl IntoNode {
     ];
 
     view! {
-        <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
-            <Box width=74 gap=1>
+        <FlexBox width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
+            <FlexBox width=74 gap=1>
                 <CardGrid title="Featured Projects" items=projects>
                     {#snippet card(project: ProjectItem)}
-                        <Box
+                        <FlexBox
                             width=22
                             border=BorderStyle::Double
                             border_color=Color::DarkGrey
                             padding=Padding::all(1)
                             gap=1
                         >
-                            <Text color=Color::White bold=true>{project.name.clone()}</Text>
-                            <Text color=Color::DarkGrey>{format!("Stars: *{}", project.stars)}</Text>
+                            <TextSpan color=Color::White bold=true>{project.name.clone()}</TextSpan>
+                            <TextSpan color=Color::DarkGrey>{format!("Stars: *{}", project.stars)}</TextSpan>
                             <Badge bg=Color::Green fg=Color::DarkGreen>{project.language.clone()}</Badge>
-                        </Box>
+                        </FlexBox>
                     {/snippet}
                 </CardGrid>
-            </Box>
-        </Box>
+            </FlexBox>
+        </FlexBox>
     }
 }
 

@@ -16,38 +16,35 @@ fn DropdownDemo() -> impl IntoNode {
     };
 
     view! {
-        <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
-            <Box
+        <FlexBox width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
+            <FlexBox
                 width=68
                 border=BorderStyle::Single
                 border_color=Color::DarkGrey
                 padding=Padding::all(1)
                 gap=1
             >
-                <Text color=Color::White bold=true>"component_dropdown: Menus & Hierarchical Submenus"</Text>
+                <TextSpan color=Color::White bold=true>"component_dropdown: Menus & Hierarchical Submenus"</TextSpan>
                 <Divider />
 
-                <Text color=Color::DarkGrey>
+                <TextSpan color=Color::DarkGrey>
                     "Use ↑/↓ to navigate menu items, → to open submenu, ← to go back, Enter to select."
-                </Text>
+                </TextSpan>
 
-                <Box height=1 />
+                <FlexBox height=1 />
 
-                <Box flex_direction=FlexDirection::Row gap=2 align_items=Align::Center>
+                <FlexBox flex_direction=FlexDirection::Row gap=2 align_items=Align::Center>
                     <DropdownMenu
                         open=is_open
                         placement=Placement::BottomStart
                         width=24
                         on_close={move || menu_open.set(false)}
-                        trigger={
-                            Button(
-                                ButtonProps::builder()
-                                    .children("File Menu ▾")
-                                    .on_click(move || menu_open.update(|v| *v = !*v))
-                                    .build(),
-                            )
-                        }
                     >
+                        {#snippet trigger()}
+                            <Button on_click={move || menu_open.update(|v| *v = !*v)}>
+                                "File Menu ▾"
+                            </Button>
+                        {/snippet}
                         <DropdownItem label="New File" on_select={select("New File")} />
                         <DropdownItem label="Open Project..." on_select={select("Open Project")} />
                         <DropdownSubmenu label="Export" width=22>
@@ -60,17 +57,17 @@ fn DropdownDemo() -> impl IntoNode {
                         </DropdownSubmenu>
                         <DropdownItem label="Settings" on_select={select("Settings")} />
                     </DropdownMenu>
-                </Box>
+                </FlexBox>
 
-                <Box height=1 />
+                <FlexBox height=1 />
                 <Divider />
 
-                <Box border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1)>
-                    <Text color=Color::White>{format!("Selected Option: {}", selected_action.get())}</Text>
-                    <Text color=Color::DarkGrey>"Esc / Tab: Close dropdown | Arrow keys: Navigate items"</Text>
-                </Box>
-            </Box>
-        </Box>
+                <FlexBox border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1)>
+                    <TextSpan color=Color::White>{format!("Selected Option: {}", selected_action.get())}</TextSpan>
+                    <TextSpan color=Color::DarkGrey>"Esc / Tab: Close dropdown | Arrow keys: Navigate items"</TextSpan>
+                </FlexBox>
+            </FlexBox>
+        </FlexBox>
     }
 }
 

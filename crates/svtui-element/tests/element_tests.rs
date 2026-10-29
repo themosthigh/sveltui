@@ -1,8 +1,8 @@
 use std::rc::Rc;
 use svtui_element::{
-    BoxElement, FocusId, FocusManager, HitMap, HitTarget, InteractionTree, IntoNode, TextElement,
-    get_scroll, is_focused, measure_node, next_render_focus_id, render_node_interactive,
-    reset_focus_counter, use_focus,
+    FlexBoxElement, FocusId, FocusManager, HitMap, HitTarget, InteractionTree, IntoNode,
+    TextElement, get_scroll, is_focused, measure_node, next_render_focus_id,
+    render_node_interactive, reset_focus_counter, use_focus,
 };
 use svtui_layout::{BorderStyle, Overflow, Rect};
 use svtui_terminal::Buffer;
@@ -42,7 +42,10 @@ fn test_stable_focus_ids_across_renders() {
     assert_eq!(id1, FocusId(0));
     assert_eq!(id2, FocusId(1));
 
-    let tree = BoxElement::new().focus_id(id2).tab_stop(true).into_node();
+    let tree = FlexBoxElement::new()
+        .focus_id(id2)
+        .tab_stop(true)
+        .into_node();
     let mut manager = FocusManager::new();
     manager.reconcile(InteractionTree::from_node(&tree));
     assert!(manager.focus(id2));
@@ -73,11 +76,11 @@ fn test_use_focus_and_focus_within() {
     let parent_id = FocusId(100);
     let child_id = FocusId(101);
 
-    let tree = BoxElement::new()
+    let tree = FlexBoxElement::new()
         .focus_id(parent_id)
         .tab_stop(true)
         .child(
-            BoxElement::new()
+            FlexBoxElement::new()
                 .focus_id(child_id)
                 .tab_stop(true)
                 .child(TextElement::new("Child button")),
@@ -117,7 +120,7 @@ fn test_use_focus_and_focus_within() {
 
 #[test]
 fn test_box_min_max_dimensions() {
-    let b = BoxElement::new()
+    let b = FlexBoxElement::new()
         .width(10)
         .min_width(20)
         .max_width(50)
@@ -125,7 +128,7 @@ fn test_box_min_max_dimensions() {
     let (w, _) = measure_node(&b, 100, 100);
     assert_eq!(w, 20); // Clamped to min_width 20
 
-    let b2 = BoxElement::new()
+    let b2 = FlexBoxElement::new()
         .width(60)
         .min_width(20)
         .max_width(50)
@@ -139,7 +142,7 @@ fn test_box_overflow_scroll() {
     let mut buffer = Buffer::new(20, 5);
     let mut hit_map = HitMap::new();
 
-    let node = BoxElement::new()
+    let node = FlexBoxElement::new()
         .width(20)
         .height(5)
         .overflow(Overflow::Scroll)
@@ -168,7 +171,7 @@ fn test_horizontal_scrollbar_ui_parity() {
     let mut buffer = Buffer::new(10, 5);
     let mut hit_map = HitMap::new();
 
-    let node = BoxElement::new()
+    let node = FlexBoxElement::new()
         .width(10)
         .height(5)
         .overflow_x(Overflow::Scroll)
@@ -189,7 +192,7 @@ fn test_horizontal_text_scrolling_offset() {
     let mut buffer = Buffer::new(10, 3);
     let mut hit_map = HitMap::new();
 
-    let node = BoxElement::new()
+    let node = FlexBoxElement::new()
         .width(10)
         .height(3)
         .border(BorderStyle::None)
@@ -210,7 +213,7 @@ fn test_mouse_scroll_handler_horizontal_and_fallback() {
     let mut buffer = Buffer::new(20, 5);
     let mut hit_map = HitMap::new();
 
-    let node = BoxElement::new()
+    let node = FlexBoxElement::new()
         .width(20)
         .height(5)
         .overflow_x(Overflow::Scroll)
@@ -250,11 +253,11 @@ fn test_mouse_scroll_handler_horizontal_and_fallback() {
 #[test]
 fn test_nested_scroll_box_scroll() {
     let scroll_id = FocusId::new(); // User calls FocusId::new() in main()
-    let tree = BoxElement::new() // Root Box
+    let tree = FlexBoxElement::new() // Root Box
         .child(
-            BoxElement::new() // Dialog Box
+            FlexBoxElement::new() // Dialog Box
                 .child(
-                    BoxElement::new() // Scrollable Box
+                    FlexBoxElement::new() // Scrollable Box
                         .focus_id(scroll_id)
                         .height(3)
                         .overflow_y(Overflow::Scroll)
@@ -294,7 +297,7 @@ fn test_nested_scroll_box_scroll() {
 #[test]
 fn test_render_node_cursor_offset() {
     let input_id = FocusId::new();
-    let tree = BoxElement::new()
+    let tree = FlexBoxElement::new()
         .focus_id(input_id)
         .tab_stop(true)
         .border(BorderStyle::Single)
@@ -340,7 +343,7 @@ fn test_overlay_rendering_and_hit_targets() {
         .backdrop(true)
         .on_close(move || closed_clone.store(true, Ordering::SeqCst))
         .content(
-            BoxElement::new()
+            FlexBoxElement::new()
                 .width(20)
                 .height(5)
                 .focus_id(dialog_focus)
@@ -350,7 +353,7 @@ fn test_overlay_rendering_and_hit_targets() {
 
     // Outer document with a base button
     let base_button_focus = FocusId(1);
-    let root = BoxElement::new()
+    let root = FlexBoxElement::new()
         .focus_id(base_button_focus)
         .child(overlay)
         .into_node();

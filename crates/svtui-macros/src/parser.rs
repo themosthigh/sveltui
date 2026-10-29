@@ -188,19 +188,43 @@ fn parse_each_node(input: ParseStream, first_content: ParseStream) -> Result<Eac
     first_content.parse::<Token![as]>()?;
     let expr: Expr = syn::parse2(expr_tokens)?;
 
-    let mut pat_tokens = TokenStream::new();
-    while !first_content.peek(syn::token::Paren) && !first_content.is_empty() {
-        let tt: proc_macro2::TokenTree = first_content.parse()?;
-        pat_tokens.extend(std::iter::once(tt));
-    }
-    let pat = Pat::parse_single.parse2(pat_tokens)?;
+    let rest_tokens: Vec<proc_macro2::TokenTree> = {
+        let mut tts = Vec::new();
+        while !first_content.is_empty() {
+            tts.push(first_content.parse()?);
+        }
+        tts
+    };
 
-    let key = if first_content.peek(syn::token::Paren) {
-        let key_content;
-        syn::parenthesized!(key_content in first_content);
-        Some(key_content.parse::<Expr>()?)
+    let (pat, key) = if let Some(proc_macro2::TokenTree::Group(last_group)) = rest_tokens.last() {
+        if last_group.delimiter() == proc_macro2::Delimiter::Parenthesis && rest_tokens.len() > 1 {
+            let before_tokens: TokenStream = rest_tokens[..rest_tokens.len() - 1]
+                .iter()
+                .cloned()
+                .collect();
+            if let Ok(pat) = Pat::parse_single.parse2(before_tokens) {
+                let key_stream = last_group.stream();
+                if let Ok(key) = syn::parse2::<Expr>(key_stream) {
+                    (pat, Some(key))
+                } else {
+                    let all_tokens: TokenStream = rest_tokens.into_iter().collect();
+                    let pat = Pat::parse_single.parse2(all_tokens)?;
+                    (pat, None)
+                }
+            } else {
+                let all_tokens: TokenStream = rest_tokens.into_iter().collect();
+                let pat = Pat::parse_single.parse2(all_tokens)?;
+                (pat, None)
+            }
+        } else {
+            let all_tokens: TokenStream = rest_tokens.into_iter().collect();
+            let pat = Pat::parse_single.parse2(all_tokens)?;
+            (pat, None)
+        }
     } else {
-        None
+        let all_tokens: TokenStream = rest_tokens.into_iter().collect();
+        let pat = Pat::parse_single.parse2(all_tokens)?;
+        (pat, None)
     };
 
     let body = parse_nodes_until(input, is_control_boundary)?;

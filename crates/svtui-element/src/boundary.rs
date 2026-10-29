@@ -1,71 +1,76 @@
-use crate::node::{IntoNode, VNode};
+use crate::node::VNode;
 use crate::snippet::Snippet;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
-pub struct ErrorBoundary {
-    fallback: Option<Snippet<String>>,
-    children: Option<Box<dyn FnOnce() -> VNode>>,
+#[derive(Default)]
+pub struct ErrorBoundaryProps {
+    pub fallback: Option<Snippet<String>>,
+    pub children: Option<Snippet<()>>,
 }
 
-impl Default for ErrorBoundary {
-    fn default() -> Self {
-        Self::new()
+#[derive(Default)]
+pub struct ErrorBoundaryPropsBuilder {
+    fallback: Option<Snippet<String>>,
+    children: Option<Snippet<()>>,
+}
+
+impl ErrorBoundaryProps {
+    pub fn builder() -> ErrorBoundaryPropsBuilder {
+        ErrorBoundaryPropsBuilder::default()
     }
 }
 
-impl ErrorBoundary {
-    pub fn new() -> Self {
-        Self {
-            fallback: None,
-            children: None,
+impl ErrorBoundaryPropsBuilder {
+    pub fn slot_fallback(mut self, s: Snippet<String>) -> Self {
+        self.fallback = Some(s);
+        self
+    }
+    pub fn fallback(self, s: Snippet<String>) -> Self {
+        self.slot_fallback(s)
+    }
+    pub fn slot_children(mut self, s: Snippet<()>) -> Self {
+        self.children = Some(s);
+        self
+    }
+    pub fn children(self, s: Snippet<()>) -> Self {
+        self.slot_children(s)
+    }
+    pub fn build(self) -> ErrorBoundaryProps {
+        ErrorBoundaryProps {
+            fallback: self.fallback,
+            children: self.children,
         }
     }
-
-    pub fn fallback(mut self, fallback: impl Into<Snippet<String>>) -> Self {
-        self.fallback = Some(fallback.into());
-        self
-    }
-
-    pub fn child(mut self, child: impl IntoNode + 'static) -> Self {
-        self.children = Some(Box::new(move || child.into_node()));
-        self
-    }
-
-    pub fn render_child(mut self, f: impl FnOnce() -> VNode + 'static) -> Self {
-        self.children = Some(Box::new(f));
-        self
-    }
 }
 
-impl IntoNode for ErrorBoundary {
-    fn into_node(self) -> VNode {
-        let fallback = self.fallback;
-        let children = self.children;
+#[allow(non_snake_case)]
+pub fn ErrorBoundary(props: ErrorBoundaryProps) -> VNode {
+    let fallback = props.fallback;
+    let children = props.children;
 
-        let res = catch_unwind(AssertUnwindSafe(|| {
-            if let Some(c) = children {
-                c()
+    let res = catch_unwind(AssertUnwindSafe(|| {
+        if let Some(c) = children {
+            c.render(())
+        } else {
+            VNode::Empty
+        }
+    }));
+
+    match res {
+        Ok(node) => node,
+        Err(err) => {
+            let err_msg = if let Some(s) = err.downcast_ref::<&str>() {
+                s.to_string()
+            } else if let Some(s) = err.downcast_ref::<String>() {
+                s.clone()
+            } else {
+                "Component crashed".to_string()
+            };
+
+            if let Some(fb) = fallback {
+                fb.render(err_msg)
             } else {
                 VNode::Empty
-            }
-        }));
-
-        match res {
-            Ok(node) => node,
-            Err(err) => {
-                let err_msg = if let Some(s) = err.downcast_ref::<&str>() {
-                    s.to_string()
-                } else if let Some(s) = err.downcast_ref::<String>() {
-                    s.clone()
-                } else {
-                    "Component crashed".to_string()
-                };
-
-                if let Some(fb) = fallback {
-                    fb.render(err_msg)
-                } else {
-                    VNode::Empty
-                }
             }
         }
     }

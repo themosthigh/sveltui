@@ -25,22 +25,22 @@ fn ScrollDemo() -> impl IntoNode {
         .collect::<Vec<_>>();
 
     view! {
-        <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
-            <Box
+        <FlexBox width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
+            <FlexBox
                 width=68
                 border=BorderStyle::Single
                 border_color=Color::DarkGrey
                 padding=Padding::all(1)
                 gap=1
             >
-                <Text color=Color::White bold=true>"component_scroll: Virtual Scrolling & Overflow"</Text>
+                <TextSpan color=Color::White bold=true>"component_scroll: Virtual Scrolling & Overflow"</TextSpan>
                 <Divider />
 
-                <Text color=Color::DarkGrey>
+                <TextSpan color=Color::DarkGrey>
                     "Mouse Wheel / Trackpad / Shift+Wheel or Arrow Keys scroll both axes seamlessly."
-                </Text>
+                </TextSpan>
 
-                <Box flex_direction=FlexDirection::Row gap=1 align_items=Align::Center>
+                <FlexBox flex_direction=FlexDirection::Row gap=1 align_items=Align::Center>
                     <Button
                         on_click={move || lines_count.update(|c| *c += 5)}
                     >
@@ -51,13 +51,13 @@ fn ScrollDemo() -> impl IntoNode {
                     >
                         "Reset Lines"
                     </Button>
-                    <Text color=Color::DarkGrey>{format!("Current log lines: {}", lines_count.get())}</Text>
-                </Box>
+                    <TextSpan color=Color::DarkGrey>{format!("Current log lines: {}", lines_count.get())}</TextSpan>
+                </FlexBox>
 
-                <Box height=1 />
+                <FlexBox height=1 />
 
                 // Scroll container with custom scrollbars
-                <Box
+                <FlexBox
                     border=border_style
                     border_color=if focus.is_active() { Color::White } else { Color::DarkGrey }
                     focus_id=scroll_id
@@ -69,16 +69,16 @@ fn ScrollDemo() -> impl IntoNode {
                     scrollbar_visibility=ScrollbarVisibility::Auto
                 >
                     {#each log_entries as entry}
-                        <Text color=Color::White>{entry}</Text>
+                        <TextSpan color=Color::White>{entry}</TextSpan>
                     {/each}
-                </Box>
+                </FlexBox>
 
-                <Box height=1 />
+                <FlexBox height=1 />
                 <Divider />
 
-                <Text color=Color::DarkGrey>"Tab: Focus scroll container | Wheel / Shift+Wheel: Scroll axes | Q/Esc: Quit"</Text>
-            </Box>
-        </Box>
+                <TextSpan color=Color::DarkGrey>"Tab: Focus scroll container | Wheel / Shift+Wheel: Scroll axes | Q/Esc: Quit"</TextSpan>
+            </FlexBox>
+        </FlexBox>
     }
 }
 

@@ -33,16 +33,16 @@ fn ActiveSession(props: ActiveSessionProps) -> impl IntoNode {
     });
 
     view! {
-        <Box border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1) gap=1>
-            <Text color=Color::White bold=true>"Active Session Component"</Text>
+        <FlexBox border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1) gap=1>
+            <TextSpan color=Color::White bold=true>"Active Session Component"</TextSpan>
             <Divider />
-            <Text color=Color::DarkGrey>"Recent Lifecycle Activity:"</Text>
+            <TextSpan color=Color::DarkGrey>"Recent Lifecycle Activity:"</TextSpan>
             {#each logs.get() as log}
-                <Text color=Color::White>{log}</Text>
+                <TextSpan color=Color::White>{log}</TextSpan>
             {:else}
-                <Text color=Color::DarkGrey>"No events recorded yet"</Text>
+                <TextSpan color=Color::DarkGrey>"No events recorded yet"</TextSpan>
             {/each}
-        </Box>
+        </FlexBox>
     }
 }
 
@@ -58,18 +58,18 @@ fn LifecycleDemo() -> impl IntoNode {
     });
 
     view! {
-        <Box width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
-            <Box
+        <FlexBox width=Size::Fill height=Size::Fill align_items=Align::Center justify_content=Justify::Center>
+            <FlexBox
                 width=68
                 border=BorderStyle::Double
                 border_color=Color::DarkGrey
                 padding=Padding::all(1)
                 gap=1
             >
-                <Text color=Color::White bold=true>"framework_lifecycle: on_mount, on_destroy & effect"</Text>
+                <TextSpan color=Color::White bold=true>"framework_lifecycle: on_mount, on_destroy & effect"</TextSpan>
                 <Divider />
 
-                <Box flex_direction=FlexDirection::Row gap=1>
+                <FlexBox flex_direction=FlexDirection::Row gap=1>
                     <Button
                         on_click={move || session_id.update(|id| *id += 1)}
                     >
@@ -80,24 +80,24 @@ fn LifecycleDemo() -> impl IntoNode {
                     >
                         {if session_visible.get() { "Unmount Component" } else { "Mount Component" }}
                     </Button>
-                </Box>
+                </FlexBox>
 
-                <Box height=1 />
+                <FlexBox height=1 />
 
                 {#if session_visible.get()}
                     <ActiveSession session_id=session_id />
                 {:else}
-                    <Box
+                    <FlexBox
                         border=BorderStyle::Single
                         border_color=Color::DarkGrey
                         padding=Padding::all(2)
                         align_items=Align::Center
                     >
-                        <Text color=Color::DarkGrey>"Component unmounted. Cleanups executed."</Text>
-                    </Box>
+                        <TextSpan color=Color::DarkGrey>"Component unmounted. Cleanups executed."</TextSpan>
+                    </FlexBox>
                 {/if}
-            </Box>
-        </Box>
+            </FlexBox>
+        </FlexBox>
     }
 }
 

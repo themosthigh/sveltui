@@ -1,5 +1,5 @@
 use crate::measure::{Bounds, child_box, children, in_flow, limits, measure, resolve_main_sizes};
-use crate::node::{BoxElement, VNode};
+use crate::node::{FlexBoxElement, VNode};
 use svtui_layout::{Align, Rect, ScrollbarVisibility, Size, place_flex_children};
 
 pub(crate) struct ChildLayout<'a> {
@@ -15,7 +15,7 @@ pub(crate) struct BoxLayout<'a> {
     pub horizontal_scrollbar: bool,
 }
 
-fn arrange(b: &BoxElement, viewport: (u16, u16)) -> Vec<ChildLayout<'_>> {
+fn arrange(b: &FlexBoxElement, viewport: (u16, u16)) -> Vec<ChildLayout<'_>> {
     let nodes = children(&b.children);
     let flow: Vec<_> = nodes.iter().copied().filter(|n| in_flow(n)).collect();
     let direction = b.flex_direction;
@@ -75,7 +75,7 @@ fn arrange(b: &BoxElement, viewport: (u16, u16)) -> Vec<ChildLayout<'_>> {
         .collect()
 }
 
-pub(crate) fn layout_box(b: &BoxElement, width: u16, height: u16) -> BoxLayout<'_> {
+pub(crate) fn layout_box(b: &FlexBoxElement, width: u16, height: u16) -> BoxLayout<'_> {
     let mut vertical =
         b.overflow_y.is_scrollable() && b.scrollbar_visibility == ScrollbarVisibility::Always;
     let mut horizontal =
