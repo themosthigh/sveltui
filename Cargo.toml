@@ -22,3 +22,11 @@ categories = ["command-line-interface", "gui"]
 sveltui = { path = "crates/sveltui", version = "0.1.0-alpha.1" }
 sveltui-macros = { path = "crates/sveltui-macros", version = "0.1.0-alpha.1" }
 crossterm = "0.28"
+
+[profile.release-small]
+inherits = "release"
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

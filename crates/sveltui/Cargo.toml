@@ -19,6 +19,15 @@ notify = "6.1"
 
 [dev-dependencies]
 sveltui-components = { path = "../sveltui-components" }
+criterion = { version = "0.5", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "engine_bench"
+harness = false
+
+[[bench]]
+name = "memory_bench"
+harness = false
 
 [[example]]
 name = "hello_world"

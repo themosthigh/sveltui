@@ -113,7 +113,7 @@ impl Drop for Terminal {
 
 // Keep terminal output independent of raw-mode setup so the actual emitted
 // commands can be verified alongside the in-memory buffer.
-fn write_buffer_diff(
+pub fn write_buffer_diff(
     mut stdout: impl Write,
     curr_buffer: &Buffer,
     prev_buffer: &Buffer,
