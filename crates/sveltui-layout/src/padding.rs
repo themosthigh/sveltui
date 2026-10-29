@@ -33,6 +33,15 @@ impl Padding {
             left: horizontal,
         }
     }
+
+    pub const fn only(top: u16, right: u16, bottom: u16, left: u16) -> Self {
+        Self {
+            top,
+            right,
+            bottom,
+            left,
+        }
+    }
 }
 
 impl From<u16> for Padding {
