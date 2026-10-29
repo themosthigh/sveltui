@@ -40,6 +40,10 @@ impl<T> Snippet<T> {
         self.0.is_none()
     }
 
+    pub fn is_snippet_present(&self) -> bool {
+        self.is_some()
+    }
+
     pub fn render(&self, arg: T) -> VNode {
         match &self.0 {
             Some(f) => f(arg),
@@ -85,10 +89,18 @@ impl From<VNode> for Snippet<()> {
 }
 
 pub trait OptionSnippetExt<T> {
+    fn is_snippet_present(&self) -> bool;
     fn render(&self, arg: T) -> VNode;
 }
 
 impl<T> OptionSnippetExt<T> for Option<Snippet<T>> {
+    fn is_snippet_present(&self) -> bool {
+        match self {
+            Some(s) => s.is_some(),
+            None => false,
+        }
+    }
+
     fn render(&self, arg: T) -> VNode {
         match self {
             Some(s) => s.render(arg),
@@ -98,6 +110,13 @@ impl<T> OptionSnippetExt<T> for Option<Snippet<T>> {
 }
 
 impl<T> OptionSnippetExt<T> for Option<&Snippet<T>> {
+    fn is_snippet_present(&self) -> bool {
+        match self {
+            Some(s) => s.is_some(),
+            None => false,
+        }
+    }
+
     fn render(&self, arg: T) -> VNode {
         match self {
             Some(s) => s.render(arg),
@@ -140,8 +159,8 @@ impl IntoPropOption<String> for Option<&str> {
     }
 }
 
-impl IntoPropOption<Snippet<()>> for Snippet<()> {
-    fn into_prop_option(self) -> Option<Snippet<()>> {
+impl<T> IntoPropOption<Snippet<T>> for Snippet<T> {
+    fn into_prop_option(self) -> Option<Snippet<T>> {
         if self.is_some() { Some(self) } else { None }
     }
 }

@@ -185,11 +185,14 @@ fn Greetings() -> impl IntoNode {
 
 ### Children & Snippets
 
-Component children and snippets share a unified syntax via [`Snippet`](file:///Users/themosthigh/Projects/experimental/svtui/crates/svtui-element/src/snippet.rs):
-- Required children are declared as `pub children: Snippet`.
-- Optional children or snippet slots are declared as `#[prop(optional)] pub children: Option<Snippet>`.
-- Use `.is_some()` or `.is_none()` to check whether optional children are provided.
-- Use `{@render props.children}` to render directly.
+Component children and snippets share a unified syntax via [`Snippet`](file:///Users/themosthigh/Projects/experimental/svtui/crates/svtui-element/src/snippet.rs), governed by the **One-Way Rule**:
+- **Primary Children (1 Way)**: Must be placed directly inside the element body (`<Component> ... </Component>`). Passing `children=...` as a prop attribute or declaring `{#snippet children}` is prohibited and rejected at compile time.
+- **Custom Named Slots (1 Way)**: Must be declared via block macro syntax inside the element body (`{#snippet slot_name} ... {/snippet}`). Passing snippets as regular prop attributes is prohibited.
+- **Required vs Optional**:
+  - Required slots are declared as `pub children: Snippet` or `header: Snippet<T>`.
+  - Optional slots are declared as `#[prop(optional)] pub children: Option<Snippet>` or `#[prop(optional)] footer: Option<Snippet<T>>`.
+- Use `.is_snippet_present()` to check whether an optional snippet contains renderable content (safely accounting for empty snippets).
+- Use `{@render props.children}` or `{@render props.slot(arg)}` to render directly.
 
 ```rust
 #[derive(Props)]

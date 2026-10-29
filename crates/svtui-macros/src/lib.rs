@@ -58,6 +58,26 @@ fn extract_option_inner(ty: &syn::Type) -> Option<&syn::Type> {
     }
 }
 
+fn is_snippet_type(ty: &syn::Type) -> bool {
+    match ty {
+        syn::Type::Path(type_path) => {
+            if let Some(segment) = type_path.path.segments.last() {
+                if segment.ident == "Snippet" {
+                    return true;
+                }
+                if segment.ident == "Option"
+                    && let syn::PathArguments::AngleBracketed(args) = &segment.arguments
+                    && let Some(syn::GenericArgument::Type(inner)) = args.args.first()
+                {
+                    return is_snippet_type(inner);
+                }
+            }
+            false
+        }
+        _ => false,
+    }
+}
+
 #[proc_macro_derive(Props, attributes(prop))]
 pub fn derive_props(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -135,11 +155,83 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
             #field_name: None,
         });
 
+        let is_snippet = is_snippet_type(field_ty);
+
         if is_optional {
             if let Some(inner_ty) = extract_option_inner(field_ty) {
+                if field_name == "children" {
+                    setters.push(quote! {
+                        pub fn slot_children(mut self, val: impl #root::IntoPropOption<#inner_ty>) -> Self {
+                            self.#field_name = Some(val.into_prop_option());
+                            self
+                        }
+                        pub fn children(self, val: impl #root::IntoPropOption<#inner_ty>) -> Self {
+                            self.slot_children(val)
+                        }
+                    });
+                } else if is_snippet {
+                    let slot_fn = quote::format_ident!("slot_{}", field_name);
+                    setters.push(quote! {
+                        pub fn #slot_fn(mut self, val: impl #root::IntoPropOption<#inner_ty>) -> Self {
+                            self.#field_name = Some(val.into_prop_option());
+                            self
+                        }
+                    });
+                } else {
+                    setters.push(quote! {
+                        pub fn #field_name(mut self, val: impl #root::IntoPropOption<#inner_ty>) -> Self {
+                            self.#field_name = Some(val.into_prop_option());
+                            self
+                        }
+                    });
+                }
+            } else {
+                if field_name == "children" {
+                    setters.push(quote! {
+                        pub fn slot_children(mut self, val: impl Into<#field_ty>) -> Self {
+                            self.#field_name = Some(val.into());
+                            self
+                        }
+                        pub fn children(self, val: impl Into<#field_ty>) -> Self {
+                            self.slot_children(val)
+                        }
+                    });
+                } else if is_snippet {
+                    let slot_fn = quote::format_ident!("slot_{}", field_name);
+                    setters.push(quote! {
+                        pub fn #slot_fn(mut self, val: impl Into<#field_ty>) -> Self {
+                            self.#field_name = Some(val.into());
+                            self
+                        }
+                    });
+                } else {
+                    setters.push(quote! {
+                        pub fn #field_name(mut self, val: impl Into<#field_ty>) -> Self {
+                            self.#field_name = Some(val.into());
+                            self
+                        }
+                    });
+                }
+            }
+            build_inits.push(quote! {
+                #field_name: self.#field_name.flatten(),
+            });
+        } else {
+            if field_name == "children" {
                 setters.push(quote! {
-                    pub fn #field_name(mut self, val: impl #root::IntoPropOption<#inner_ty>) -> Self {
-                        self.#field_name = Some(val.into_prop_option());
+                    pub fn slot_children(mut self, val: impl Into<#field_ty>) -> Self {
+                        self.#field_name = Some(val.into());
+                        self
+                    }
+                    pub fn children(self, val: impl Into<#field_ty>) -> Self {
+                        self.slot_children(val)
+                    }
+                });
+            } else if is_snippet {
+                let slot_fn = quote::format_ident!("slot_{}", field_name);
+                setters.push(quote! {
+                    pub fn #slot_fn(mut self, val: impl Into<#field_ty>) -> Self {
+                        self.#field_name = Some(val.into());
                         self
                     }
                 });
@@ -151,16 +243,6 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
                     }
                 });
             }
-            build_inits.push(quote! {
-                #field_name: self.#field_name.flatten(),
-            });
-        } else {
-            setters.push(quote! {
-                pub fn #field_name(mut self, val: impl Into<#field_ty>) -> Self {
-                    self.#field_name = Some(val.into());
-                    self
-                }
-            });
             if let Some(expr) = default_expr {
                 build_inits.push(quote! {
                     #field_name: self.#field_name.unwrap_or_else(|| #expr),
