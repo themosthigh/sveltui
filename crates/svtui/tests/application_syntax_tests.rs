@@ -241,9 +241,11 @@ fn test_section_8_optional_default_props() {
 // Section 9: Children & Snippets
 #[derive(Props)]
 struct DialogProps {
+    #[snippet]
     header: Snippet,
-    #[prop(optional)]
+    #[snippet(optional)]
     footer: Option<Snippet>,
+    #[snippet]
     pub children: Snippet,
 }
 
@@ -290,6 +292,7 @@ fn test_section_9_children_and_snippets() {
 #[derive(Props)]
 struct ListViewProps<T: 'static> {
     items: State<Vec<T>>,
+    #[snippet]
     row: Snippet<T>,
 }
 

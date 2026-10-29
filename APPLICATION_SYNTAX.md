@@ -188,18 +188,20 @@ fn Greetings() -> impl IntoNode {
 Component children and snippets share a unified syntax via [`Snippet`](file:///Users/themosthigh/Projects/experimental/svtui/crates/svtui-element/src/snippet.rs), governed by the **One-Way Rule**:
 - **Primary Children (1 Way)**: Must be placed directly inside the element body (`<Component> ... </Component>`). Passing `children=...` as a prop attribute or declaring `{#snippet children}` is prohibited and rejected at compile time.
 - **Custom Named Slots (1 Way)**: Must be declared via block macro syntax inside the element body (`{#snippet slot_name} ... {/snippet}`). Passing snippets as regular prop attributes is prohibited.
-- **Required vs Optional**:
-  - Required slots are declared as `pub children: Snippet` or `header: Snippet<T>`.
-  - Optional slots are declared as `#[prop(optional)] pub children: Option<Snippet>` or `#[prop(optional)] footer: Option<Snippet<T>>`.
+- **Explicit Snippet Attributes**:
+  - Required slots are declared with `#[snippet]`, e.g. `#[snippet] pub children: Snippet` or `#[snippet] header: Snippet<T>`.
+  - Optional slots are declared with `#[snippet(optional)]`, e.g. `#[snippet(optional)] pub children: Option<Snippet>` or `#[snippet(optional)] footer: Option<Snippet<T>>`.
 - Use `.is_snippet_present()` to check whether an optional snippet contains renderable content (safely accounting for empty snippets).
 - Use `{@render props.children}` or `{@render props.slot(arg)}` to render directly.
 
 ```rust
 #[derive(Props)]
 struct DialogProps {
+    #[snippet]
     header: Snippet,
-    #[prop(optional)]
+    #[snippet(optional)]
     footer: Option<Snippet>,
+    #[snippet]
     pub children: Snippet,
 }
 
@@ -243,6 +245,7 @@ fn ConfirmDelete() -> impl IntoNode {
 #[derive(Props)]
 struct ListViewProps<T: 'static> {
     items: State<Vec<T>>,
+    #[snippet]
     row: Snippet<T>,
 }
 

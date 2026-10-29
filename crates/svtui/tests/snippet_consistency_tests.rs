@@ -11,10 +11,11 @@ struct UserItem {
 struct UserTableProps<T: 'static> {
     title: String,
     items: Vec<T>,
+    #[snippet]
     row: Snippet<T>,
-    #[prop(optional)]
+    #[snippet(optional)]
     header: Option<Snippet<()>>,
-    #[prop(optional)]
+    #[snippet(optional)]
     footer: Option<Snippet<()>>,
 }
 
@@ -41,8 +42,9 @@ fn UserTable<T: Clone + 'static>(props: UserTableProps<T>) -> impl IntoNode {
 #[derive(Props)]
 struct CardLayoutProps {
     title: String,
+    #[snippet]
     pub children: Snippet,
-    #[prop(optional)]
+    #[snippet(optional)]
     actions: Option<Snippet<()>>,
 }
 

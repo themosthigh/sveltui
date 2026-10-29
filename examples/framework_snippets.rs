@@ -12,6 +12,7 @@ struct ProjectItem {
 struct CardGridProps {
     title: String,
     items: Vec<ProjectItem>,
+    #[snippet]
     card: Snippet<ProjectItem>,
 }
 

@@ -78,7 +78,7 @@ fn is_snippet_type(ty: &syn::Type) -> bool {
     }
 }
 
-#[proc_macro_derive(Props, attributes(prop))]
+#[proc_macro_derive(Props, attributes(prop, snippet))]
 pub fn derive_props(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let struct_name = &input.ident;
@@ -122,6 +122,7 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
         let field_name = field.ident.as_ref().unwrap();
         let field_ty = &field.ty;
 
+        let mut is_snippet = is_snippet_type(field_ty);
         let mut is_optional = false;
         let mut default_expr = None;
         let mut is_default = false;
@@ -144,7 +145,31 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
                         Ok(())
                     }
                 });
+            } else if attr.path().is_ident("snippet") {
+                is_snippet = true;
+                if let syn::Meta::List(list) = &attr.meta {
+                    let _ = list.parse_nested_meta(|meta| {
+                        if meta.path.is_ident("optional") {
+                            is_optional = true;
+                            Ok(())
+                        } else if meta.path.is_ident("default") {
+                            if meta.input.peek(syn::Token![=]) {
+                                let value: syn::Expr = meta.value()?.parse()?;
+                                default_expr = Some(value);
+                            } else {
+                                is_default = true;
+                            }
+                            Ok(())
+                        } else {
+                            Ok(())
+                        }
+                    });
+                }
             }
+        }
+
+        if is_snippet && extract_option_inner(field_ty).is_some() {
+            is_optional = true;
         }
 
         builder_fields.push(quote! {
@@ -154,8 +179,6 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
         default_inits.push(quote! {
             #field_name: None,
         });
-
-        let is_snippet = is_snippet_type(field_ty);
 
         if is_optional {
             if let Some(inner_ty) = extract_option_inner(field_ty) {

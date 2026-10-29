@@ -9,7 +9,7 @@ pub struct BadgeProps {
     pub fg: Color,
     #[prop(optional)]
     pub label: Option<String>,
-    #[prop(optional)]
+    #[snippet(optional)]
     pub children: Option<Snippet>,
 }
 

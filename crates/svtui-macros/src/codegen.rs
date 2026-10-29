@@ -51,6 +51,22 @@ pub fn codegen_nodes(nodes: &[Node]) -> proc_macro2::TokenStream {
     }
 }
 
+pub fn codegen_node_refs(nodes: &[&Node]) -> proc_macro2::TokenStream {
+    let root = element_root();
+    if nodes.is_empty() {
+        quote! { #root::VNode::Empty }
+    } else if nodes.len() == 1 {
+        codegen_node(nodes[0])
+    } else {
+        let streams = nodes.iter().map(|n| codegen_node(n));
+        quote! {
+            #root::VNode::Fragment(vec![
+                #(#streams),*
+            ])
+        }
+    }
+}
+
 fn codegen_if(if_node: &IfNode) -> proc_macro2::TokenStream {
     let root = element_root();
     let initial_cond = match &if_node.initial.condition {
@@ -227,43 +243,67 @@ fn codegen_await(await_node: &AwaitNode) -> proc_macro2::TokenStream {
     }
 }
 
+fn codegen_builder_element(
+    el: &Element,
+    tag: &syn::Ident,
+    constructor: proc_macro2::TokenStream,
+    root: &proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    let mut setter_calls = Vec::new();
+    for attr in &el.attributes {
+        let attr_name = &attr.name;
+        if attr_name == "children" {
+            return syn::Error::new(
+                attr_name.span(),
+                format!(
+                    "Cannot pass 'children' as an attribute prop on `<{}>`. Place children inside the element body: `<{}>...</{}>`",
+                    tag, tag, tag
+                ),
+            )
+            .to_compile_error();
+        }
+        let attr_val = &attr.value;
+        setter_calls.push(quote! {
+            .#attr_name(#attr_val)
+        });
+    }
+
+    let mut child_calls = Vec::new();
+    for child in &el.children {
+        if let Node::Snippet(s) = child {
+            return syn::Error::new(
+                s.name.span(),
+                format!(
+                    "Component `<{}>` does not support snippet slots. Use standard children or attributes.",
+                    tag
+                ),
+            )
+            .to_compile_error();
+        }
+        let child_stream = codegen_node(child);
+        child_calls.push(quote! {
+            .child(#child_stream)
+        });
+    }
+
+    quote! {
+        #root::IntoNode::into_node(
+            #constructor
+                #(#setter_calls)*
+                #(#child_calls)*
+        )
+    }
+}
+
 pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
     let root = element_root();
     let tag = &el.name;
     let tag_str = tag.to_string();
 
     match tag_str.as_str() {
-        "Box" => {
-            let mut setter_calls = Vec::new();
-            for attr in &el.attributes {
-                let attr_name = &attr.name;
-                if attr_name == "children" {
-                    return syn::Error::new(
-                        attr_name.span(),
-                        "Cannot pass 'children' as an attribute prop on `<Box>`. Place children inside the element body: `<Box>...</Box>`",
-                    )
-                    .to_compile_error();
-                }
-                let attr_val = &attr.value;
-                setter_calls.push(quote! {
-                    .#attr_name(#attr_val)
-                });
-            }
-
-            let mut child_calls = Vec::new();
-            for child in &el.children {
-                let child_stream = codegen_node(child);
-                child_calls.push(quote! {
-                    .child(#child_stream)
-                });
-            }
-
-            quote! {
-                #root::BoxElement::new()
-                    #(#setter_calls)*
-                    #(#child_calls)*
-                    .into_node()
-            }
+        "Box" => codegen_builder_element(el, tag, quote! { #root::BoxElement::default() }, &root),
+        "Overlay" => {
+            codegen_builder_element(el, tag, quote! { #root::OverlayElement::default() }, &root)
         }
         "Text" => {
             let mut setter_calls = Vec::new();
@@ -309,38 +349,6 @@ pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
                     .into_node()
             }
         }
-        "Overlay" => {
-            let mut setter_calls = Vec::new();
-            for attr in &el.attributes {
-                let attr_name = &attr.name;
-                if attr_name == "children" {
-                    return syn::Error::new(
-                        attr_name.span(),
-                        "Cannot pass 'children' as an attribute prop on `<Overlay>`. Place children inside the element body: `<Overlay>...</Overlay>`",
-                    )
-                    .to_compile_error();
-                }
-                let attr_val = &attr.value;
-                setter_calls.push(quote! {
-                    .#attr_name(#attr_val)
-                });
-            }
-
-            let mut child_calls = Vec::new();
-            for child in &el.children {
-                let child_stream = codegen_node(child);
-                child_calls.push(quote! {
-                    .child(#child_stream)
-                });
-            }
-
-            quote! {
-                #root::OverlayElement::new()
-                    #(#setter_calls)*
-                    #(#child_calls)*
-                    .into_node()
-            }
-        }
         "Provider" => {
             let mut val_expr = quote! { () };
             for attr in &el.attributes {
@@ -376,19 +384,7 @@ pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
                 regular_children.push(child);
             }
 
-            let children_ts = if regular_children.is_empty() {
-                quote! { #root::VNode::Empty }
-            } else if regular_children.len() == 1 {
-                codegen_node(regular_children[0])
-            } else {
-                let streams = regular_children.iter().map(|c| codegen_node(c));
-                quote! {
-                    #root::VNode::Fragment(vec![
-                        #(#streams),*
-                    ])
-                }
-            };
-
+            let children_ts = codegen_node_refs(&regular_children);
             quote! {
                 #root::ErrorBoundary::new()
                     #fallback_ts
@@ -400,59 +396,7 @@ pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
         }
         "TextInput" | "TextArea" | "Checkbox" | "Switch" | "Divider" | "ProgressBar"
         | "DropdownMenu" | "DropdownItem" | "DropdownSubmenu" | "Popover" => {
-            let mut setter_calls = Vec::new();
-            for attr in &el.attributes {
-                let attr_name = &attr.name;
-                if attr_name == "children" {
-                    return syn::Error::new(
-                        attr_name.span(),
-                        format!(
-                            "Cannot pass 'children' as an attribute prop on `<{}>`.",
-                            tag
-                        ),
-                    )
-                    .to_compile_error();
-                }
-                let attr_val = &attr.value;
-                setter_calls.push(quote! {
-                    .#attr_name(#attr_val)
-                });
-            }
-
-            let mut child_calls = Vec::new();
-            for child in &el.children {
-                if let Node::Snippet(s) = child {
-                    return syn::Error::new(
-                        s.name.span(),
-                        format!(
-                            "Component `<{}>` does not support snippet slots. Use standard children or attributes.",
-                            tag
-                        ),
-                    )
-                    .to_compile_error();
-                }
-                match child {
-                    Node::Text(lit) => {
-                        child_calls.push(quote! {
-                            .label(#lit)
-                        });
-                    }
-                    _ => {
-                        let child_stream = codegen_node(child);
-                        child_calls.push(quote! {
-                            .child(#child_stream)
-                        });
-                    }
-                }
-            }
-
-            quote! {
-                #root::IntoNode::into_node(
-                    #tag::default()
-                        #(#setter_calls)*
-                        #(#child_calls)*
-                )
-            }
+            codegen_builder_element(el, tag, quote! { #tag::default() }, &root)
         }
         "Dialog" => {
             let has_snippets = el.children.iter().any(|c| matches!(c, Node::Snippet(_)));
@@ -461,40 +405,10 @@ pub fn codegen_element(el: &Element) -> proc_macro2::TokenStream {
                 codegen_custom_component(el, tag, &root)
             } else {
                 // Built-in Dialog widget
-                let mut setter_calls = Vec::new();
-                for attr in &el.attributes {
-                    let attr_name = &attr.name;
-                    let attr_val = &attr.value;
-                    setter_calls.push(quote! {
-                        .#attr_name(#attr_val)
-                    });
-                }
-
-                let mut child_calls = Vec::new();
-                for child in &el.children {
-                    let child_stream = codegen_node(child);
-                    child_calls.push(quote! {
-                        .child(#child_stream)
-                    });
-                }
-
-                quote! {
-                    #root::IntoNode::into_node(
-                        #tag::default()
-                            #(#setter_calls)*
-                            #(#child_calls)*
-                    )
-                }
+                codegen_builder_element(el, tag, quote! { #tag::default() }, &root)
             }
         }
         _ => codegen_custom_component(el, tag, &root),
-    }
-}
-
-fn is_node_meaningful(node: &Node) -> bool {
-    match node {
-        Node::Text(lit) => !lit.value().trim().is_empty(),
-        _ => true,
     }
 }
 
@@ -504,6 +418,8 @@ fn codegen_custom_component(
     root: &proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
     let mut prop_setters = Vec::new();
+    let mut attr_names = std::collections::HashSet::with_capacity(el.attributes.len());
+
     for attr in &el.attributes {
         let attr_name = &attr.name;
         if attr_name == "children" {
@@ -516,6 +432,7 @@ fn codegen_custom_component(
             )
             .to_compile_error();
         }
+        attr_names.insert(attr_name);
         let attr_val = &attr.value;
         prop_setters.push(quote! {
             .#attr_name(#attr_val)
@@ -523,81 +440,70 @@ fn codegen_custom_component(
     }
 
     let mut snippet_setters = Vec::new();
-    let mut regular_children = Vec::new();
+    let mut meaningful_children = Vec::new();
     let mut seen_snippets = std::collections::HashSet::new();
 
     for child in &el.children {
-        if let Node::Snippet(s) = child {
-            let s_name = &s.name;
-            if s_name == "children" {
-                return syn::Error::new(
-                    s_name.span(),
-                    format!(
-                        "Cannot declare a named snippet for 'children' on `<{}>`. Primary children must be placed directly inside the element body: `<{}>...</{}>`",
-                        tag, tag, tag
-                    ),
-                )
-                .to_compile_error();
-            }
+        match child {
+            Node::Snippet(s) => {
+                let s_name = &s.name;
+                if s_name == "children" {
+                    return syn::Error::new(
+                        s_name.span(),
+                        format!(
+                            "Cannot declare a named snippet for 'children' on `<{}>`. Primary children must be placed directly inside the element body: `<{}>...</{}>`",
+                            tag, tag, tag
+                        ),
+                    )
+                    .to_compile_error();
+                }
 
-            if el.attributes.iter().any(|a| a.name == *s_name) {
-                return syn::Error::new(
-                    s_name.span(),
-                    format!(
-                        "Slot '{}' is defined both as an attribute prop and as a `{{#snippet {}}}` block on `<{}>`.",
-                        s_name, s_name, tag
-                    ),
-                )
-                .to_compile_error();
-            }
+                if attr_names.contains(s_name) {
+                    return syn::Error::new(
+                        s_name.span(),
+                        format!(
+                            "Slot '{}' is defined both as an attribute prop and as a `{{#snippet {}}}` block on `<{}>`.",
+                            s_name, s_name, tag
+                        ),
+                    )
+                    .to_compile_error();
+                }
 
-            if !seen_snippets.insert(s_name.to_string()) {
-                return syn::Error::new(
-                    s_name.span(),
-                    format!("Duplicate snippet slot '{}' on `<{}>`.", s_name, tag),
-                )
-                .to_compile_error();
-            }
+                if !seen_snippets.insert(s_name) {
+                    return syn::Error::new(
+                        s_name.span(),
+                        format!("Duplicate snippet slot '{}' on `<{}>`.", s_name, tag),
+                    )
+                    .to_compile_error();
+                }
 
-            let slot_ident = quote::format_ident!("slot_{}", s_name);
-            let snippet_ts = codegen_snippet(s);
-            snippet_setters.push(quote! {
-                .#slot_ident(#snippet_ts)
-            });
-        } else {
-            regular_children.push(child);
+                let slot_ident = quote::format_ident!("slot_{}", s_name);
+                let snippet_ts = codegen_snippet(s);
+                snippet_setters.push(quote! {
+                    .#slot_ident(#snippet_ts)
+                });
+            }
+            Node::Text(lit) if lit.value().trim().is_empty() => {
+                // Ignore empty or whitespace-only text literals
+            }
+            other => {
+                meaningful_children.push(other);
+            }
         }
     }
 
-    let meaningful_children: Vec<&Node> = regular_children
-        .into_iter()
-        .filter(|c| is_node_meaningful(c))
-        .collect();
-
     let children_setter = if !meaningful_children.is_empty() {
-        let body_ts = if meaningful_children.len() == 1 {
-            codegen_node(meaningful_children[0])
-        } else {
-            let streams = meaningful_children.iter().map(|c| codegen_node(c));
-            quote! {
-                #root::VNode::Fragment(vec![
-                    #(#streams),*
-                ])
-            }
-        };
-        let cs = quote! {
-            #root::Snippet::new(move |_| {
-                #body_ts
-            })
-        };
+        let body_ts = codegen_node_refs(&meaningful_children);
         Some(quote! {
-            .slot_children(#cs)
+            .slot_children(#root::Snippet::new(move |_| {
+                #body_ts
+            }))
         })
     } else {
         None
     };
 
-    let tag_props = syn::Ident::new(&format!("{}Props", tag), tag.span());
+    let tag_props = quote::format_ident!("{}Props", tag);
 
     let has_props = !prop_setters.is_empty()
         || !snippet_setters.is_empty()
