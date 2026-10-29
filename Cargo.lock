@@ -316,66 +316,30 @@ checksum = "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8"
 
 [[package]]
 name = "sveltui"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "crossterm",
  "notify",
  "sveltui-components",
- "sveltui-element",
- "sveltui-layout",
  "sveltui-macros",
- "sveltui-reactive",
- "sveltui-terminal",
 ]
 
 [[package]]
 name = "sveltui-components"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "crossterm",
  "sveltui",
- "sveltui-element",
- "sveltui-layout",
  "sveltui-macros",
- "sveltui-reactive",
-]
-
-[[package]]
-name = "sveltui-element"
-version = "0.1.0"
-dependencies = [
- "crossterm",
- "sveltui-layout",
- "sveltui-reactive",
- "sveltui-terminal",
-]
-
-[[package]]
-name = "sveltui-layout"
-version = "0.1.0"
-dependencies = [
- "crossterm",
 ]
 
 [[package]]
 name = "sveltui-macros"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "sveltui-reactive"
-version = "0.1.0"
-
-[[package]]
-name = "sveltui-terminal"
-version = "0.1.0"
-dependencies = [
- "crossterm",
- "sveltui-layout",
 ]
 
 [[package]]

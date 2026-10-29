@@ -1,3 +1,10 @@
+use crate::element::{
+    DispatchOutcome, EventContext, EventResult, FocusManager, HitMap, VNode,
+    render_node_interactive, reset_focus_counter,
+};
+use crate::layout::Rect;
+use crate::reactive::Runtime;
+use crate::terminal::Terminal;
 use crate::watcher::FileWatcher;
 use crossterm::event::{
     self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEventKind,
@@ -5,13 +12,6 @@ use crossterm::event::{
 use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use sveltui_element::{
-    DispatchOutcome, EventContext, EventResult, FocusManager, HitMap, VNode,
-    render_node_interactive, reset_focus_counter,
-};
-use sveltui_layout::Rect;
-use sveltui_reactive::Runtime;
-use sveltui_terminal::Terminal;
 
 pub struct App<V, H = fn(KeyEvent, &mut EventContext) -> EventResult, S = fn(&Path)> {
     view: V,
@@ -119,9 +119,9 @@ where
                 // Clear before construction so writes during rendering survive.
                 Runtime::set_dirty(false);
                 reset_focus_counter();
-                sveltui_reactive::begin_frame();
+                crate::reactive::begin_frame();
                 let root_node = focus.with_context(&mut self.view);
-                sveltui_reactive::end_frame();
+                crate::reactive::end_frame();
                 terminal.curr_buffer.clear();
                 hit_map.clear();
                 let screen_rect = Rect::new(0, 0, term_w, term_h);

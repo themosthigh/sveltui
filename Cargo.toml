@@ -1,12 +1,24 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/sveltui-reactive",
-    "crates/sveltui-layout",
-    "crates/sveltui-terminal",
-    "crates/sveltui-element",
     "crates/sveltui-components",
     "crates/sveltui-macros",
     "crates/sveltui",
 ]
 default-members = ["crates/sveltui"]
+
+[workspace.package]
+version = "0.1.0-alpha.1"
+edition = "2024"
+rust-version = "1.85"
+authors = ["themosthigh"]
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/themosthigh/sveltui"
+homepage = "https://github.com/themosthigh/sveltui"
+keywords = ["tui", "terminal", "reactive", "svelte", "ui"]
+categories = ["command-line-interface", "gui"]
+
+[workspace.dependencies]
+sveltui = { path = "crates/sveltui", version = "0.1.0-alpha.1" }
+sveltui-macros = { path = "crates/sveltui-macros", version = "0.1.0-alpha.1" }
+crossterm = "0.28"

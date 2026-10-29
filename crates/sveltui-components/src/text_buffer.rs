@@ -1,1 +1,1 @@
-pub use sveltui_element::text_buffer::*;
+pub use sveltui::element::text_buffer::*;

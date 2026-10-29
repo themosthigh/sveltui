@@ -10,6 +10,15 @@ I reject the TEA (Elm's model) for building applications. I build websites for a
 I therefore believe that some amount of performance can be sacrificed for the _"Joy of code"_
 
 
+## Installation
+
+```sh
+cargo add sveltui@0.1.0-alpha.1 sveltui-components@0.1.0-alpha.1
+```
+
+> Pre-release versions must be requested explicitly until a stable release exists.
+
+
 ## Syntax example
 
 For a comprehensive guide, see the [syntax guide](./APPLICATION_SYNTAX.md).

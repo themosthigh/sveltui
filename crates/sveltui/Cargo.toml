@@ -1,15 +1,20 @@
 [package]
 name = "sveltui"
-version = "0.1.0"
-edition = "2024"
+description = "A declarative, reactive TUI framework that feels like writing Svelte."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "../../README.md"
 
 [dependencies]
-sveltui-reactive = { path = "../sveltui-reactive" }
-sveltui-layout = { path = "../sveltui-layout" }
-sveltui-terminal = { path = "../sveltui-terminal" }
-sveltui-element = { path = "../sveltui-element" }
-sveltui-macros = { path = "../sveltui-macros" }
-crossterm = "0.28"
+sveltui-macros.workspace = true
+crossterm.workspace = true
 notify = "6.1"
 
 [dev-dependencies]

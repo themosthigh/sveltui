@@ -1,12 +1,18 @@
 [package]
 name = "sveltui-components"
-version = "0.1.0"
-edition = "2024"
+description = "Built-in components (Button, TextInput, Dialog, ...) for sveltui."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "../../README.md"
 
 [dependencies]
-sveltui = { path = "../sveltui" }
-sveltui-element = { path = "../sveltui-element" }
-sveltui-layout = { path = "../sveltui-layout" }
-sveltui-reactive = { path = "../sveltui-reactive" }
-sveltui-macros = { path = "../sveltui-macros" }
-crossterm = "0.28"
+sveltui.workspace = true
+sveltui-macros.workspace = true
+crossterm.workspace = true

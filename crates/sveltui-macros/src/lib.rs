@@ -24,12 +24,7 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let attrs = &input_fn.attrs;
     let fn_name = &input_fn.sig.ident;
 
-    let pkg = std::env::var("CARGO_PKG_NAME").unwrap_or_default();
-    let root = if pkg == "sveltui-reactive" {
-        quote! { crate }
-    } else {
-        quote! { ::sveltui::reactive }
-    };
+    let root = quote! { ::sveltui::reactive };
 
     let props_ident = quote::format_ident!("{}Props", fn_name);
     let builder_ident = quote::format_ident!("{}PropsBuilder", fn_name);
@@ -116,12 +111,7 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
     let struct_name = &input.ident;
     let builder_name = quote::format_ident!("{}Builder", struct_name);
 
-    let pkg = std::env::var("CARGO_PKG_NAME").unwrap_or_default();
-    let root = if pkg == "sveltui-element" {
-        quote! { crate }
-    } else {
-        quote! { ::sveltui }
-    };
+    let root = quote! { ::sveltui };
 
     let fields = match &input.data {
         syn::Data::Struct(s) => match &s.fields {

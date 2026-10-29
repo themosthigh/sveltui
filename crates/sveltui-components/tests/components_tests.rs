@@ -1,12 +1,12 @@
 use sveltui::Snippet;
+use sveltui::element::{FocusId, IntoNode, VNode, measure_node};
+use sveltui::layout::Placement;
+use sveltui::reactive::create_signal;
+use sveltui::view;
 use sveltui_components::{
     Badge, BadgeProps, Button, ButtonProps, Dialog, DialogProps, DropdownMenu, Popover,
     PopoverProps, TextArea, TextAreaProps, get_cursor, set_cursor,
 };
-use sveltui_element::{FocusId, IntoNode, VNode, measure_node};
-use sveltui_layout::Placement;
-use sveltui_macros::view;
-use sveltui_reactive::create_signal;
 
 #[test]
 fn test_button_measurement() {
@@ -171,14 +171,14 @@ fn test_dropdown_component_into_node() {
             </DropdownMenu::Content>
         </DropdownMenu::Root>
     };
-    let tree = sveltui_element::InteractionTree::from_node(&dropdown);
+    let tree = sveltui::element::InteractionTree::from_node(&dropdown);
     assert_eq!(tree.layers().len(), 1);
     assert!(tree.layers()[0].active);
     assert!(tree.layers()[0].opener.is_some());
     assert_eq!(
         tree.nodes()
             .iter()
-            .filter(|n| n.interaction.semantics.role == sveltui_element::Role::MenuItem)
+            .filter(|n| n.interaction.semantics.role == sveltui::element::Role::MenuItem)
             .count(),
         2
     );
@@ -207,7 +207,7 @@ fn test_nested_dropdown_submenus_3_level() {
             </DropdownMenu::Content>
         </DropdownMenu::Root>
     };
-    let tree = sveltui_element::InteractionTree::from_node(&node);
+    let tree = sveltui::element::InteractionTree::from_node(&node);
     assert_eq!(tree.layers().len(), 3);
     assert!(tree.layers().iter().all(|layer| layer.active));
     let pdf = tree

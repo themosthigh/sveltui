@@ -40,20 +40,18 @@
 //! Semantic snapshots are available through the interaction tree; platform
 //! screen-reader adapters are not included.
 //!
-//! Run `cargo run --example keyboard_scopes` for nested overlays and a core-only
+//! Run `cargo run --example component_keyboard` for nested overlays and a core-only
 //! custom control. Collection/grid/tree selection helpers are available for
 //! composing future widgets; this release migrates the existing component set.
 
 extern crate self as sveltui;
 
 pub mod app;
+pub mod element;
+pub mod layout;
+pub mod reactive;
+pub mod terminal;
 pub mod watcher;
-
-// Re-export sub-crates
-pub use sveltui_element as element;
-pub use sveltui_layout as layout;
-pub use sveltui_reactive as reactive;
-pub use sveltui_terminal as terminal;
 
 // Re-export proc-macros
 pub use sveltui_macros::{Props, component, view};

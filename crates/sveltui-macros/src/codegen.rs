@@ -6,11 +6,7 @@ use syn::Expr;
 use syn::spanned::Spanned;
 
 fn element_root() -> proc_macro2::TokenStream {
-    match std::env::var("CARGO_PKG_NAME").as_deref() {
-        Ok("sveltui-components") => quote! { ::sveltui_element },
-        Ok("sveltui-element") => quote! { crate },
-        _ => quote! { ::sveltui::element },
-    }
+    quote! { ::sveltui::element }
 }
 
 pub fn codegen_node(node: &Node) -> proc_macro2::TokenStream {

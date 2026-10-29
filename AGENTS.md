@@ -48,13 +48,9 @@ sveltui/
 ├── Makefile                    # Standard developer & agent targets
 ├── AGENTS.md                   # Instructions and standards for agents
 ├── crates/
-│   ├── sveltui/                  # Main facade crate, App runtime, file watcher, prelude
-│   ├── sveltui-components/       # Built-in components (Button, TextInput, Switch, Checkbox, etc.)
-│   ├── sveltui-element/          # VNodes, FlexBoxElement, TextElement, layout execution, hit testing, focus
-│   ├── sveltui-layout/           # Flex layout, BorderStyle, Padding, Size, Rect geometry
-│   ├── sveltui-macros/           # Declarative JSX macro (`view! { ... }`)
-│   ├── sveltui-reactive/         # Fine-grained reactive signals (`create_signal`, `Runtime`)
-│   └── sveltui-terminal/         # Double-buffering, terminal rendering, raw mode
+│   ├── sveltui/                  # Core crate (App, reactive, layout, terminal, element)
+│   ├── sveltui-components/       # Built-in components (Button, TextInput, Dialog, etc.)
+│   └── sveltui-macros/           # Declarative JSX macro (`view! { ... }`, `#[component]`)
 └── examples/                   # Framework and component examples
 ```
 
