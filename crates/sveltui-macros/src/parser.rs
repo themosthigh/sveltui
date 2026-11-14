@@ -346,6 +346,43 @@ fn parse_if_node(input: ParseStream, first_content: ParseStream) -> Result<IfNod
     })
 }
 
+/// Splits what follows `as` in `{#each}` into the item pattern, the optional
+/// index and the optional `(key)`. A trailing parenthesised group is only a
+/// key when the rest still parses, so a pattern like `Some(x)` stays whole.
+fn parse_each_binding(
+    tokens: Vec<proc_macro2::TokenTree>,
+) -> Result<(Pat, Option<Ident>, Option<Expr>)> {
+    use proc_macro2::{Delimiter, TokenTree};
+    if let Some(TokenTree::Group(group)) = tokens.last()
+        && group.delimiter() == Delimiter::Parenthesis
+        && tokens.len() > 1
+        && let Ok(key) = syn::parse2::<Expr>(group.stream())
+    {
+        let before: Vec<TokenTree> = tokens[..tokens.len() - 1].to_vec();
+        if let Ok((pat, index)) = parse_item_and_index(before) {
+            return Ok((pat, index, Some(key)));
+        }
+    }
+    let (pat, index) = parse_item_and_index(tokens)?;
+    Ok((pat, index, None))
+}
+
+/// `item` or `item, i`. The comma is found at the top level only, so
+/// tuple patterns like `(a, b)` keep theirs.
+fn parse_item_and_index(tokens: Vec<proc_macro2::TokenTree>) -> Result<(Pat, Option<Ident>)> {
+    use proc_macro2::TokenTree;
+    let comma = tokens
+        .iter()
+        .position(|t| matches!(t, TokenTree::Punct(p) if p.as_char() == ','));
+    let Some(comma) = comma else {
+        let pat = Pat::parse_single.parse2(tokens.into_iter().collect())?;
+        return Ok((pat, None));
+    };
+    let pat = Pat::parse_single.parse2(tokens[..comma].iter().cloned().collect())?;
+    let index: Ident = syn::parse2(tokens[comma + 1..].iter().cloned().collect())?;
+    Ok((pat, Some(index)))
+}
+
 fn parse_each_node(input: ParseStream, first_content: ParseStream) -> Result<EachNode> {
     let mut expr_tokens = TokenStream::new();
     while !first_content.peek(Token![as]) && !first_content.is_empty() {
@@ -363,36 +400,7 @@ fn parse_each_node(input: ParseStream, first_content: ParseStream) -> Result<Eac
         tts
     };
 
-    let (pat, key) = if let Some(proc_macro2::TokenTree::Group(last_group)) = rest_tokens.last() {
-        if last_group.delimiter() == proc_macro2::Delimiter::Parenthesis && rest_tokens.len() > 1 {
-            let before_tokens: TokenStream = rest_tokens[..rest_tokens.len() - 1]
-                .iter()
-                .cloned()
-                .collect();
-            if let Ok(pat) = Pat::parse_single.parse2(before_tokens) {
-                let key_stream = last_group.stream();
-                if let Ok(key) = syn::parse2::<Expr>(key_stream) {
-                    (pat, Some(key))
-                } else {
-                    let all_tokens: TokenStream = rest_tokens.into_iter().collect();
-                    let pat = Pat::parse_single.parse2(all_tokens)?;
-                    (pat, None)
-                }
-            } else {
-                let all_tokens: TokenStream = rest_tokens.into_iter().collect();
-                let pat = Pat::parse_single.parse2(all_tokens)?;
-                (pat, None)
-            }
-        } else {
-            let all_tokens: TokenStream = rest_tokens.into_iter().collect();
-            let pat = Pat::parse_single.parse2(all_tokens)?;
-            (pat, None)
-        }
-    } else {
-        let all_tokens: TokenStream = rest_tokens.into_iter().collect();
-        let pat = Pat::parse_single.parse2(all_tokens)?;
-        (pat, None)
-    };
+    let (pat, index, key) = parse_each_binding(rest_tokens)?;
 
     let body = parse_nodes_until(input, is_control_boundary)?;
     let mut else_branch = None;
@@ -439,18 +447,37 @@ fn parse_each_node(input: ParseStream, first_content: ParseStream) -> Result<Eac
     Ok(EachNode {
         expr,
         pat,
+        index,
         key,
         body,
         else_branch,
     })
 }
 
+/// The pattern after `then` or `catch`, left out for a bare tag.
+fn parse_optional_pat(content: ParseStream) -> Result<Option<Pat>> {
+    if content.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(Pat::parse_single(content)?))
+    }
+}
+
 fn parse_await_node(input: ParseStream, first_content: ParseStream) -> Result<AwaitNode> {
     let future: Expr = first_content.parse()?;
-    let loading = parse_nodes_until(input, is_control_boundary)?;
-
     let mut then_branch = None;
     let mut catch_branch = None;
+
+    // `{#await fut then v}` skips the pending state and starts straight in
+    // the resolved branch.
+    let loading = if first_content.peek(Ident) && first_content.fork().parse::<Ident>()? == "then" {
+        first_content.parse::<Ident>()?;
+        let pat = parse_optional_pat(first_content)?;
+        then_branch = Some((pat, parse_nodes_until(input, is_control_boundary)?));
+        Vec::new()
+    } else {
+        parse_nodes_until(input, is_control_boundary)?
+    };
 
     loop {
         if input.is_empty() {
@@ -482,11 +509,11 @@ fn parse_await_node(input: ParseStream, first_content: ParseStream) -> Result<Aw
                 ));
             }
             if tag == "then" {
-                let pat = real_content.call(Pat::parse_single)?;
+                let pat = parse_optional_pat(&real_content)?;
                 let body = parse_nodes_until(input, is_control_boundary)?;
                 then_branch = Some((pat, body));
             } else if tag == "catch" {
-                let pat = real_content.call(Pat::parse_single)?;
+                let pat = parse_optional_pat(&real_content)?;
                 let body = parse_nodes_until(input, is_control_boundary)?;
                 catch_branch = Some((pat, body));
             } else {

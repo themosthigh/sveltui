@@ -43,6 +43,8 @@ pub struct IfNode {
 pub struct EachNode {
     pub expr: Expr,
     pub pat: Pat,
+    /// The `i` in `{#each xs as item, i}`.
+    pub index: Option<Ident>,
     pub key: Option<Expr>,
     pub body: Vec<Node>,
     pub else_branch: Option<Vec<Node>>,
@@ -51,8 +53,9 @@ pub struct EachNode {
 pub struct AwaitNode {
     pub future: Expr,
     pub loading: Vec<Node>,
-    pub then_branch: Option<(Pat, Vec<Node>)>,
-    pub catch_branch: Option<(Pat, Vec<Node>)>,
+    /// A `None` pattern is a bare `{:then}`: show the body, bind nothing.
+    pub then_branch: Option<(Option<Pat>, Vec<Node>)>,
+    pub catch_branch: Option<(Option<Pat>, Vec<Node>)>,
 }
 
 pub struct SnippetNode {

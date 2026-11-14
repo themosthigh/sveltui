@@ -628,4 +628,38 @@ mod tests {
         let code = generated(quote! { {@render props.footer} });
         assert!(!code.contains("is_snippet_present"));
     }
+
+    #[test]
+    fn each_accepts_an_index_and_a_key() {
+        let code = generated(tokens("{#each xs as item, i (item.id)} \"x\" {/each}"));
+        assert!(code.contains("for (i , item) in (xs) . into_iter () . enumerate ()"));
+        assert!(code.contains("run_keyed"));
+        let code = generated(tokens("{#each xs as (a, b), i} \"x\" {/each}"));
+        assert!(code.contains("for (i , (a , b)) in"));
+        let code = generated(tokens("{#each xs as (a, b)} \"x\" {/each}"));
+        assert!(code.contains("for (a , b) in (xs) . into_iter () {"));
+    }
+
+    #[test]
+    fn each_index_must_be_a_name() {
+        assert!(!parse_error(tokens("{#each xs as item, 1} \"x\" {/each}")).is_empty());
+    }
+
+    #[test]
+    fn bare_then_and_catch_bind_nothing() {
+        let code = generated(tokens(
+            "{#await fut} \"wait\" {:then} \"done\" {:catch} \"oops\" {/await}",
+        ));
+        assert!(code.contains("if let Some (_) = __val"));
+        assert!(code.contains("if let Some (_) = __err"));
+    }
+
+    #[test]
+    fn then_shorthand_skips_the_loading_branch() {
+        let code = generated(tokens("{#await fut then v} {v} {:catch e} {e} {/await}"));
+        assert!(code.contains("if let Some (v) = __val"));
+        assert!(code.contains("if let Some (e) = __err"));
+        let code = generated(tokens("{#await fut then} \"done\" {/await}"));
+        assert!(code.contains("if let Some (_) = __val"));
+    }
 }

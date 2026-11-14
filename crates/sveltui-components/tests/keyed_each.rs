@@ -45,6 +45,18 @@ fn PositionalList() -> impl IntoNode {
     }
 }
 
+#[component]
+fn IndexedList() -> impl IntoNode {
+    let ids = ROWS.with(|rows| rows.borrow().clone());
+    view! {
+        <View>
+            {#each ids as id, i (id)}
+                <Row id={id * 10 + i as u32} />
+            {/each}
+        </View>
+    }
+}
+
 fn frame(root: fn() -> VNode) -> Vec<(u32, u32)> {
     LOG.with(|log| log.borrow_mut().clear());
     begin_frame();
@@ -94,4 +106,12 @@ fn unkeyed_rows_follow_position() {
         frame(|| PositionalList(PositionalListProps::builder().build()).into_node()),
         vec![(2, 2), (3, 2)]
     );
+}
+
+#[test]
+fn each_binds_the_row_index_next_to_a_key() {
+    ROWS.with(|rows| *rows.borrow_mut() = vec![1, 2, 3]);
+    let seen = frame(|| IndexedList(IndexedListProps::builder().build()).into_node());
+    let ids: Vec<u32> = seen.iter().map(|(id, _)| *id).collect();
+    assert_eq!(ids, vec![10, 21, 32]);
 }

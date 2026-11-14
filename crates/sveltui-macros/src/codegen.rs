@@ -128,6 +128,14 @@ fn codegen_each(each_node: &EachNode) -> proc_macro2::TokenStream {
     let expr = &each_node.expr;
     let pat = &each_node.pat;
     let body_ts = codegen_nodes(&each_node.body);
+    // `{#each xs as item, i}` counts the rows as we walk them.
+    let (binding, rows) = match &each_node.index {
+        Some(index) => (
+            quote! { (#index, #pat) },
+            quote! { (#expr).into_iter().enumerate() },
+        ),
+        None => (quote! { #pat }, quote! { (#expr).into_iter() }),
+    };
 
     let else_ts = if let Some(else_branch) = &each_node.else_branch {
         codegen_nodes(else_branch)
@@ -154,7 +162,7 @@ fn codegen_each(each_node: &EachNode) -> proc_macro2::TokenStream {
     quote! {
         ::sveltui::reactive::ComponentScope::run_scoped("each", || {
             let mut __items = Vec::new();
-            for #pat in (#expr).into_iter() {
+            for #binding in #rows {
                 __items.push(#row);
             }
             if __items.is_empty() {
@@ -233,6 +241,7 @@ fn codegen_await(await_node: &AwaitNode) -> proc_macro2::TokenStream {
     let loading_ts = branch_scope("await-loading", codegen_nodes(&await_node.loading));
 
     let then_body = if let Some((pat, body)) = &await_node.then_branch {
+        let pat = pat.as_ref().map_or_else(|| quote! { _ }, |p| quote! { #p });
         let body_ts = branch_scope("await-then", codegen_nodes(body));
         quote! {
             if let Some(#pat) = __val {
@@ -246,6 +255,7 @@ fn codegen_await(await_node: &AwaitNode) -> proc_macro2::TokenStream {
     };
 
     let catch_body = if let Some((pat, body)) = &await_node.catch_branch {
+        let pat = pat.as_ref().map_or_else(|| quote! { _ }, |p| quote! { #p });
         let body_ts = branch_scope("await-catch", codegen_nodes(body));
         quote! {
             if let Some(#pat) = __err {
