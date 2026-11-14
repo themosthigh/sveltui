@@ -662,4 +662,68 @@ mod tests {
         let code = generated(tokens("{#await fut then} \"done\" {/await}"));
         assert!(code.contains("if let Some (_) = __val"));
     }
+
+    #[test]
+    fn key_blocks_run_the_body_in_a_keyed_scope() {
+        let code = generated(tokens("{#key page} <Row /> {/key}"));
+        assert!(code.contains("run_keyed (\"key\" , __key"));
+        assert!(parse_error(tokens("{#key page} <Row /> {/each}")).contains("{/key}"));
+    }
+
+    #[test]
+    fn const_and_snippets_become_lets_at_the_top() {
+        let code = generated(tokens(
+            "{#if ok} {@const total = a + b} {#snippet row(x, y)} {x} {/snippet} \"hi\" {@render row(1, 2)} {/if}",
+        ));
+        let total = code.find("let total = a + b ;").expect("const binding");
+        let row = code.find("let row = :: sveltui").expect("snippet binding");
+        let first_node = code.find("\"hi\"").expect("text");
+        assert!(total < row && row < first_node);
+        assert!(code.contains("(row) . render ((1 , 2))"));
+    }
+
+    #[test]
+    fn single_argument_render_is_not_wrapped() {
+        let code = generated(quote! { {@render row(x)} });
+        assert!(code.contains("(row) . render (x)"));
+        let code = generated(quote! { {@render row()} });
+        assert!(code.contains("(row) . render (())"));
+    }
+
+    #[test]
+    fn const_outside_a_block_is_an_error() {
+        let tree = syn::parse2::<ViewTree>(tokens("{@const a = 1}")).expect("parses");
+        assert!(
+            codegen_node(&tree.root)
+                .to_string()
+                .contains("compile_error")
+        );
+    }
+
+    #[test]
+    fn interpolated_strings_become_format_calls() {
+        let code = generated(tokens(
+            r#"<View> $"Items: {tasks.get().len()} {{ok}} {ratio:.1}" "{plain}" </View>"#,
+        ));
+        assert!(code.contains(
+            ":: std :: format ! (\"Items: {} {{ok}} {:.1}\" , tasks . get () . len () , ratio)"
+        ));
+        // A plain string keeps its braces as they are.
+        assert!(code.contains("\"{plain}\""));
+    }
+
+    #[test]
+    fn interpolation_works_in_attributes_and_with_a_spaced_f() {
+        let code = generated(tokens(r#"<View title=$"n={n}" /> "#));
+        assert!(code.contains(". title (:: std :: format ! (\"n={}\" , n))"));
+        let code = generated(tokens(r#"f "a{b::c}""#));
+        assert!(code.contains("format ! (\"a{}\" , b :: c)"));
+    }
+
+    #[test]
+    fn interpolation_reports_bad_braces() {
+        assert!(parse_error(tokens(r#"$"a {b""#)).contains("Unclosed"));
+        assert!(parse_error(tokens(r#"$"a } b""#)).contains("Unmatched"));
+        assert!(parse_error(tokens(r#"$"a {1 +} b""#)).contains("not a Rust expression"));
+    }
 }

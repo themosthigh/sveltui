@@ -9,6 +9,8 @@ pub enum Node {
     Await(AwaitNode),
     Snippet(SnippetNode),
     Render(RenderNode),
+    Key(KeyNode),
+    Const(ConstNode),
 }
 
 pub struct Attribute {
@@ -72,4 +74,16 @@ pub struct RenderNode {
 
 pub struct ViewTree {
     pub root: Node,
+}
+
+/// `{#key expr} .. {/key}`: the body starts afresh whenever `expr` changes.
+pub struct KeyNode {
+    pub expr: Expr,
+    pub body: Vec<Node>,
+}
+
+/// `{@const pat = expr}`: a local binding for the rest of the block.
+pub struct ConstNode {
+    pub pat: Pat,
+    pub expr: Expr,
 }

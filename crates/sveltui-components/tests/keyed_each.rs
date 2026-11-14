@@ -57,6 +57,22 @@ fn IndexedList() -> impl IntoNode {
     }
 }
 
+#[component]
+fn Keyed() -> impl IntoNode {
+    // The first row's id doubles as the key.
+    let page = ROWS.with(|rows| rows.borrow()[0]);
+    view! {
+        {#key page}
+            {@const id = 7}
+            {#snippet pair(a: u32, b: u32)}
+                <Row id={a + b} />
+            {/snippet}
+            {@render pair(id, 1)}
+            <TextSpan>$"page {page} of {id:>3}"</TextSpan>
+        {/key}
+    }
+}
+
 fn frame(root: fn() -> VNode) -> Vec<(u32, u32)> {
     LOG.with(|log| log.borrow_mut().clear());
     begin_frame();
@@ -114,4 +130,14 @@ fn each_binds_the_row_index_next_to_a_key() {
     let seen = frame(|| IndexedList(IndexedListProps::builder().build()).into_node());
     let ids: Vec<u32> = seen.iter().map(|(id, _)| *id).collect();
     assert_eq!(ids, vec![10, 21, 32]);
+}
+
+#[test]
+fn key_blocks_reset_state_when_the_value_changes() {
+    ROWS.with(|rows| *rows.borrow_mut() = vec![1]);
+    let run = || frame(|| Keyed(KeyedProps::builder().build()).into_node());
+    assert_eq!(run(), vec![(8, 1)]);
+    assert_eq!(run(), vec![(8, 2)]);
+    ROWS.with(|rows| *rows.borrow_mut() = vec![2]);
+    assert_eq!(run(), vec![(8, 1)]);
 }

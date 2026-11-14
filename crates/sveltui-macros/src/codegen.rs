@@ -1,5 +1,5 @@
 use crate::ast::{
-    AwaitNode, EachNode, Element, IfCondition, IfNode, Node, RenderNode, SnippetNode,
+    AwaitNode, EachNode, Element, IfCondition, IfNode, KeyNode, Node, RenderNode, SnippetNode,
 };
 use quote::{ToTokens, quote, quote_spanned};
 use syn::Expr;
@@ -28,38 +28,69 @@ pub fn codegen_node(node: &Node) -> proc_macro2::TokenStream {
         Node::Await(await_node) => codegen_await(await_node),
         Node::Snippet(snippet_node) => codegen_snippet(snippet_node),
         Node::Render(render_node) => codegen_render(render_node),
+        Node::Key(key_node) => codegen_key(key_node),
+        Node::Const(const_node) => syn::Error::new(
+            const_node.pat.span(),
+            "`{@const}` must sit directly inside an element, component or block.",
+        )
+        .to_compile_error(),
+    }
+}
+
+/// Lowers `{#key expr}`. The body runs in a scope that goes by the value,
+/// so when the value changes the old scope is dropped and the body starts
+/// afresh, with new state for every component in it.
+fn codegen_key(key_node: &KeyNode) -> proc_macro2::TokenStream {
+    let root = element_root();
+    let expr = &key_node.expr;
+    let body_ts = codegen_nodes(&key_node.body);
+    quote! {
+        #root::IntoNode::into_node({
+            let __key = &(#expr);
+            ::sveltui::reactive::ComponentScope::run_keyed("key", __key, || #body_ts)
+        })
     }
 }
 
 pub fn codegen_nodes(nodes: &[Node]) -> proc_macro2::TokenStream {
-    let root = element_root();
-    if nodes.is_empty() {
-        quote! { #root::VNode::Empty }
-    } else if nodes.len() == 1 {
-        codegen_node(&nodes[0])
-    } else {
-        let streams = nodes.iter().map(codegen_node);
-        quote! {
-            #root::VNode::Fragment(vec![
-                #(#streams),*
-            ])
-        }
-    }
+    codegen_block(nodes.iter())
 }
 
 pub fn codegen_node_refs(nodes: &[&Node]) -> proc_macro2::TokenStream {
+    codegen_block(nodes.iter().copied())
+}
+
+/// Lowers the nodes of one block. `{@const}` and local `{#snippet}`
+/// declarations become `let` bindings at the top, in source order, so the
+/// nodes after them (wherever they sit) can use the names. They render
+/// nothing themselves.
+fn codegen_block<'a>(nodes: impl Iterator<Item = &'a Node>) -> proc_macro2::TokenStream {
     let root = element_root();
-    if nodes.is_empty() {
-        quote! { #root::VNode::Empty }
-    } else if nodes.len() == 1 {
-        codegen_node(nodes[0])
-    } else {
-        let streams = nodes.iter().map(|n| codegen_node(n));
-        quote! {
-            #root::VNode::Fragment(vec![
-                #(#streams),*
-            ])
+    let mut bindings = Vec::new();
+    let mut rendered = Vec::new();
+    for node in nodes {
+        match node {
+            Node::Const(c) => {
+                let (pat, expr) = (&c.pat, &c.expr);
+                bindings.push(quote! { let #pat = #expr; });
+            }
+            Node::Snippet(s) => {
+                let name = &s.name;
+                let snippet = codegen_snippet(s);
+                bindings.push(quote! { let #name = #snippet; });
+            }
+            other => rendered.push(codegen_node(other)),
         }
+    }
+    let body = match rendered.len() {
+        0 => quote! { #root::VNode::Empty },
+        1 => rendered.remove(0),
+        _ => quote! { #root::VNode::Fragment(vec![ #(#rendered),* ]) },
+    };
+    if bindings.is_empty() {
+        body
+    } else {
+        quote! {{ #(#bindings)* #body }}
     }
 }
 
@@ -190,11 +221,17 @@ fn codegen_render(render_node: &RenderNode) -> proc_macro2::TokenStream {
         }
         _ => (quote! { (#target) }, quote! { () }),
     };
-    // `x()` renders a snippet that takes no argument.
-    let args = if args.is_empty() {
-        quote! { () }
-    } else {
-        args
+    // A snippet takes one value: none is `()` and several are a tuple, the
+    // same shape `{#snippet name(a, b)}` declares.
+    let arg_count = match target {
+        Expr::Call(call) => call.args.len(),
+        Expr::MethodCall(m) => m.args.len(),
+        _ => 0,
+    };
+    let args = match arg_count {
+        0 => quote! { () },
+        1 => args,
+        _ => quote! { (#args) },
     };
     if render_node.optional {
         // Checking first means the arguments aren't evaluated for a snippet
@@ -225,7 +262,24 @@ fn codegen_snippet(snippet_node: &SnippetNode) -> proc_macro2::TokenStream {
         let first = &args[0];
         quote! { #first }
     } else {
-        quote! { (#(#args),*) }
+        // Several arguments travel as one tuple. A type written on an
+        // argument moves to the tuple's type, with `_` for the others.
+        let pats = args.iter().map(|arg| match arg {
+            syn::Pat::Type(typed) => &*typed.pat,
+            other => other,
+        });
+        let tys = args.iter().map(|arg| match arg {
+            syn::Pat::Type(typed) => {
+                let ty = &typed.ty;
+                quote! { #ty }
+            }
+            _ => quote! { _ },
+        });
+        if args.iter().any(|arg| matches!(arg, syn::Pat::Type(_))) {
+            quote! { (#(#pats),*): (#(#tys),*) }
+        } else {
+            quote! { (#(#pats),*) }
+        }
     };
 
     quote! {

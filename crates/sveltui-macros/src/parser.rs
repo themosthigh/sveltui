@@ -1,6 +1,6 @@
 use crate::ast::{
-    Attribute, AwaitNode, EachNode, Element, IfBranch, IfCondition, IfNode, Node, RenderNode,
-    SnippetNode, ViewTree,
+    Attribute, AwaitNode, ConstNode, EachNode, Element, IfBranch, IfCondition, IfNode, KeyNode,
+    Node, RenderNode, SnippetNode, ViewTree,
 };
 use proc_macro2::TokenStream;
 use syn::ext::IdentExt;
@@ -20,6 +20,10 @@ pub fn parse_attr_value(input: ParseStream) -> Result<Expr> {
         syn::braced!(content in input);
         let expr: Expr = content.parse()?;
         return Ok(expr);
+    }
+
+    if let Some(format) = parse_format_literal(input)? {
+        return Ok(format);
     }
 
     let start = input.span();
@@ -251,6 +255,8 @@ fn parse_nodes_until(
                 break;
             }
             nodes.push(Node::Element(input.parse::<Element>()?));
+        } else if let Some(format) = parse_format_literal(input)? {
+            nodes.push(Node::Block(format));
         } else if input.peek(LitStr) {
             nodes.push(Node::Text(input.parse::<LitStr>()?));
         } else if input.peek(syn::token::Brace) {
@@ -535,6 +541,125 @@ fn parse_await_node(input: ParseStream, first_content: ParseStream) -> Result<Aw
     })
 }
 
+fn parse_key_node(input: ParseStream, first_content: ParseStream) -> Result<KeyNode> {
+    let expr: Expr = first_content.parse()?;
+    let body = parse_nodes_until(input, is_control_boundary)?;
+    if input.is_empty() {
+        return Err(input.error("Unclosed `{#key}` block, expected `{/key}`"));
+    }
+    let real_content;
+    syn::braced!(real_content in input);
+    real_content.parse::<Token![/]>()?;
+    let tag = real_content.call(Ident::parse_any)?;
+    if tag != "key" {
+        return Err(syn::Error::new(
+            tag.span(),
+            format!("Expected `{{/key}}`, found `{{/{tag}}}`"),
+        ));
+    }
+    Ok(KeyNode { expr, body })
+}
+
+/// Parses an interpolated string, written `$"Items: {n}"` (or `f "..."`,
+/// since `f"..."` is a reserved prefix that Rust refuses to lex). Plain
+/// strings stay literal, so their braces need no escaping. Returns `None`
+/// when the input doesn't start one.
+fn parse_format_literal(input: ParseStream) -> Result<Option<Expr>> {
+    let marker = input.peek(Token![$])
+        || (input.peek(Ident) && input.peek2(LitStr) && input.fork().parse::<Ident>()? == "f");
+    if !marker {
+        return Ok(None);
+    }
+    if input.peek(Token![$]) {
+        input.parse::<Token![$]>()?;
+    } else {
+        input.parse::<Ident>()?;
+    }
+    let lit: LitStr = input.parse()?;
+    interpolate(&lit).map(Some)
+}
+
+/// Turns the text of an interpolated string into a `format!` call. Each
+/// `{expr}` or `{expr:spec}` becomes a hole with `expr` as its argument,
+/// and `{{` and `}}` stay literal braces. `format!` itself can only take
+/// plain names inline, which is why we do the splitting here.
+fn interpolate(lit: &LitStr) -> Result<Expr> {
+    let text = lit.value();
+    let mut format = String::new();
+    let mut args: Vec<Expr> = Vec::new();
+    let mut chars = text.char_indices().peekable();
+    while let Some((start, c)) = chars.next() {
+        match c {
+            '{' if matches!(chars.peek(), Some((_, '{'))) => {
+                chars.next();
+                format.push_str("{{");
+            }
+            '}' if matches!(chars.peek(), Some((_, '}'))) => {
+                chars.next();
+                format.push_str("}}");
+            }
+            '}' => {
+                return Err(syn::Error::new(
+                    lit.span(),
+                    "Unmatched `}` in an interpolated string. Write `}}` for a literal brace.",
+                ));
+            }
+            '{' => {
+                let mut depth = 1;
+                let mut end = None;
+                for (i, c) in chars.by_ref() {
+                    match c {
+                        '{' => depth += 1,
+                        '}' => {
+                            depth -= 1;
+                            if depth == 0 {
+                                end = Some(i);
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                let Some(end) = end else {
+                    return Err(syn::Error::new(
+                        lit.span(),
+                        "Unclosed `{` in an interpolated string. Write `{{` for a literal brace.",
+                    ));
+                };
+                let (expr, spec) = split_hole(&text[start + 1..end], lit)?;
+                format.push('{');
+                format.push_str(&spec);
+                format.push('}');
+                args.push(expr);
+            }
+            c => format.push(c),
+        }
+    }
+    let format = LitStr::new(&format, lit.span());
+    Ok(syn::parse_quote_spanned!(lit.span() => ::std::format!(#format #(, #args)*)))
+}
+
+/// Splits `expr` or `expr:spec`. The whole hole is tried as an expression
+/// first, so a `::` or a ternary-looking `a:b` inside it is never cut.
+fn split_hole(hole: &str, lit: &LitStr) -> Result<(Expr, String)> {
+    if let Ok(expr) = syn::parse_str::<Expr>(hole) {
+        return Ok((expr, String::new()));
+    }
+    let bytes = hole.as_bytes();
+    let colon = (0..bytes.len()).rev().find(|&i| {
+        bytes[i] == b':' && (i == 0 || bytes[i - 1] != b':') && bytes.get(i + 1) != Some(&b':')
+    });
+    if let Some(i) = colon
+        && let Ok(expr) = syn::parse_str::<Expr>(&hole[..i])
+    {
+        return Ok((expr, hole[i..].to_string()));
+    }
+    Err(syn::Error::new(
+        lit.span(),
+        format!("`{{{hole}}}` in an interpolated string is not a Rust expression."),
+    ))
+}
+
 fn parse_snippet_node(input: ParseStream, first_content: ParseStream) -> Result<SnippetNode> {
     let name: Ident = first_content.parse()?;
     let args = if first_content.peek(syn::token::Paren) {
@@ -622,7 +747,9 @@ fn parse_brace_node(input: ParseStream) -> Result<Node> {
     if content.peek(Token![#]) {
         content.parse::<Token![#]>()?;
         let tag = content.call(Ident::parse_any)?;
-        if tag == "if" {
+        if tag == "key" {
+            Ok(Node::Key(parse_key_node(input, &content)?))
+        } else if tag == "if" {
             Ok(Node::If(parse_if_node(input, &content)?))
         } else if tag == "each" {
             Ok(Node::Each(parse_each_node(input, &content)?))
@@ -635,7 +762,7 @@ fn parse_brace_node(input: ParseStream) -> Result<Node> {
                 tag.span(),
                 format!(
                     "Unknown block directive `#{tag}`. Valid blocks are `{{#if}}`, \
-                     `{{#each}}`, `{{#await}}` and `{{#snippet}}`."
+                     `{{#each}}`, `{{#await}}`, `{{#snippet}}` and `{{#key}}`."
                 ),
             ))
         }
@@ -644,10 +771,17 @@ fn parse_brace_node(input: ParseStream) -> Result<Node> {
         let tag = content.call(Ident::parse_any)?;
         if tag == "render" {
             Ok(Node::Render(parse_render_target(&content)?))
+        } else if tag == "const" {
+            let pat = Pat::parse_single(&content)?;
+            content.parse::<Token![=]>()?;
+            let expr: Expr = content.parse()?;
+            Ok(Node::Const(ConstNode { pat, expr }))
         } else {
             Err(syn::Error::new(
                 tag.span(),
-                format!("Unknown directive `@{tag}`. The only valid directive is `{{@render}}`."),
+                format!(
+                    "Unknown directive `@{tag}`. Valid directives are `{{@render}}` and `{{@const}}`."
+                ),
             ))
         }
     } else {
@@ -711,6 +845,10 @@ impl Parse for ViewTree {
             let el = input.parse::<Element>()?;
             Ok(ViewTree {
                 root: Node::Element(el),
+            })
+        } else if let Some(format) = parse_format_literal(input)? {
+            Ok(ViewTree {
+                root: Node::Block(format),
             })
         } else if input.peek(LitStr) {
             let lit = input.parse::<LitStr>()?;
