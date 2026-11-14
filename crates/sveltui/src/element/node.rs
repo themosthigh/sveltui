@@ -1,3 +1,4 @@
+use crate::element::dynamic::DynamicSlot;
 use crate::element::focus::FocusId;
 use crate::element::interaction::{
     Activation, DismissLayer, EventContext, EventResult, FocusGroup, FocusScope, Interaction,
@@ -244,7 +245,60 @@ pub enum VNode {
     Text(TextElement),
     Overlay(OverlayElement),
     Fragment(Vec<VNode>),
+    /// A slot that builds itself and refreshes when what it read changes.
+    /// Layout and painting never see one: `resolve` swaps each for what it
+    /// holds, and the render entry points call it. Code that looks inside a
+    /// node's children should call `resolve` first, or it will pass over
+    /// the slot.
+    Dynamic(DynamicSlot),
     Empty,
+}
+
+impl VNode {
+    /// Whether a slot is anywhere in the tree.
+    pub fn has_dynamic(&self) -> bool {
+        match self {
+            VNode::Dynamic(_) => true,
+            VNode::View(view) => view.children.iter().any(VNode::has_dynamic),
+            VNode::Fragment(items) => items.iter().any(VNode::has_dynamic),
+            VNode::Overlay(overlay) => {
+                overlay.trigger.as_deref().is_some_and(VNode::has_dynamic)
+                    || overlay.content.as_deref().is_some_and(VNode::has_dynamic)
+            }
+            VNode::Text(_) | VNode::Empty => false,
+        }
+    }
+
+    /// The tree with every slot replaced by what it holds after refreshing,
+    /// slots inside that included. A tree without slots comes back as it
+    /// was.
+    pub fn resolve(self) -> VNode {
+        match self {
+            VNode::Dynamic(slot) => slot.refresh().resolve(),
+            VNode::View(mut view) => {
+                view.children = std::mem::take(&mut view.children)
+                    .into_iter()
+                    .map(VNode::resolve)
+                    .collect();
+                VNode::View(view)
+            }
+            VNode::Fragment(items) => {
+                VNode::Fragment(items.into_iter().map(VNode::resolve).collect())
+            }
+            VNode::Overlay(mut overlay) => {
+                overlay.trigger = overlay.trigger.take().map(|n| Box::new(n.resolve()));
+                overlay.content = overlay.content.take().map(|n| Box::new(n.resolve()));
+                VNode::Overlay(overlay)
+            }
+            other => other,
+        }
+    }
+}
+
+impl IntoNode for DynamicSlot {
+    fn into_node(self) -> VNode {
+        VNode::Dynamic(self)
+    }
 }
 
 pub trait IntoNode {

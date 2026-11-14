@@ -308,7 +308,8 @@ impl LayoutEngine {
                         .unwrap_or_else(|_| self.tree.new_leaf(Style::default()).unwrap())
                 }
             }
-            VNode::Empty => self
+            // Slots are resolved before layout starts, so one here is empty.
+            VNode::Empty | VNode::Dynamic(_) => self
                 .tree
                 .new_leaf(Style {
                     display: Display::None,

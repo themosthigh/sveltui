@@ -1,6 +1,14 @@
 pub mod boundary;
 pub mod collection;
+pub mod dynamic;
+#[cfg(test)]
+mod dynamic_tests;
+pub mod each;
+#[cfg(test)]
+mod each_tests;
 pub use collection::*;
+pub use dynamic::DynamicSlot;
+pub use each::KeyedList;
 pub mod events;
 pub mod focus;
 pub mod interaction;

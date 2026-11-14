@@ -69,15 +69,15 @@ fn codegen_if(if_node: &IfNode) -> proc_macro2::TokenStream {
         IfCondition::Expr(expr) => quote! { #expr },
         IfCondition::Let { pat, expr } => quote! { let #pat = #expr },
     };
-    let initial_body = codegen_nodes(&if_node.initial.body);
+    let initial_body = branch_scope("if-0", codegen_nodes(&if_node.initial.body));
 
     let mut else_ifs = Vec::new();
-    for branch in &if_node.else_ifs {
+    for (index, branch) in if_node.else_ifs.iter().enumerate() {
         let cond = match &branch.condition {
             IfCondition::Expr(expr) => quote! { #expr },
             IfCondition::Let { pat, expr } => quote! { let #pat = #expr },
         };
-        let body = codegen_nodes(&branch.body);
+        let body = branch_scope(&format!("if-{}", index + 1), codegen_nodes(&branch.body));
         else_ifs.push(quote! {
             else if #cond {
                 #body
@@ -86,7 +86,7 @@ fn codegen_if(if_node: &IfNode) -> proc_macro2::TokenStream {
     }
 
     let else_branch = if let Some(body) = &if_node.else_branch {
-        let body_ts = codegen_nodes(body);
+        let body_ts = branch_scope("if-else", codegen_nodes(body));
         quote! {
             else {
                 #body_ts
@@ -100,12 +100,26 @@ fn codegen_if(if_node: &IfNode) -> proc_macro2::TokenStream {
         }
     };
 
+    // Each branch runs in a scope named for it, so flipping the condition
+    // destroys the state and cleanups the old branch built instead of
+    // handing them to whatever the new branch puts at the same position.
+    // The whole chain has a scope too, so it takes one position among its
+    // siblings whichever branch is showing.
     quote! {
-        #root::IntoNode::into_node(
-            if #initial_cond {
-                #initial_body
-            } #(#else_ifs)* #else_branch
-        )
+        ::sveltui::reactive::ComponentScope::run_scoped("if", || {
+            #root::IntoNode::into_node(
+                if #initial_cond {
+                    #initial_body
+                } #(#else_ifs)* #else_branch
+            )
+        })
+    }
+}
+
+/// Wraps generated code that builds a branch in a scope called `name`.
+fn branch_scope(name: &str, body: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    quote! {
+        ::sveltui::reactive::ComponentScope::run_scoped(#name, || #body)
     }
 }
 
@@ -113,7 +127,6 @@ fn codegen_each(each_node: &EachNode) -> proc_macro2::TokenStream {
     let root = element_root();
     let expr = &each_node.expr;
     let pat = &each_node.pat;
-    let _key = &each_node.key;
     let body_ts = codegen_nodes(&each_node.body);
 
     let else_ts = if let Some(else_branch) = &each_node.else_branch {
@@ -122,18 +135,34 @@ fn codegen_each(each_node: &EachNode) -> proc_macro2::TokenStream {
         quote! { #root::VNode::Empty }
     };
 
+    // With a key, each row runs in the scope that goes by that key, so a
+    // component in the row keeps its state when rows before it come and go.
+    // Without one, rows are matched by position, as before. Either way the
+    // whole list gets a scope of its own, so its length never shifts the
+    // scopes of the siblings after it.
+    let row = if let Some(key) = &each_node.key {
+        quote! {
+            {
+                let __key = &(#key);
+                ::sveltui::reactive::ComponentScope::run_keyed("each-row", __key, || #body_ts)
+            }
+        }
+    } else {
+        quote! { #body_ts }
+    };
+
     quote! {
-        {
+        ::sveltui::reactive::ComponentScope::run_scoped("each", || {
             let mut __items = Vec::new();
             for #pat in (#expr).into_iter() {
-                __items.push(#body_ts);
+                __items.push(#row);
             }
             if __items.is_empty() {
                 #root::IntoNode::into_node(#else_ts)
             } else {
                 #root::VNode::Fragment(__items)
             }
-        }
+        })
     }
 }
 
@@ -201,10 +230,10 @@ fn codegen_snippet(snippet_node: &SnippetNode) -> proc_macro2::TokenStream {
 fn codegen_await(await_node: &AwaitNode) -> proc_macro2::TokenStream {
     let root = element_root();
     let future = &await_node.future;
-    let loading_ts = codegen_nodes(&await_node.loading);
+    let loading_ts = branch_scope("await-loading", codegen_nodes(&await_node.loading));
 
     let then_body = if let Some((pat, body)) = &await_node.then_branch {
-        let body_ts = codegen_nodes(body);
+        let body_ts = branch_scope("await-then", codegen_nodes(body));
         quote! {
             if let Some(#pat) = __val {
                 #body_ts
@@ -217,7 +246,7 @@ fn codegen_await(await_node: &AwaitNode) -> proc_macro2::TokenStream {
     };
 
     let catch_body = if let Some((pat, body)) = &await_node.catch_branch {
-        let body_ts = codegen_nodes(body);
+        let body_ts = branch_scope("await-catch", codegen_nodes(body));
         quote! {
             if let Some(#pat) = __err {
                 #body_ts
@@ -229,8 +258,10 @@ fn codegen_await(await_node: &AwaitNode) -> proc_macro2::TokenStream {
         quote! { #root::VNode::Empty }
     };
 
+    // The pending future and the branch showing both live in a scope of
+    // their own, so a block that appears or goes takes its state with it.
     quote! {
-        {
+        ::sveltui::reactive::ComponentScope::run_scoped("await", || {
             let __state = ::sveltui::reactive::use_async_state(#future);
             match __state {
                 ::sveltui::reactive::AsyncState::Loading => #root::IntoNode::into_node(#loading_ts),
@@ -249,7 +280,7 @@ fn codegen_await(await_node: &AwaitNode) -> proc_macro2::TokenStream {
                     })
                 }
             }
-        }
+        })
     }
 }
 

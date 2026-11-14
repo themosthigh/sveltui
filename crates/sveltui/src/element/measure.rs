@@ -57,6 +57,7 @@ pub(crate) fn content_size(direction: FlexDirection, sizes: &[(u16, u16)], gap: 
 pub(crate) fn measure(node: &VNode, bounds: Bounds) -> (u16, u16) {
     match node {
         VNode::Empty => (0, 0),
+        VNode::Dynamic(slot) => measure(&slot.refresh().resolve(), bounds),
         VNode::Overlay(overlay) => overlay
             .trigger
             .as_deref()

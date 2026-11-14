@@ -40,6 +40,8 @@ thread_local! {
     static CURRENT_OBSERVER: RefCell<Option<ObserverId>> = const { RefCell::new(None) };
     static BATCH_DEPTH: RefCell<usize> = const { RefCell::new(0) };
     static PENDING_EFFECTS: RefCell<HashSet<ObserverId>> = RefCell::new(HashSet::new());
+    /// One list per `collect_reads` call in progress, innermost last.
+    static COLLECTORS: RefCell<Vec<Vec<SignalId>>> = const { RefCell::new(Vec::new()) };
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -102,7 +104,45 @@ impl Runtime {
         BELL.swap(false, Ordering::SeqCst)
     }
 
+    /// Runs `f` and says which signals it read, each with the version it
+    /// had when read. Comparing those versions later (`reads_changed`) tells
+    /// us whether `f` would give a different answer, without running it.
+    /// Reads still reach any observer around us as well.
+    pub fn collect_reads<R>(f: impl FnOnce() -> R) -> (R, Vec<(SignalId, u64)>) {
+        COLLECTORS.with(|c| c.borrow_mut().push(Vec::new()));
+        let result = f();
+        let ids = COLLECTORS.with(|c| c.borrow_mut().pop().unwrap_or_default());
+        let reads = ids
+            .into_iter()
+            .map(|id| (id, Self::signal_version(id)))
+            .collect();
+        (result, reads)
+    }
+
+    /// Whether any signal in `reads` has been written since its version was
+    /// noted.
+    pub fn reads_changed(reads: &[(SignalId, u64)]) -> bool {
+        reads
+            .iter()
+            .any(|&(id, version)| Self::signal_version(id) != version)
+    }
+
+    fn signal_version(id: SignalId) -> u64 {
+        SIGNAL_VALUES
+            .read()
+            .ok()
+            .and_then(|vals| vals.get(&id).map(|entry| entry.1))
+            .unwrap_or(0)
+    }
+
     pub fn track(signal_id: SignalId) {
+        COLLECTORS.with(|c| {
+            if let Some(list) = c.borrow_mut().last_mut()
+                && !list.contains(&signal_id)
+            {
+                list.push(signal_id);
+            }
+        });
         CURRENT_OBSERVER.with(|obs| {
             if let Some(obs_id) = *obs.borrow()
                 && let Ok(mut subs) = SIGNAL_SUBSCRIBERS.write()

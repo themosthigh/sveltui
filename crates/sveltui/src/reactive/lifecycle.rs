@@ -1,5 +1,7 @@
 use std::any::Any;
 use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::rc::Rc;
 
 pub type ScopeId = usize;
@@ -18,6 +20,11 @@ pub struct ScopeNode {
     pub slot_cursor: usize,
     pub children: Vec<ScopeId>,
     pub child_cursor: usize,
+    /// Children found by key rather than by position, so a row keeps its
+    /// state when the rows around it come and go.
+    pub keyed: HashMap<u64, ScopeId>,
+    /// The keys asked for since the frame began; the rest are gone.
+    pub keyed_used: HashSet<u64>,
     pub cleanups: Vec<CleanupFn>,
     pub is_first_render: bool,
 }
@@ -43,6 +50,8 @@ impl ScopeManager {
             slot_cursor: 0,
             children: Vec::new(),
             child_cursor: 0,
+            keyed: HashMap::new(),
+            keyed_used: HashSet::new(),
             cleanups: Vec::new(),
             is_first_render: true,
         };
@@ -57,6 +66,7 @@ impl ScopeManager {
         for scope in self.scopes.iter_mut().flatten() {
             scope.slot_cursor = 0;
             scope.child_cursor = 0;
+            scope.keyed_used.clear();
         }
         self.scope_stack.clear();
         self.scope_stack.push(self.root_id);
@@ -94,6 +104,7 @@ impl ScopeManager {
                 if let Some(ref mut child) = self.scopes[existing_id] {
                     child.slot_cursor = 0;
                     child.child_cursor = 0;
+                    child.keyed_used.clear();
                 }
                 existing_id
             } else {
@@ -116,6 +127,79 @@ impl ScopeManager {
         (child_id, pushed_root)
     }
 
+    /// Enters the child of the current scope that goes by `key`, making it
+    /// the first time we see the key. Asking for a key twice in one frame
+    /// gives the second asker a scope of its own, so two rows never share
+    /// state.
+    pub fn enter_keyed(&mut self, name: &'static str, key: u64) -> (ScopeId, bool) {
+        let pushed_root = if self.scope_stack.is_empty() {
+            self.scope_stack.push(self.root_id);
+            true
+        } else {
+            false
+        };
+        let parent_id = *self
+            .scope_stack
+            .last()
+            .expect("Scope stack must not be empty");
+        let mut key = key;
+        while self.scopes[parent_id]
+            .as_ref()
+            .expect("Parent scope exists")
+            .keyed_used
+            .contains(&key)
+        {
+            key = key.wrapping_add(1);
+        }
+        let known = self.scopes[parent_id]
+            .as_ref()
+            .and_then(|parent| parent.keyed.get(&key).copied());
+        let child_id = match known {
+            Some(id) if self.scopes[id].is_some() => {
+                if let Some(child) = self.scopes[id].as_mut() {
+                    child.slot_cursor = 0;
+                    child.child_cursor = 0;
+                    child.keyed_used.clear();
+                }
+                id
+            }
+            _ => {
+                let id = self.alloc_scope(name);
+                self.scopes[parent_id]
+                    .as_mut()
+                    .expect("Parent scope exists")
+                    .keyed
+                    .insert(key, id);
+                id
+            }
+        };
+        self.scopes[parent_id]
+            .as_mut()
+            .expect("Parent scope exists")
+            .keyed_used
+            .insert(key);
+        self.scope_stack.push(child_id);
+        (child_id, pushed_root)
+    }
+
+    /// Enters a scope that hangs off no parent, making it if `existing` is
+    /// not a live scope. The owner destroys it with `destroy_scope`.
+    pub fn enter_detached(&mut self, name: &'static str, existing: Option<ScopeId>) -> ScopeId {
+        let id = match existing {
+            Some(id) if self.scopes.get(id).is_some_and(|s| s.is_some()) => {
+                if let Some(scope) = self.scopes[id].as_mut() {
+                    scope.slot_cursor = 0;
+                    scope.child_cursor = 0;
+                    scope.keyed_used.clear();
+                }
+                id
+            }
+            _ => self.alloc_scope(name),
+        };
+        self.scope_stack.push(id);
+        id
+    }
+
     pub fn exit_scope(&mut self, scope_id: ScopeId, pushed_root: bool) {
         self.reconcile_children(scope_id);
         if let Some(pos) = self.scope_stack.iter().rposition(|&id| id == scope_id) {
@@ -129,11 +213,24 @@ impl ScopeManager {
     pub fn reconcile_children(&mut self, scope_id: ScopeId) {
         let unmounted: Vec<ScopeId> = if let Some(ref mut node) = self.scopes[scope_id] {
             node.is_first_render = false;
-            if node.child_cursor < node.children.len() {
+            let mut gone: Vec<ScopeId> = if node.child_cursor < node.children.len() {
                 node.children.drain(node.child_cursor..).collect()
             } else {
                 Vec::new()
+            };
+            let used = &node.keyed_used;
+            let stale: Vec<u64> = node
+                .keyed
+                .keys()
+                .filter(|key| !used.contains(key))
+                .copied()
+                .collect();
+            for key in stale {
+                if let Some(id) = node.keyed.remove(&key) {
+                    gone.push(id);
+                }
             }
+            gone
         } else {
             Vec::new()
         };
@@ -148,7 +245,7 @@ impl ScopeManager {
             return;
         }
         if let Some(mut node) = self.scopes[scope_id].take() {
-            for child_id in node.children {
+            for child_id in node.children.into_iter().chain(node.keyed.into_values()) {
                 self.destroy_scope(child_id);
             }
             for cleanup in node.cleanups.drain(..) {
@@ -165,6 +262,8 @@ impl ScopeManager {
             slot_cursor: 0,
             children: Vec::new(),
             child_cursor: 0,
+            keyed: HashMap::new(),
+            keyed_used: HashSet::new(),
             cleanups: Vec::new(),
             is_first_render: true,
         };
@@ -274,6 +373,50 @@ pub struct ComponentScope;
 impl ComponentScope {
     pub fn run_scoped<R>(name: &'static str, f: impl FnOnce() -> R) -> R {
         let (scope_id, pushed_root) = SCOPE_MANAGER.with(|sm| sm.borrow_mut().enter_scope(name));
+        let _guard = ScopeGuard {
+            scope_id,
+            pushed_root,
+        };
+        f()
+    }
+
+    /// Runs `f` in a scope that belongs to the caller, found again by the
+    /// id left in `scope`. It works outside a frame too, which is how a
+    /// retained piece of the tree runs again alone. Pair it with
+    /// `ComponentScope::destroy_detached` when the owner goes away.
+    pub fn run_detached<R>(
+        name: &'static str,
+        scope: &std::cell::Cell<Option<ScopeId>>,
+        f: impl FnOnce() -> R,
+    ) -> R {
+        let id = SCOPE_MANAGER.with(|sm| sm.borrow_mut().enter_detached(name, scope.get()));
+        scope.set(Some(id));
+        let _guard = ScopeGuard {
+            scope_id: id,
+            pushed_root: false,
+        };
+        f()
+    }
+
+    /// Destroys a scope made by `run_detached`, running its cleanups.
+    pub fn destroy_detached(scope: ScopeId) {
+        let _ = SCOPE_MANAGER.try_with(|sm| {
+            if let Ok(mut mgr) = sm.try_borrow_mut() {
+                mgr.destroy_scope(scope);
+            }
+        });
+    }
+
+    /// Runs `f` in the child scope that goes by `key`, so what a component
+    /// keeps there (its state, its cleanups) follows the key and not the
+    /// position. A key we stop asking for has its scope destroyed when the
+    /// enclosing scope finishes the frame.
+    pub fn run_keyed<K: Hash + ?Sized, R>(name: &'static str, key: &K, f: impl FnOnce() -> R) -> R {
+        let mut hasher = DefaultHasher::new();
+        key.hash(&mut hasher);
+        let hash = hasher.finish();
+        let (scope_id, pushed_root) =
+            SCOPE_MANAGER.with(|sm| sm.borrow_mut().enter_keyed(name, hash));
         let _guard = ScopeGuard {
             scope_id,
             pushed_root,

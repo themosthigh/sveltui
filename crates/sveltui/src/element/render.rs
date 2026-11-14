@@ -201,6 +201,9 @@ pub fn render_node_interactive(
     buffer: &mut Buffer,
     hit_map: &mut HitMap,
 ) {
+    if node.has_dynamic() {
+        return render_node_interactive(&node.clone().resolve(), rect, buffer, hit_map);
+    }
     hit_map.collect_interactions(node);
     // One layout for the whole tree. Its root size is what the node
     // measures to, and its children are passed down so nothing below lays
@@ -477,7 +480,9 @@ fn render_node_offset_internal(
     }
 
     match node {
-        VNode::Empty | VNode::Overlay(_) => {}
+        // Slots are resolved on the way in (`render_node_interactive`), so
+        // there is nothing to paint for one that got this far.
+        VNode::Empty | VNode::Overlay(_) | VNode::Dynamic(_) => {}
         VNode::Text(text) => {
             let lines = crate::element::text::lines(text, Some(width));
             for (i, line) in lines.iter().enumerate() {
