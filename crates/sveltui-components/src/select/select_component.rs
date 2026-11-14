@@ -99,10 +99,10 @@ pub fn Trigger(props: TriggerProps) -> VNode {
     let arrow = if open { "▴" } else { "▾" };
 
     view! {
-        <Pressable focus_id=id tab_stop=true disabled=select.disabled semantics=semantics
+        <Pressable focus_id=id tab_stop=true disabled={select.disabled} semantics=semantics
             on_click=on_click on_key=on_key>
-            <View flex_direction=FlexDirection::Row width=props.width gap=1
-                border=border border_color=border_color padding=Padding::symmetric(1, 0)>
+            <View flex_direction=FlexDirection::Row width={props.width} gap=1
+                border=border border_color=border_color padding={Padding::symmetric(1, 0)}>
                 <View flex_grow=1.0f32>{@render props.children}</View>
                 <TextSpan foreground_color=Color::DarkGrey>{arrow}</TextSpan>
             </View>
@@ -242,12 +242,12 @@ pub fn Select(props: SelectProps) -> VNode {
                 view! {
                     <View>
                         <Trigger width=width>
-                            <Value placeholder=placeholder.clone() />
+                            <Value placeholder={placeholder.clone()} />
                         </Trigger>
                         <Content width=width>
                             {#each options as option}
-                                <Item value=option.value label=option.label.clone()
-                                    disabled=option.disabled>{option.label}</Item>
+                                <Item value={option.value} label={option.label.clone()}
+                                    disabled={option.disabled}>{option.label}</Item>
                             {/each}
                         </Content>
                     </View>

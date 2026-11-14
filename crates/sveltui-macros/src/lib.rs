@@ -727,36 +727,80 @@ mod tests {
     }
 
     #[test]
-    fn unbraced_values_are_literals_paths_and_fields() {
+    fn unbraced_values_are_literals_and_paths() {
         let code = generated(quote! {
-            <View width=40 gap=-1 color=Color::White fg=props.fg flag=true name="x"
-                padding=Padding::all(1) title=name.clone() pair=(a, 0) />
+            <View width=40 gap=-1 ratio=-0.5 flag=true name="x" title=title
+                color=Color::White self_ref=self::x none=None />
         });
         assert!(code.contains(". width (40)"));
         assert!(code.contains(". gap (- 1)"));
-        assert!(code.contains(". color (Color :: White)"));
-        assert!(code.contains(". fg (props . fg)"));
+        assert!(code.contains(". ratio (- 0.5)"));
         assert!(code.contains(". flag (true)"));
-        assert!(code.contains(". padding (Padding :: all (1))"));
-        assert!(code.contains(". title (name . clone ())"));
-        assert!(code.contains(". pair ((a , 0))"));
+        assert!(code.contains(". name (\"x\")"));
+        assert!(code.contains(". title (title)"));
+        assert!(code.contains(". color (Color :: White)"));
+        assert!(code.contains(". none (None)"));
     }
 
     #[test]
-    fn unbraced_expressions_point_at_the_braces_fix() {
-        for tokens in [
-            quote! { <View width=a / 2 /> },
-            quote! { <View width=a + 1 /> },
-            quote! { <View on_click=move || go() /> },
-            quote! { <View width= /> },
-            quote! { <View width=a.len() * 2 /> },
-        ] {
+    fn unbraced_values_end_at_the_tag_or_the_next_attribute() {
+        let code = generated(quote! { <View a=1 b=x c=Color::Red {d} {..e} /> });
+        assert!(code.contains(". c (Color :: Red)"));
+        assert!(code.contains(". d (d)"));
+        let code = generated(quote! { <View a=x>"text"</View> });
+        assert!(code.contains(". a (x)"));
+    }
+
+    #[test]
+    fn unbraced_expressions_name_the_exact_fix() {
+        let rejected = [
+            (
+                quote! { <View padding=Padding::all(1) /> },
+                "padding={Padding::all(1)}",
+            ),
+            (quote! { <View width=props.width /> }, "width={props.width}"),
+            (quote! { <View name=x.len() /> }, "name={x.len()}"),
+            (quote! { <View pair=(a, 0) /> }, "pair={(a, 0)}"),
+            (
+                quote! { <View cols=[length(3), fr(1)] /> },
+                "cols={[length(3), fr(1)]}",
+            ),
+            (
+                quote! { <View on_click=move || go() /> },
+                "on_click={move || go()}",
+            ),
+            (quote! { <View width=a / 2 /> }, "width={a / 2}"),
+            (quote! { <View width=a + 1 height=2 /> }, "width={a + 1}"),
+            (
+                quote! { <View c=if a { 1 } else { 2 } /> },
+                "c={if a { 1 } else { 2 }}",
+            ),
+            (quote! { <View bind:open=!x /> }, "bind:open={!x}"),
+            (
+                quote! { <View margin=Margin { left: 1 } /> },
+                "margin={Margin { left : 1 }}",
+            ),
+            (
+                quote! { <View color=Some(Color::Red) /> },
+                "color={Some(Color::Red)}",
+            ),
+            (quote! { <View width= /> }, "width={}"),
+        ];
+        for (tokens, fix) in rejected {
             let message = parse_error(tokens);
-            assert!(
-                message.contains("Wrap anything else in braces"),
-                "{message}"
-            );
+            assert!(message.contains("Wrap the value in braces"), "{message}");
+            assert!(message.contains(&format!("`{fix}`")), "{fix} in {message}");
         }
+    }
+
+    #[test]
+    fn a_comparison_value_is_not_cut_at_the_greater_than() {
+        let message = parse_error(tokens("<View disabled=a > b>\"x\"</View>"));
+        assert!(message.contains("`disabled={a > b}`"), "{message}");
+        let message = parse_error(tokens("<View disabled=a > 3 />"));
+        assert!(message.contains("`disabled={a > 3}`"), "{message}");
+        // A child string after the tag's `>` is still just a child.
+        generated(tokens("<View disabled=a>\"x\"</View>"));
     }
 
     #[test]

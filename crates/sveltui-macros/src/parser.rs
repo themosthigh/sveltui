@@ -4,17 +4,19 @@ use crate::ast::{
 };
 use proc_macro2::TokenStream;
 use syn::ext::IdentExt;
-use syn::parse::{Parse, ParseStream, Parser};
+use syn::parse::{Parse, ParseBuffer, ParseStream, Parser};
 use syn::spanned::Spanned;
 use syn::{Expr, Ident, LitStr, Pat, Result, Token, UnOp};
 
-/// Parses an attribute value. Braces hold any expression. Without braces we
-/// accept a literal (`-1` included), a path, a tuple or an array,
-/// followed by any run of `.field`, `.method(..)` and `(..)` calls. Every
-/// part of that is either one token or a balanced group, so a bare `>` or
-/// `/` can never be mistaken for the end of the tag. Operators and closures
-/// are not accepted: the tag would end halfway through them.
-pub fn parse_attr_value(input: ParseStream) -> Result<Expr> {
+/// Parses an attribute value. Braces hold any expression. Without braces
+/// the value is one of two things: a literal (a string, number or bool,
+/// `-1` included) or a path (`title`, `Color::White`). Anything else, from
+/// a call to an operator, needs braces. The rule is that narrow so a bare
+/// `>` or `/` can only ever end the tag, and so `width=40` and
+/// `width={props.width}` are the only two shapes a reader has to know.
+/// `label` is the attribute as written (`width`, `bind:value`), used to
+/// show the fix.
+pub fn parse_attr_value(input: ParseStream, label: &str) -> Result<Expr> {
     if input.peek(syn::token::Brace) {
         let content;
         syn::braced!(content in input);
@@ -26,19 +28,15 @@ pub fn parse_attr_value(input: ParseStream) -> Result<Expr> {
         return Ok(format);
     }
 
-    let start = input.span();
-    let mut expr: Expr = if input.peek(syn::Lit) {
+    let begin = input.fork();
+    let expr: Expr = if input.peek(syn::Lit) {
         Expr::Lit(input.parse()?)
-    } else if input.peek(Token![-]) && input.peek2(syn::Lit) {
+    } else if input.peek(Token![-]) && (input.peek2(syn::LitInt) || input.peek2(syn::LitFloat)) {
         Expr::Unary(syn::ExprUnary {
             attrs: Vec::new(),
             op: UnOp::Neg(input.parse()?),
             expr: Box::new(Expr::Lit(input.parse()?)),
         })
-    } else if input.peek(syn::token::Paren) {
-        parse_paren_group(input)?
-    } else if input.peek(syn::token::Bracket) {
-        Expr::Array(input.parse()?)
     } else if input.peek(Ident)
         || input.peek(Token![::])
         || input.peek(Token![self])
@@ -48,95 +46,116 @@ pub fn parse_attr_value(input: ParseStream) -> Result<Expr> {
     {
         Expr::Path(input.parse()?)
     } else {
-        return Err(unbraced_error(start));
+        return Err(unbraced_error(&begin, label, false));
     };
 
-    loop {
-        if input.peek(Token![.]) && (input.peek2(Ident::peek_any) || input.peek2(syn::LitInt)) {
-            let dot = input.parse::<Token![.]>()?;
-            let member: syn::Member = input.parse()?;
-            if let (syn::Member::Named(method), true) = (&member, input.peek(syn::token::Paren)) {
-                let args = parse_call_args(input)?;
-                expr = Expr::MethodCall(syn::ExprMethodCall {
-                    attrs: Vec::new(),
-                    receiver: Box::new(expr),
-                    dot_token: dot,
-                    method: method.clone(),
-                    turbofish: None,
-                    paren_token: args.0,
-                    args: args.1,
-                });
-            } else {
-                expr = Expr::Field(syn::ExprField {
-                    attrs: Vec::new(),
-                    base: Box::new(expr),
-                    dot_token: dot,
-                    member,
-                });
-            }
-        } else if input.peek(syn::token::Paren) && matches!(expr, Expr::Path(_) | Expr::Call(_)) {
-            let args = parse_call_args(input)?;
-            expr = Expr::Call(syn::ExprCall {
-                attrs: Vec::new(),
-                func: Box::new(expr),
-                paren_token: args.0,
-                args: args.1,
-            });
-        } else {
-            break;
+    // What follows must end the value: the end of the tag, the next
+    // attribute, or a `{name}` shorthand and `{..props}` spread.
+    let next_is_attribute = input.peek(Ident) && !input.peek2(Token![::]);
+    if input.is_empty() || (input.peek(Token![/]) && input.peek2(Token![>])) || next_is_attribute {
+        return Ok(expr);
+    }
+    if input.peek(Token![>]) {
+        // A `>` ends the tag. After it come children, which never start
+        // with a name or a number, so one there means a comparison.
+        let fork = input.fork();
+        let _: Token![>] = fork.parse()?;
+        let comparison = fork.peek(Ident) || fork.peek(syn::LitInt) || fork.peek(syn::LitFloat);
+        if !comparison {
+            return Ok(expr);
+        }
+        return Err(unbraced_error(&begin, label, true));
+    }
+    if input.peek(syn::token::Brace) {
+        let fork = input.fork();
+        let content;
+        syn::braced!(content in fork);
+        let shorthand =
+            (content.peek(Ident) && content.peek2(syn::parse::End)) || content.peek(Token![..]);
+        if shorthand {
+            return Ok(expr);
         }
     }
+    Err(unbraced_error(&begin, label, false))
+}
 
-    // Anything but the end of the tag or the next attribute means the value
-    // was a bigger expression than we accept without braces.
-    let ends_value = input.is_empty()
-        || input.peek(Token![>])
-        || (input.peek(Token![/]) && input.peek2(Token![>]))
-        || input.peek(Ident)
-        || input.peek(syn::token::Brace);
-    if !ends_value {
-        return Err(unbraced_error(start));
+/// The error for a value that needs braces. We read the value's tokens
+/// from `begin` (up to the next attribute or the end of the tag) so the
+/// message can show the fix in the user's own words. With `include_gt` the
+/// first `>` belongs to the value, as in `disabled=a > b`.
+fn unbraced_error(begin: &ParseBuffer, label: &str, include_gt: bool) -> syn::Error {
+    use proc_macro2::{Spacing, TokenTree};
+    let span = begin.span();
+    let rest = begin.fork();
+    let mut tokens = TokenStream::new();
+    let mut seen_gt = false;
+    while !rest.is_empty() {
+        let tt: TokenTree = rest.fork().parse().expect("a token");
+        let first = tokens.is_empty();
+        match &tt {
+            TokenTree::Punct(p) if p.as_char() == '/' && rest.peek2(Token![>]) => break,
+            TokenTree::Punct(p) if p.as_char() == '>' => {
+                if include_gt && !seen_gt {
+                    seen_gt = true;
+                } else {
+                    break;
+                }
+            }
+            // `name=` or `bind:name` starts the next attribute.
+            TokenTree::Ident(_) if !first => {
+                let look = rest.fork();
+                let _: TokenTree = look.parse().expect("the name");
+                if let Ok(TokenTree::Punct(p)) = look.parse::<TokenTree>()
+                    && p.spacing() == Spacing::Alone
+                    && (p.as_char() == '=' || p.as_char() == ':')
+                {
+                    break;
+                }
+            }
+            _ => {}
+        }
+        let _: TokenTree = rest.parse().expect("a token");
+        tokens.extend(std::iter::once(tt));
     }
-    Ok(expr)
-}
-
-/// A `(a)` or `(a, b)` value, which is a parenthesised expression or a tuple.
-fn parse_paren_group(input: ParseStream) -> Result<Expr> {
-    let (paren_token, elems) = parse_call_args(input)?;
-    if elems.len() == 1 && !elems.trailing_punct() {
-        Ok(Expr::Paren(syn::ExprParen {
-            attrs: Vec::new(),
-            paren_token,
-            expr: Box::new(elems.into_iter().next().expect("one element")),
-        }))
-    } else {
-        Ok(Expr::Tuple(syn::ExprTuple {
-            attrs: Vec::new(),
-            paren_token,
-            elems,
-        }))
-    }
-}
-
-type CallArgs = (
-    syn::token::Paren,
-    syn::punctuated::Punctuated<Expr, Token![,]>,
-);
-
-fn parse_call_args(input: ParseStream) -> Result<CallArgs> {
-    let content;
-    let paren = syn::parenthesized!(content in input);
-    let args = content.parse_terminated(Expr::parse, Token![,])?;
-    Ok((paren, args))
-}
-
-fn unbraced_error(span: proc_macro2::Span) -> syn::Error {
+    let value = tidy_tokens(&tokens.to_string());
     syn::Error::new(
         span,
-        "An attribute value without braces must be a single literal or path \
-         (like `width=40` or `color=Color::White`). Wrap anything else in \
-         braces, like `width={a / 2}` or `disabled={a > b}`.",
+        format!(
+            "An attribute value without braces must be a literal or a path \
+             (like `width=40` or `color=Color::White`). \
+             Wrap the value in braces: `{label}={{{value}}}`."
+        ),
     )
+}
+
+/// `TokenStream::to_string` puts a space between every token. This takes
+/// out the ones nobody would write, so the fix reads like the source.
+fn tidy_tokens(text: &str) -> String {
+    let mut out = text.to_string();
+    for (from, to) in [
+        (" :: ", "::"),
+        (":: ", "::"),
+        (" ::", "::"),
+        (" . ", "."),
+        (" .", "."),
+        (". ", "."),
+        (" (", "("),
+        ("( ", "("),
+        (" )", ")"),
+        (" [", "["),
+        ("[ ", "["),
+        (" ]", "]"),
+        (" ,", ","),
+        (" ;", ";"),
+        (" ?", "?"),
+        (" !", "!"),
+        ("! ", "!"),
+        ("& ", "&"),
+        ("- ", "-"),
+    ] {
+        out = out.replace(from, to);
+    }
+    out
 }
 
 impl Parse for Attribute {
@@ -198,7 +217,12 @@ impl Parse for Attribute {
         };
         let value = if input.peek(Token![=]) {
             input.parse::<Token![=]>()?;
-            parse_attr_value(input)?
+            let label = if bind {
+                format!("bind:{name}")
+            } else {
+                name.to_string()
+            };
+            parse_attr_value(input, &label)?
         } else if bind {
             // `bind:name` is shorthand for `bind:name={name}`.
             path_expr(&name)

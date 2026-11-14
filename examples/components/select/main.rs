@@ -16,7 +16,7 @@ fn SelectDemo() -> impl IntoNode {
     ];
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0)
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)}
             align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View width=48 border=BorderStyle::Single border_color=Color::DarkGrey
                 title=" Select " padding=1 gap=1>

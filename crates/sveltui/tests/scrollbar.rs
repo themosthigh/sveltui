@@ -217,7 +217,7 @@ fn dragging_the_thumb_keeps_it_under_the_pointer() {
 fn the_horizontal_thumb_drags_along_its_row() {
     let id = FocusId::new();
     let node = view! {
-        <View width=12 height=4 border=BorderStyle::Single padding=Padding::symmetric(1, 0)
+        <View width=12 height=4 border=BorderStyle::Single padding={Padding::symmetric(1, 0)}
             overflow_x=Overflow::Scroll scroll_id=id>
             <TextSpan>"0123456789abcdefghijklmnopqrst"</TextSpan>
         </View>

@@ -94,7 +94,7 @@ fn an_image_loads_in_the_background_and_replaces_the_fallback() {
             let url = url.clone();
             view! {
                 <NetworkImage::Root width=4 height=2 protocol=ImageProtocol::HalfBlock>
-                    <NetworkImage::Image src=url.clone() alt="A flag" />
+                    <NetworkImage::Image src={url.clone()} alt="A flag" />
                     <NetworkImage::Fallback>"..."</NetworkImage::Fallback>
                 </NetworkImage::Root>
             }
@@ -118,7 +118,7 @@ fn a_failed_request_shows_the_fallback_straight_away() {
             let url = url.clone();
             view! {
                 <NetworkImage::Root width=4 height=2 protocol=ImageProtocol::HalfBlock>
-                    <NetworkImage::Image src=url.clone() alt="Ada" />
+                    <NetworkImage::Image src={url.clone()} alt="Ada" />
                     <NetworkImage::Fallback delay_ms=60_000>"AL"</NetworkImage::Fallback>
                 </NetworkImage::Root>
             }
@@ -138,7 +138,7 @@ fn the_fallback_waits_out_its_delay_while_loading() {
             let url = url.clone();
             view! {
                 <NetworkImage::Root width=4 height=2 protocol=ImageProtocol::HalfBlock>
-                    <NetworkImage::Image src=url.clone() alt="Ada" />
+                    <NetworkImage::Image src={url.clone()} alt="Ada" />
                     <NetworkImage::Fallback delay_ms=60_000>"AL"</NetworkImage::Fallback>
                 </NetworkImage::Root>
             }
@@ -160,8 +160,8 @@ fn sources_are_tried_in_order() {
             let (broken, working) = (broken.clone(), working.clone());
             view! {
                 <NetworkImage::Root width=4 height=2 protocol=ImageProtocol::HalfBlock>
-                    <NetworkImage::Image src=broken.clone() alt="Ada" />
-                    <NetworkImage::Image src=working.clone() alt="Ada" />
+                    <NetworkImage::Image src={broken.clone()} alt="Ada" />
+                    <NetworkImage::Image src={working.clone()} alt="Ada" />
                     <NetworkImage::Fallback>"AL"</NetworkImage::Fallback>
                 </NetworkImage::Root>
             }
@@ -181,7 +181,7 @@ fn a_response_over_the_size_limit_is_an_error() {
             let url = url.clone();
             view! {
                 <NetworkImage::Root width=4 height=2 protocol=ImageProtocol::HalfBlock>
-                    <NetworkImage::Image src=url.clone() alt="Ada" max_bytes=10 />
+                    <NetworkImage::Image src={url.clone()} alt="Ada" max_bytes=10 />
                     <NetworkImage::Fallback>"AL"</NetworkImage::Fallback>
                 </NetworkImage::Root>
             }
@@ -205,7 +205,7 @@ fn a_local_file_works_as_the_last_resort() {
             view! {
                 <NetworkImage::Root width=4 height=2 protocol=ImageProtocol::HalfBlock>
                     <NetworkImage::Image src="http://127.0.0.1:1/never.png" alt="Ada" />
-                    <NetworkImage::Image src=src.clone() alt="Ada" />
+                    <NetworkImage::Image src={src.clone()} alt="Ada" />
                 </NetworkImage::Root>
             }
         }
@@ -229,7 +229,7 @@ fn the_status_is_reported_as_loading_progresses() {
             view! {
                 <NetworkImage::Root width=4 height=2 protocol=ImageProtocol::HalfBlock
                     on_loading_status_change=on_change>
-                    <NetworkImage::Image src=url.clone() alt="Ada" />
+                    <NetworkImage::Image src={url.clone()} alt="Ada" />
                 </NetworkImage::Root>
             }
         }
@@ -253,7 +253,7 @@ fn a_wikimedia_thumbnail_loads_over_https() {
             let url = url.clone();
             view! {
                 <NetworkImage::Root width=20 height=10 protocol=ImageProtocol::HalfBlock>
-                    <NetworkImage::Image src=url.clone() alt="Frida Kahlo" />
+                    <NetworkImage::Image src={url.clone()} alt="Frida Kahlo" />
                 </NetworkImage::Root>
             }
         }

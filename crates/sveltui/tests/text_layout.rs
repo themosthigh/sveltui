@@ -87,7 +87,7 @@ fn direct_text_nodes_stretch_in_the_parent_cross_axis() {
 #[test]
 fn centered_text_remains_aligned_after_resizing() {
     let node = view! {
-        <View width=Dimension::Percent(1.0) height=3 align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height=3 align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <TextSpan>"Span"</TextSpan>
             <Paragraph>"Text"</Paragraph>
         </View>

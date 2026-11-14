@@ -107,7 +107,7 @@ fn draw(build: impl Fn() -> VNode, width: u16, height: u16) -> (Buffer, HitMap) 
 fn the_component_draws_half_blocks_in_color() {
     let bytes = png(&red_over_blue());
     let (buffer, hits) = draw(
-        || view! { <Image bytes=bytes.clone() alt="A flag" width=2 height=1 fit=ImageFit::Fill protocol=ImageProtocol::HalfBlock /> },
+        || view! { <Image bytes={bytes.clone()} alt="A flag" width=2 height=1 fit=ImageFit::Fill protocol=ImageProtocol::HalfBlock /> },
         10,
         3,
     );
@@ -150,7 +150,7 @@ mod graphics {
         with_cells();
         let bytes = png(&red_over_blue());
         let (buffer, _) = draw(
-            || view! { <Image bytes=bytes.clone() alt="A flag" width=4 height=2 protocol=ImageProtocol::Kitty /> },
+            || view! { <Image bytes={bytes.clone()} alt="A flag" width=4 height=2 protocol=ImageProtocol::Kitty /> },
             20,
             6,
         );
@@ -174,7 +174,7 @@ mod graphics {
         with_cells();
         let bytes = png(&red_over_blue());
         let (buffer, _) = draw(
-            || view! { <Image bytes=bytes.clone() alt="A flag" width=4 height=2 protocol=ImageProtocol::Kitty /> },
+            || view! { <Image bytes={bytes.clone()} alt="A flag" width=4 height=2 protocol=ImageProtocol::Kitty /> },
             20,
             6,
         );
@@ -191,7 +191,7 @@ mod graphics {
         sveltui::terminal::set_cell_pixels(0, 0);
         let bytes = png(&red_over_blue());
         let (buffer, _) = draw(
-            || view! { <Image bytes=bytes.clone() alt="A flag" width=2 height=1 protocol=ImageProtocol::Kitty /> },
+            || view! { <Image bytes={bytes.clone()} alt="A flag" width=2 height=1 protocol=ImageProtocol::Kitty /> },
             10,
             3,
         );
@@ -205,7 +205,7 @@ mod graphics {
         with_cells();
         let bytes = png(&red_over_blue());
         let build = || {
-            view! { <Image bytes=bytes.clone() alt="A flag" width=4 height=2 protocol=ImageProtocol::Kitty /> }
+            view! { <Image bytes={bytes.clone()} alt="A flag" width=4 height=2 protocol=ImageProtocol::Kitty /> }
         };
         let manager = FocusManager::new();
         let mut keys = Vec::new();

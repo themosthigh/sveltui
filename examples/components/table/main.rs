@@ -67,7 +67,7 @@ fn TableDemo() -> impl IntoNode {
     let (border_name, table_border) = BORDERS[border.get()];
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) padding=1 gap=1>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} padding=1 gap=1>
             <View flex_direction=FlexDirection::Row gap=1>
                 <Button on_click={move || rules.update(|r| *r = (*r + 1) % RULES.len())}>
                     {format!("Rules: {rules_name}")}
@@ -77,7 +77,7 @@ fn TableDemo() -> impl IntoNode {
                 </Button>
             </View>
 
-            <Table::Root columns=[auto(), auto(), fr(1.0), auto()] rules=table_rules
+            <Table::Root columns={[auto(), auto(), fr(1.0), auto()]} rules=table_rules
                 border=table_border title="Popular crates">
                 <Table::Header>
                     <Table::Row>

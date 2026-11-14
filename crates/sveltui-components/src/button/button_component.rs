@@ -26,17 +26,17 @@ pub fn Button(props: ButtonProps) -> impl IntoNode {
         <Pressable
             focus_id=id
             tab_stop=true
-            disabled=props.disabled
+            disabled={props.disabled}
             activation=Activation::Press
-            semantics=Semantics::new(Role::Button, "")
+            semantics={Semantics::new(Role::Button, "")}
             on_click=on_click
         >
             <View
                 border=border_style
                 border_color=border_color
-                padding=props.padding
-                width=props.width
-                height=props.height
+                padding={props.padding}
+                width={props.width}
+                height={props.height}
                 align_items=AlignItems::Center
                 justify_content=JustifyContent::Center
             >

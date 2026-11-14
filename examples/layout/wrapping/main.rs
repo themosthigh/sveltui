@@ -23,7 +23,7 @@ fn WrappingDemo() -> impl IntoNode {
     let (align_name, align_content) = ALIGNMENTS[align.get()];
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) padding=1 gap=1>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} padding=1 gap=1>
             <TextSpan foreground_color=Color::DarkGrey>
                 "flex_wrap moves items to a new line; row_gap and column_gap space them separately."
             </TextSpan>
@@ -38,11 +38,11 @@ fn WrappingDemo() -> impl IntoNode {
             </View>
 
             <View width={WIDTHS[width.get()]} height=12 border=BorderStyle::Single
-                border_color=Color::DarkGrey padding=(1, 0)
+                border_color=Color::DarkGrey padding={(1, 0)}
                 flex_direction=FlexDirection::Row flex_wrap=FlexWrap::Wrap
                 column_gap=2 row_gap=1 align_content=align_content>
                 {TAGS.iter().map(|tag| view! {
-                    <View background_color=Color::DarkGrey padding=(1, 0)>
+                    <View background_color=Color::DarkGrey padding={(1, 0)}>
                         <TextSpan>{*tag}</TextSpan>
                     </View>
                 }).collect::<Vec<_>>()}

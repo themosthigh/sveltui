@@ -62,14 +62,14 @@ fn TreeViewDemo() -> impl IntoNode {
         .unwrap_or_else(|| "nothing".to_owned());
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) padding=1 gap=1>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} padding=1 gap=1>
             <View flex_direction=FlexDirection::Row gap=2 flex_grow=1.0 flex_basis=0>
                 <View flex_grow=1.0 flex_basis=0>
                     <TreeView roots={GridRows::Shared(roots.clone())} model={model.clone()}
-                        title="crates" height=Dimension::Percent(1.0) on_activate=open_file />
+                        title="crates" height={Dimension::Percent(1.0)} on_activate=open_file />
                 </View>
                 <View flex_grow=1.0 flex_basis=0>
-                    <TreeView::Root title="Settings" height=Dimension::Percent(1.0)
+                    <TreeView::Root title="Settings" height={Dimension::Percent(1.0)}
                         bind:selected={setting}>
                         <TreeView::Branch value="editor" label="Editor">
                             <TreeView::Item value="editor.font" label="Font" />

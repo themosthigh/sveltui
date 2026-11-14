@@ -168,17 +168,17 @@ pub fn TextInput(props: TextInputProps) -> impl IntoNode {
             tab_stop=true
             semantics=semantics
             on_click_at=on_click_at
-            on_click=props.on_click
+            on_click={props.on_click}
             on_key=on_key
         >
             <View
                 border=border_style
                 border_color=border_color
-                padding=Padding::symmetric(1, 0)
-                width=props.width
+                padding={Padding::symmetric(1, 0)}
+                width={props.width}
                 justify_content=JustifyContent::Center
                 align_items=AlignItems::FlexStart
-                title=props.title
+                title={props.title}
                 cursor_offset=cursor_offset
                 cursor_style=cursor_style
             >

@@ -37,14 +37,14 @@ pub fn Switch(props: SwitchProps) -> impl IntoNode {
         <Pressable
             focus_id=id
             tab_stop=true
-            disabled=props.disabled
+            disabled={props.disabled}
             activation=Activation::Toggle
-            semantics=Semantics::new(Role::Switch, label_str.clone()).checked(is_on)
+            semantics={Semantics::new(Role::Switch, label_str.clone()).checked(is_on)}
             on_click=on_click
         >
             <View
                 border=BorderStyle::None
-                padding=Padding::zero()
+                padding={Padding::zero()}
                 justify_content=JustifyContent::Center
                 align_items=AlignItems::FlexStart
                 flex_direction=FlexDirection::Row

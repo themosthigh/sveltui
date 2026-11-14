@@ -49,10 +49,10 @@ fn main() {
 
     view! {
         <View
-            width=Dimension::Percent(1.0)
-            height=Dimension::Percent(1.0)
+            width={Dimension::Percent(1.0)}
+            height={Dimension::Percent(1.0)}
             flex_direction=FlexDirection::Column
-            padding=Padding::all(1)
+            padding={Padding::all(1)}
             gap=1
             overflow=Overflow::Hidden
         >
@@ -60,7 +60,7 @@ fn main() {
                 flex_direction=FlexDirection::Row
                 justify_content=JustifyContent::SpaceBetween
                 align_items=AlignItems::Center
-                width=Dimension::Percent(1.0)
+                width={Dimension::Percent(1.0)}
             >
                 <TextSpan foreground_color=Color::DarkGrey>
                     "sveltui Code Editor  •  Arrow keys navigate  •  Esc to quit"
@@ -81,40 +81,40 @@ fn main() {
 
             <View
                 flex_direction=FlexDirection::Row
-                width=Dimension::Percent(1.0)
-                height=Dimension::Percent(1.0)
+                width={Dimension::Percent(1.0)}
+                height={Dimension::Percent(1.0)}
                 gap=2
                 overflow=Overflow::Hidden
             >
                 <View
                     flex_direction=FlexDirection::Column
-                    width=Dimension::Percent(0.5)
-                    height=Dimension::Percent(1.0)
+                    width={Dimension::Percent(0.5)}
+                    height={Dimension::Percent(1.0)}
                     gap=0
                 >
                     <CodeEditor
                         bind:value=code
                         language="rs"
                         show_line_numbers=true
-                        width=Dimension::Percent(1.0)
-                        height=Dimension::Percent(1.0)
-                        cursor_style=cursor_style.get()
+                        width={Dimension::Percent(1.0)}
+                        height={Dimension::Percent(1.0)}
+                        cursor_style={cursor_style.get()}
                         title="editor.rs (Editable)"
                     />
                 </View>
 
                 <View
                     flex_direction=FlexDirection::Column
-                    width=Dimension::Percent(0.5)
-                    height=Dimension::Percent(1.0)
+                    width={Dimension::Percent(0.5)}
+                    height={Dimension::Percent(1.0)}
                     gap=0
                 >
                     <CodePreview
                         value={code.get()}
                         language="rs"
                         show_line_numbers=true
-                        width=Dimension::Percent(1.0)
-                        height=Dimension::Percent(1.0)
+                        width={Dimension::Percent(1.0)}
+                        height={Dimension::Percent(1.0)}
                         title="preview.rs (Live Preview)"
                     />
                 </View>

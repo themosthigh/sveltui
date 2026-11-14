@@ -159,20 +159,20 @@ pub fn TextArea(props: TextAreaProps) -> impl IntoNode {
         <Pressable
             focus_id=id
             tab_stop=true
-            semantics=Semantics::new(Role::Textbox, title_str)
+            semantics={Semantics::new(Role::Textbox, title_str)}
             on_click_at=on_click_at
             on_key=on_key
         >
             <View
                 border=border_style
                 border_color=border_color
-                padding=Padding::symmetric(1, 0)
-                width=props.width
-                height=props.height
+                padding={Padding::symmetric(1, 0)}
+                width={props.width}
+                height={props.height}
                 align_items=AlignItems::FlexStart
                 justify_content=JustifyContent::FlexStart
                 on_scroll=on_scroll
-                title=props.title
+                title={props.title}
                 cursor_offset=cursor_offset
                 cursor_style=cursor_style
             >

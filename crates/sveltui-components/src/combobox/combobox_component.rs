@@ -229,7 +229,7 @@ pub fn Trigger(_props: TriggerProps) -> VNode {
     let arrow = if open { " ▴ " } else { " ▾ " };
     let semantics = Semantics::new(Role::Button, "Show options").expanded(open);
     view! {
-        <Pressable on_click=on_click semantics=semantics disabled=combobox.disabled>
+        <Pressable on_click=on_click semantics=semantics disabled={combobox.disabled}>
             <TextSpan foreground_color=Color::DarkGrey>{arrow}</TextSpan>
         </Pressable>
     }
@@ -300,7 +300,7 @@ pub fn Empty(props: EmptyProps) -> VNode {
     }
     let message = props.children.render(());
     view! {
-        <View padding=Padding::symmetric(1, 0)>
+        <View padding={Padding::symmetric(1, 0)}>
             {style_label(message, Color::DarkGrey, false)}
         </View>
     }
@@ -326,13 +326,13 @@ pub fn Combobox(props: ComboboxProps) -> VNode {
                 view! {
                     <View>
                         <View flex_direction=FlexDirection::Row align_items=AlignItems::Center>
-                            <Input placeholder=placeholder.clone() width=width />
+                            <Input placeholder={placeholder.clone()} width=width />
                             <Trigger />
                         </View>
                         <Content width=width>
                             {#each options as option}
-                                <Item value=option.value label=option.label.clone()
-                                    disabled=option.disabled>{option.label}</Item>
+                                <Item value={option.value} label={option.label.clone()}
+                                    disabled={option.disabled}>{option.label}</Item>
                             {/each}
                             <Empty>{empty.clone()}</Empty>
                         </Content>

@@ -10,11 +10,11 @@ fn LayoutDemo() -> impl IntoNode {
     let gap = state(2u16);
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View
-                width=Dimension::Percent(1.0)
+                width={Dimension::Percent(1.0)}
                 max_width=100
-                height=Dimension::Percent(1.0)
+                height={Dimension::Percent(1.0)}
                 max_height=50
                 border=BorderStyle::Single
                 border_color=Color::DarkGrey
@@ -44,8 +44,8 @@ fn LayoutDemo() -> impl IntoNode {
                 <View
                     flex_grow=1.0
                     flex_basis=0
-                    flex_direction=direction.get()
-                    gap=gap.get()
+                    flex_direction={direction.get()}
+                    gap={gap.get()}
                     overflow=Overflow::Scroll
                 >
                     <View

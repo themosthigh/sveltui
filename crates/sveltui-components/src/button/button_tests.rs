@@ -16,7 +16,7 @@ struct CardLayoutProps {
 #[component]
 fn CardLayout(props: CardLayoutProps) -> impl IntoNode {
     view! {
-        <View border=BorderStyle::Double padding=Padding::all(1)>
+        <View border=BorderStyle::Double padding={Padding::all(1)}>
             <TextSpan bold=true>{props.title.clone()}</TextSpan>
             <Divider />
             <View>{@render props.children}</View>

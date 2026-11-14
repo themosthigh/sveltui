@@ -70,9 +70,9 @@ pub fn DatePicker(props: DatePickerProps) -> VNode {
     };
     let field = view! {
         <View flex_direction=FlexDirection::Row gap=1>
-            <DateField id=props.id bind:value={shared} on_value_change={changed.clone()}
-                min=props.min max=props.max is_date_unavailable={props.is_date_unavailable.clone()}
-                order=props.order label={props.label.clone()} disabled=props.disabled
+            <DateField id={props.id} bind:value={shared} on_value_change={changed.clone()}
+                min={props.min} max={props.max} is_date_unavailable={props.is_date_unavailable.clone()}
+                order={props.order} label={props.label.clone()} disabled={props.disabled}
                 on_open=open_now />
             {button}
         </View>
@@ -93,9 +93,9 @@ pub fn DatePicker(props: DatePickerProps) -> VNode {
         <Overlay id=popup open=is_open layer=layer modal=true opener=trigger
             placement=Placement::Bottom on_close=close semantics=semantics trigger=field>
             <View border=BorderStyle::Rounded border_color=Color::DarkGrey>
-                <Calendar id=grid bind:value={shared} on_value_change=changed min=props.min
-                    max=props.max is_date_unavailable=props.is_date_unavailable
-                    week_starts_on=props.week_starts_on label={props.label}
+                <Calendar id=grid bind:value={shared} on_value_change=changed min={props.min}
+                    max={props.max} is_date_unavailable={props.is_date_unavailable}
+                    week_starts_on={props.week_starts_on} label={props.label}
                     on_select=picked />
             </View>
         </Overlay>

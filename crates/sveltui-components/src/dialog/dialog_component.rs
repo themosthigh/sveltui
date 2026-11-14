@@ -46,22 +46,22 @@ pub fn Dialog(props: DialogProps) -> impl IntoNode {
         <Overlay
             id=id
             open=open
-            placement=props.placement
+            placement={props.placement}
             layer=layer
-            backdrop=props.backdrop
+            backdrop={props.backdrop}
             modal=true
-            opener=props.opener
+            opener={props.opener}
             on_close=on_close
             on_open=on_open
-            on_key=props.on_key
+            on_key={props.on_key}
             semantics=semantics
         >
             <View
-                border=props.border
-                border_color=props.border_color
-                width=props.width
-                height=props.height
-                padding=props.padding
+                border={props.border}
+                border_color={props.border_color}
+                width={props.width}
+                height={props.height}
+                padding={props.padding}
                 title={(!title_str.is_empty()).then_some(title_str)}
             >
                 {#if props.children.is_some()}

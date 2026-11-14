@@ -22,7 +22,7 @@ struct UserTableProps<T: 'static> {
 #[component]
 fn UserTable<T: Clone + 'static>(props: UserTableProps<T>) -> impl IntoNode {
     view! {
-        <View border=BorderStyle::Single padding=Padding::all(1) gap=1>
+        <View border=BorderStyle::Single padding={Padding::all(1)} gap=1>
             <TextSpan bold=true>{props.title.clone()}</TextSpan>
             {#if props.header.is_snippet_present()}
                 {@render props.header}

@@ -295,8 +295,8 @@ pub fn Content(props: ContentProps) -> VNode {
     overlay.on_key = props.on_key;
     if menu.open {
         overlay = overlay.child(view! {
-            <View width=props.width border=props.border border_color={props.border_color.unwrap_or(props.bg)}
-                background_color=props.bg padding=props.padding overflow=Overflow::Scroll scroll_id=scroll_id>
+            <View width={props.width} border={props.border} border_color={props.border_color.unwrap_or(props.bg)}
+                background_color={props.bg} padding={props.padding} overflow=Overflow::Scroll scroll_id=scroll_id>
                 {@render props.children}
             </View>
         });

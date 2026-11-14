@@ -85,15 +85,15 @@ fn children_supply_semantics_typeahead_and_disabled_navigation() {
     let (count, set_count) = create_signal(0);
     let build = || {
         view! {
-            <Menu::Root id=FocusId(100) default_open=true>
-                <Menu::Trigger id=FocusId(1)>"Actions"</Menu::Trigger>
+            <Menu::Root id={FocusId(100)} default_open=true>
+                <Menu::Trigger id={FocusId(1)}>"Actions"</Menu::Trigger>
                 <Menu::Content>
                     <Menu::Group>
                         <Menu::GroupHeading>"Files"</Menu::GroupHeading>
-                        <Menu::Item id=FocusId(2)>"Alpha"</Menu::Item>
-                        <Menu::Item id=FocusId(3) disabled=true on_select={move || set_count.set(99)}>"Beta"</Menu::Item>
+                        <Menu::Item id={FocusId(2)}>"Alpha"</Menu::Item>
+                        <Menu::Item id={FocusId(3)} disabled=true on_select={move || set_count.set(99)}>"Beta"</Menu::Item>
                         <Menu::Separator />
-                        <Menu::Item id=FocusId(4) on_select={move || set_count.update(|n| *n += 1)}><TextSpan>"Gamma"</TextSpan></Menu::Item>
+                        <Menu::Item id={FocusId(4)} on_select={move || set_count.update(|n| *n += 1)}><TextSpan>"Gamma"</TextSpan></Menu::Item>
                     </Menu::Group>
                 </Menu::Content>
             </Menu::Root>
@@ -129,20 +129,20 @@ fn children_supply_semantics_typeahead_and_disabled_navigation() {
 fn hover_preserves_parent_until_child_entry_and_closes_competing_branches() {
     let build = || {
         view! {
-            <DropdownMenu::Root id=FocusId(100) default_open=true>
-                <DropdownMenu::Trigger id=FocusId(1)>"Actions"</DropdownMenu::Trigger>
+            <DropdownMenu::Root id={FocusId(100)} default_open=true>
+                <DropdownMenu::Trigger id={FocusId(1)}>"Actions"</DropdownMenu::Trigger>
                 <DropdownMenu::Content width=16>
-                    <DropdownMenu::Sub id=FocusId(101)>
-                        <DropdownMenu::SubTrigger id=FocusId(2)>"Export"</DropdownMenu::SubTrigger>
+                    <DropdownMenu::Sub id={FocusId(101)}>
+                        <DropdownMenu::SubTrigger id={FocusId(2)}>"Export"</DropdownMenu::SubTrigger>
                         <DropdownMenu::SubContent width=16>
-                            <DropdownMenu::Item id=FocusId(3)>"JSON"</DropdownMenu::Item>
+                            <DropdownMenu::Item id={FocusId(3)}>"JSON"</DropdownMenu::Item>
                         </DropdownMenu::SubContent>
                     </DropdownMenu::Sub>
-                    <DropdownMenu::Sub id=FocusId(102)>
-                        <DropdownMenu::SubTrigger id=FocusId(4)>"Share"</DropdownMenu::SubTrigger>
-                        <DropdownMenu::SubContent><DropdownMenu::Item id=FocusId(5)>"Link"</DropdownMenu::Item></DropdownMenu::SubContent>
+                    <DropdownMenu::Sub id={FocusId(102)}>
+                        <DropdownMenu::SubTrigger id={FocusId(4)}>"Share"</DropdownMenu::SubTrigger>
+                        <DropdownMenu::SubContent><DropdownMenu::Item id={FocusId(5)}>"Link"</DropdownMenu::Item></DropdownMenu::SubContent>
                     </DropdownMenu::Sub>
-                    <DropdownMenu::Item id=FocusId(6)>"Close"</DropdownMenu::Item>
+                    <DropdownMenu::Item id={FocusId(6)}>"Close"</DropdownMenu::Item>
                 </DropdownMenu::Content>
             </DropdownMenu::Root>
         }
@@ -173,9 +173,9 @@ fn hover_preserves_parent_until_child_entry_and_closes_competing_branches() {
 fn context_menu_uses_pointer_coordinates_and_keyboard_reanchors_to_trigger() {
     let build = || {
         view! {
-            <ContextMenu::Root id=FocusId(100)>
-                <ContextMenu::Trigger id=FocusId(1)>"Right click here"</ContextMenu::Trigger>
-                <ContextMenu::Content width=12><ContextMenu::Item id=FocusId(2)>"Copy"</ContextMenu::Item></ContextMenu::Content>
+            <ContextMenu::Root id={FocusId(100)}>
+                <ContextMenu::Trigger id={FocusId(1)}>"Right click here"</ContextMenu::Trigger>
+                <ContextMenu::Content width=12><ContextMenu::Item id={FocusId(2)}>"Copy"</ContextMenu::Item></ContextMenu::Content>
             </ContextMenu::Root>
         }
     };
@@ -202,23 +202,23 @@ fn menu_bar_has_one_tab_stop_and_coordinates_keyboard_and_hover_switching() {
     let build = || {
         view! {
             <View>
-                <MenuBar::Root id=FocusId(90)>
-                    <MenuBar::Menu id=FocusId(100) value="file">
-                        <MenuBar::Trigger id=FocusId(1)>"File"</MenuBar::Trigger>
+                <MenuBar::Root id={FocusId(90)}>
+                    <MenuBar::Menu id={FocusId(100)} value="file">
+                        <MenuBar::Trigger id={FocusId(1)}>"File"</MenuBar::Trigger>
                         <MenuBar::Content width=14>
-                            <MenuBar::Item id=FocusId(2)>"New"</MenuBar::Item>
-                            <MenuBar::Sub id=FocusId(102)>
-                                <MenuBar::SubTrigger id=FocusId(6)>"Export"</MenuBar::SubTrigger>
-                                <MenuBar::SubContent><MenuBar::Item id=FocusId(7)>"JSON"</MenuBar::Item></MenuBar::SubContent>
+                            <MenuBar::Item id={FocusId(2)}>"New"</MenuBar::Item>
+                            <MenuBar::Sub id={FocusId(102)}>
+                                <MenuBar::SubTrigger id={FocusId(6)}>"Export"</MenuBar::SubTrigger>
+                                <MenuBar::SubContent><MenuBar::Item id={FocusId(7)}>"JSON"</MenuBar::Item></MenuBar::SubContent>
                             </MenuBar::Sub>
                         </MenuBar::Content>
                     </MenuBar::Menu>
-                    <MenuBar::Menu id=FocusId(101) value="edit">
-                        <MenuBar::Trigger id=FocusId(3)>"Edit"</MenuBar::Trigger>
-                        <MenuBar::Content width=14><MenuBar::Item id=FocusId(4)>"Copy"</MenuBar::Item></MenuBar::Content>
+                    <MenuBar::Menu id={FocusId(101)} value="edit">
+                        <MenuBar::Trigger id={FocusId(3)}>"Edit"</MenuBar::Trigger>
+                        <MenuBar::Content width=14><MenuBar::Item id={FocusId(4)}>"Copy"</MenuBar::Item></MenuBar::Content>
                     </MenuBar::Menu>
                 </MenuBar::Root>
-                <Button id=FocusId(5)>"After"</Button>
+                <Button id={FocusId(5)}>"After"</Button>
             </View>
         }
     };
@@ -261,12 +261,12 @@ fn controlled_requests_are_once_per_event_and_rejected_close_retains_focus() {
     let (requests, set_requests) = create_signal(0);
     let build = || {
         view! {
-            <DropdownMenu::Root id=FocusId(100) open={opened.get()} on_open_change={move |next| {
+            <DropdownMenu::Root id={FocusId(100)} open={opened.get()} on_open_change={move |next| {
                 set_requests.update(|n| *n += 1);
                 if next { set_opened.set(true); }
             }}>
-                <DropdownMenu::Trigger id=FocusId(1)>"Open"</DropdownMenu::Trigger>
-                <DropdownMenu::Content><DropdownMenu::Item id=FocusId(2)>"Stay"</DropdownMenu::Item></DropdownMenu::Content>
+                <DropdownMenu::Trigger id={FocusId(1)}>"Open"</DropdownMenu::Trigger>
+                <DropdownMenu::Content><DropdownMenu::Item id={FocusId(2)}>"Stay"</DropdownMenu::Item></DropdownMenu::Content>
             </DropdownMenu::Root>
         }
     };
@@ -290,12 +290,12 @@ fn explicit_anchor_tracks_layout_and_clamps_after_resize() {
         view! {
             <View>
                 <View height={offset.get()} />
-                <Pressable focus_id=FocusId(9)>
+                <Pressable focus_id={FocusId(9)}>
                     <View width=8 height=1>"Anchor"</View>
                 </Pressable>
-                <DropdownMenu::Root id=FocusId(100) open=true>
-                    <DropdownMenu::Trigger id=FocusId(1)>"Opener"</DropdownMenu::Trigger>
-                    <DropdownMenu::Content anchor=FocusId(9) width=12><DropdownMenu::Item id=FocusId(2)>"Item"</DropdownMenu::Item></DropdownMenu::Content>
+                <DropdownMenu::Root id={FocusId(100)} open=true>
+                    <DropdownMenu::Trigger id={FocusId(1)}>"Opener"</DropdownMenu::Trigger>
+                    <DropdownMenu::Content anchor={FocusId(9)} width=12><DropdownMenu::Item id={FocusId(2)}>"Item"</DropdownMenu::Item></DropdownMenu::Content>
                 </DropdownMenu::Root>
             </View>
         }
@@ -319,11 +319,11 @@ fn explicit_anchor_tracks_layout_and_clamps_after_resize() {
 fn empty_menu_is_dismissible_and_outside_click_closes_the_full_chain() {
     let build = || {
         view! {
-            <DropdownMenu::Root id=FocusId(100) default_open=true>
-                <DropdownMenu::Trigger id=FocusId(1)>"Open"</DropdownMenu::Trigger>
+            <DropdownMenu::Root id={FocusId(100)} default_open=true>
+                <DropdownMenu::Trigger id={FocusId(1)}>"Open"</DropdownMenu::Trigger>
                 <DropdownMenu::Content>
-                    <DropdownMenu::Sub id=FocusId(101)>
-                        <DropdownMenu::SubTrigger id=FocusId(2)>"Empty"</DropdownMenu::SubTrigger>
+                    <DropdownMenu::Sub id={FocusId(101)}>
+                        <DropdownMenu::SubTrigger id={FocusId(2)}>"Empty"</DropdownMenu::SubTrigger>
                         <DropdownMenu::SubContent />
                     </DropdownMenu::Sub>
                 </DropdownMenu::Content>
@@ -352,13 +352,13 @@ fn controlled_bar_switch_emits_one_new_value_without_an_intermediate_close() {
                 set_requests.update(|values| values.push(next.clone()));
                 set_active.set(next);
             }}>
-                <MenuBar::Menu id=FocusId(100) value="file">
-                    <MenuBar::Trigger id=FocusId(1)>"File"</MenuBar::Trigger>
-                    <MenuBar::Content><MenuBar::Item id=FocusId(2)>"New"</MenuBar::Item></MenuBar::Content>
+                <MenuBar::Menu id={FocusId(100)} value="file">
+                    <MenuBar::Trigger id={FocusId(1)}>"File"</MenuBar::Trigger>
+                    <MenuBar::Content><MenuBar::Item id={FocusId(2)}>"New"</MenuBar::Item></MenuBar::Content>
                 </MenuBar::Menu>
-                <MenuBar::Menu id=FocusId(101) value="edit">
-                    <MenuBar::Trigger id=FocusId(3)>"Edit"</MenuBar::Trigger>
-                    <MenuBar::Content><MenuBar::Item id=FocusId(4)>"Copy"</MenuBar::Item></MenuBar::Content>
+                <MenuBar::Menu id={FocusId(101)} value="edit">
+                    <MenuBar::Trigger id={FocusId(3)}>"Edit"</MenuBar::Trigger>
+                    <MenuBar::Content><MenuBar::Item id={FocusId(4)}>"Copy"</MenuBar::Item></MenuBar::Content>
                 </MenuBar::Menu>
             </MenuBar::Root>
         }
@@ -487,22 +487,22 @@ fn grouped_menu_rows_fill_the_content_viewport_for_every_menu_kind() {
                     placement={Placement::Anchor { x: 0, y: 0 }}>
                     <$parts::Group>
                         <$parts::GroupHeading>"Files"</$parts::GroupHeading>
-                        <$parts::Item id=FocusId(11)>"Copy"</$parts::Item>
+                        <$parts::Item id={FocusId(11)}>"Copy"</$parts::Item>
                         <$parts::Group>
-                            <$parts::Item id=FocusId(12)>"Cut"</$parts::Item>
+                            <$parts::Item id={FocusId(12)}>"Cut"</$parts::Item>
                         </$parts::Group>
                         <$parts::Sub open=true>
-                            <$parts::SubTrigger id=FocusId(13)>"Export"</$parts::SubTrigger>
+                            <$parts::SubTrigger id={FocusId(13)}>"Export"</$parts::SubTrigger>
                             <$parts::SubContent width={$width} padding={Padding::symmetric(1, 0)}
                                 placement={Placement::Anchor { x: 0, y: 12 }}>
                                 <$parts::Group>
-                                    <$parts::Item id=FocusId(15)>"JSON"</$parts::Item>
+                                    <$parts::Item id={FocusId(15)}>"JSON"</$parts::Item>
                                 </$parts::Group>
                             </$parts::SubContent>
                         </$parts::Sub>
                     </$parts::Group>
                     <$parts::Separator />
-                    <$parts::Item id=FocusId(14)>"Ungrouped"</$parts::Item>
+                    <$parts::Item id={FocusId(14)}>"Ungrouped"</$parts::Item>
                 </$parts::Content>
             }
         };

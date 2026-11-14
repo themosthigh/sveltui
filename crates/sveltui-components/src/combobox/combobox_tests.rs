@@ -305,7 +305,7 @@ fn options_list_shortcut_filters_and_chooses() {
         ListboxOption::new("bru", "Brussels"),
     ];
     let build = move || {
-        view! { <Combobox id=INPUT options=options.clone() placeholder="City" empty="No city" /> }
+        view! { <Combobox id=INPUT options={options.clone()} placeholder="City" empty="No city" /> }
     };
     let mut manager = FocusManager::new();
     focused(&mut manager, &build);

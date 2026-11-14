@@ -26,7 +26,7 @@ pub(crate) fn trigger(
     children: VNode,
 ) -> VNode {
     view! {
-        <Pressable focus_id=popup.ids.trigger tab_stop=tab_stop semantics=semantics
+        <Pressable focus_id={popup.ids.trigger} tab_stop=tab_stop semantics=semantics
             on_hover={popup.on_trigger_hover()} on_key={escape_closes(popup.clone())}>
             {children}
         </Pressable>
@@ -49,10 +49,10 @@ pub(crate) fn content(
         move || popup.dismiss()
     };
     view! {
-        <Overlay id=popup.ids.layer anchor=popup.ids.trigger open={popup.open.get()}
+        <Overlay id={popup.ids.layer} anchor={popup.ids.trigger} open={popup.open.get()}
             placement=placement layer={DismissLayer::tooltip()} backdrop=false
             on_close=on_close on_key={escape_closes(popup.clone())}>
-            <Pressable focus_id=popup.ids.content semantics=semantics
+            <Pressable focus_id={popup.ids.content} semantics=semantics
                 on_hover={popup.on_content_hover()}>
                 <View border=BorderStyle::Single border_color=Color::DarkGrey width=width
                     padding=padding>

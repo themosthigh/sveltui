@@ -13,7 +13,7 @@ fn FlakyWidget(props: FlakyWidgetProps) -> impl IntoNode {
     }
 
     view! {
-        <View border=BorderStyle::Single border_color=Color::White padding=Padding::all(1) gap=1>
+        <View border=BorderStyle::Single border_color=Color::White padding={Padding::all(1)} gap=1>
             <TextSpan foreground_color=Color::White bold=true>"Child Widget: Running Healthy"</TextSpan>
             <TextSpan foreground_color=Color::DarkGrey>"Calculations proceeding normally. Click 'Trigger Panic' below to test isolation."</TextSpan>
         </View>
@@ -25,12 +25,12 @@ fn ErrorBoundaryDemo() -> impl IntoNode {
     let should_crash = state(false);
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View
                 width=72
                 border=BorderStyle::Double
                 border_color=Color::DarkGrey
-                padding=Padding::all(1)
+                padding={Padding::all(1)}
                 gap=1
             >
                 <TextSpan foreground_color=Color::White bold=true>"framework_error_boundary: Crash Isolation & Recovery"</TextSpan>
@@ -57,7 +57,7 @@ fn ErrorBoundaryDemo() -> impl IntoNode {
                         <View
                             border=BorderStyle::Double
                             border_color=Color::White
-                            padding=Padding::all(1)
+                            padding={Padding::all(1)}
                             gap=1
                         >
                             <TextSpan foreground_color=Color::White bold=true>"[ErrorBoundary Caught Failure]"</TextSpan>

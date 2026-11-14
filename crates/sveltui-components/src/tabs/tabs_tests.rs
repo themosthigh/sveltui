@@ -52,9 +52,9 @@ fn three_tabs(root: RootPropsBuilder) -> VNode {
             view! {
                 <View>
                 <Tabs::List>
-                    <Tabs::Trigger value="a" id=FocusId(1)>"Alpha"</Tabs::Trigger>
-                    <Tabs::Trigger value="b" id=FocusId(2)>"Beta"</Tabs::Trigger>
-                    <Tabs::Trigger value="c" id=FocusId(3)>"Gamma"</Tabs::Trigger>
+                    <Tabs::Trigger value="a" id={FocusId(1)}>"Alpha"</Tabs::Trigger>
+                    <Tabs::Trigger value="b" id={FocusId(2)}>"Beta"</Tabs::Trigger>
+                    <Tabs::Trigger value="c" id={FocusId(3)}>"Gamma"</Tabs::Trigger>
                 </Tabs::List>
                 <Tabs::Content value="a"><TextSpan>"panel-a"</TextSpan></Tabs::Content>
                 <Tabs::Content value="b"><TextSpan>"panel-b"</TextSpan></Tabs::Content>
@@ -89,7 +89,7 @@ fn tablist_is_one_tab_stop_that_lands_on_the_selected_tab_then_the_panel() {
     let build = || {
         view! {
             <View>
-                <Button id=FocusId(100)>"Before"</Button>
+                <Button id={FocusId(100)}>"Before"</Button>
                 {three_tabs(RootProps::builder().default_value("b"))}
             </View>
         }
@@ -225,9 +225,9 @@ fn first_enabled_tab_is_selected_and_disabled_tabs_are_skipped() {
         view! {
             <Tabs::Root>
                 <Tabs::List>
-                    <Tabs::Trigger value="a" id=FocusId(1) disabled=true>"Alpha"</Tabs::Trigger>
-                    <Tabs::Trigger value="b" id=FocusId(2)>"Beta"</Tabs::Trigger>
-                    <Tabs::Trigger value="c" id=FocusId(3)>"Gamma"</Tabs::Trigger>
+                    <Tabs::Trigger value="a" id={FocusId(1)} disabled=true>"Alpha"</Tabs::Trigger>
+                    <Tabs::Trigger value="b" id={FocusId(2)}>"Beta"</Tabs::Trigger>
+                    <Tabs::Trigger value="c" id={FocusId(3)}>"Gamma"</Tabs::Trigger>
                 </Tabs::List>
                 <Tabs::Content value="a"><TextSpan>"panel-a"</TextSpan></Tabs::Content>
                 <Tabs::Content value="b"><TextSpan>"panel-b"</TextSpan></Tabs::Content>
@@ -347,10 +347,10 @@ fn panel_with_focusable_content_is_not_an_extra_tab_stop() {
             <Tabs::Root>
                 <View>
                     <Tabs::List>
-                        <Tabs::Trigger value="a" id=FocusId(1)>"Alpha"</Tabs::Trigger>
+                        <Tabs::Trigger value="a" id={FocusId(1)}>"Alpha"</Tabs::Trigger>
                     </Tabs::List>
                     <Tabs::Content value="a">
-                        <Button id=FocusId(50)>"Inside"</Button>
+                        <Button id={FocusId(50)}>"Inside"</Button>
                     </Tabs::Content>
                 </View>
             </Tabs::Root>

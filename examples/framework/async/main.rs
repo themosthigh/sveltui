@@ -23,12 +23,12 @@ fn AsyncDemo() -> impl IntoNode {
     let endpoint = state(String::from("us-east-1"));
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View
                 width=72
                 border=BorderStyle::Single
                 border_color=Color::DarkGrey
-                padding=Padding::all(1)
+                padding={Padding::all(1)}
                 gap=1
             >
                 <TextSpan foreground_color=Color::White bold=true>"framework_async: {#await} Asynchronous Runes"</TextSpan>
@@ -53,7 +53,7 @@ fn AsyncDemo() -> impl IntoNode {
 
                 <Divider />
 
-                <View border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1) min_height=4>
+                <View border=BorderStyle::Single border_color=Color::DarkGrey padding={Padding::all(1)} min_height=4>
                     {#await fetch_server_stats(endpoint.get())}
                         <TextSpan foreground_color=Color::DarkGrey>"[Pending] Contacting cluster API..."</TextSpan>
                     {:then stats}

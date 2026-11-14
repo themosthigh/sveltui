@@ -125,13 +125,13 @@ fn width_of(manager: &FocusManager, id: usize) -> u16 {
 fn split(layout: State<Vec<f32>>, collapsible: bool) -> impl Fn() -> VNode {
     move || {
         view! {
-            <Resizable::PanelGroup id=FocusId(100) bind:layout=layout>
-                <Resizable::Panel id=FocusId(1) default_size=30.0 min_size=10.0 max_size=80.0
+            <Resizable::PanelGroup id={FocusId(100)} bind:layout=layout>
+                <Resizable::Panel id={FocusId(1)} default_size=30.0 min_size=10.0 max_size=80.0
                     collapsible=collapsible>
                     "left"
                 </Resizable::Panel>
-                <Resizable::Handle id=FocusId(10) />
-                <Resizable::Panel id=FocusId(2) default_size=70.0>"right"</Resizable::Panel>
+                <Resizable::Handle id={FocusId(10)} />
+                <Resizable::Panel id={FocusId(2)} default_size=70.0>"right"</Resizable::Panel>
             </Resizable::PanelGroup>
         }
     }
@@ -254,14 +254,14 @@ fn layout_changes_and_collapses_are_reported() {
             let collapsed = collapsed.clone();
             let on_collapse: Rc<dyn Fn()> = Rc::new(move || *collapsed.borrow_mut() += 1);
             view! {
-                <Resizable::PanelGroup id=FocusId(100)
+                <Resizable::PanelGroup id={FocusId(100)}
                     on_layout_change={move |sizes: Vec<f32>| changes.borrow_mut().push(sizes)}>
-                    <Resizable::Panel id=FocusId(1) default_size=30.0 min_size=10.0
-                        collapsible=true on_collapse=on_collapse.clone()>
+                    <Resizable::Panel id={FocusId(1)} default_size=30.0 min_size=10.0
+                        collapsible=true on_collapse={on_collapse.clone()}>
                         "left"
                     </Resizable::Panel>
-                    <Resizable::Handle id=FocusId(10) />
-                    <Resizable::Panel id=FocusId(2)>"right"</Resizable::Panel>
+                    <Resizable::Handle id={FocusId(10)} />
+                    <Resizable::Panel id={FocusId(2)}>"right"</Resizable::Panel>
                 </Resizable::PanelGroup>
             }
         }
@@ -281,10 +281,10 @@ fn vertical_groups_resize_with_up_and_down() {
     let layout = layout_state();
     let build = move || {
         view! {
-            <Resizable::PanelGroup id=FocusId(100) direction=Orientation::Vertical bind:layout=layout>
-                <Resizable::Panel id=FocusId(1) default_size=50.0>"top"</Resizable::Panel>
-                <Resizable::Handle id=FocusId(10) />
-                <Resizable::Panel id=FocusId(2) default_size=50.0>"bottom"</Resizable::Panel>
+            <Resizable::PanelGroup id={FocusId(100)} direction=Orientation::Vertical bind:layout=layout>
+                <Resizable::Panel id={FocusId(1)} default_size=50.0>"top"</Resizable::Panel>
+                <Resizable::Handle id={FocusId(10)} />
+                <Resizable::Panel id={FocusId(2)} default_size=50.0>"bottom"</Resizable::Panel>
             </Resizable::PanelGroup>
         }
     };

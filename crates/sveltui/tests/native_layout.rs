@@ -74,7 +74,7 @@ fn capped_percentages_respect_parent_alignment_in_all_directions() {
 fn explicit_alignment_does_not_change_native_sizing() {
     let node = view! {
         <View width=160 height=8 align_items=AlignItems::FlexStart>
-            <View width=Dimension::Percent(1.0) max_width=100 height=4 align_self=AlignSelf::Center />
+            <View width={Dimension::Percent(1.0)} max_width=100 height=4 align_self=AlignSelf::Center />
         </View>
     };
     let layout = LayoutEngine::new().compute_layout(&node, 160, 8);
@@ -101,8 +101,8 @@ fn native_auto_stretch_uses_space_inside_padding_borders_margins_and_scrollbars(
 #[test]
 fn capped_percentages_resize_and_keep_stretched_children_inside() {
     let node = view! {
-        <View width=Dimension::Percent(1.0) height=8 align_items=AlignItems::Center>
-            <View width=Dimension::Percent(1.0) max_width=100 height=6 border=BorderStyle::Single padding=1>
+        <View width={Dimension::Percent(1.0)} height=8 align_items=AlignItems::Center>
+            <View width={Dimension::Percent(1.0)} max_width=100 height=6 border=BorderStyle::Single padding=1>
                 <View height=1 />
             </View>
         </View>

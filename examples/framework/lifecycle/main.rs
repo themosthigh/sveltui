@@ -33,7 +33,7 @@ fn ActiveSession(props: ActiveSessionProps) -> impl IntoNode {
     });
 
     view! {
-        <View border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1) gap=1>
+        <View border=BorderStyle::Single border_color=Color::DarkGrey padding={Padding::all(1)} gap=1>
             <TextSpan foreground_color=Color::White bold=true>"Active Session Component"</TextSpan>
             <Divider />
             <TextSpan foreground_color=Color::DarkGrey>"Recent Lifecycle Activity:"</TextSpan>
@@ -58,12 +58,12 @@ fn LifecycleDemo() -> impl IntoNode {
     });
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View
                 width=68
                 border=BorderStyle::Double
                 border_color=Color::DarkGrey
-                padding=Padding::all(1)
+                padding={Padding::all(1)}
                 gap=1
             >
                 <TextSpan foreground_color=Color::White bold=true>"framework_lifecycle: on_mount, on_destroy & effect"</TextSpan>
@@ -90,7 +90,7 @@ fn LifecycleDemo() -> impl IntoNode {
                     <View
                         border=BorderStyle::Single
                         border_color=Color::DarkGrey
-                        padding=Padding::all(2)
+                        padding={Padding::all(2)}
                         align_items=AlignItems::Center
                     >
                         <TextSpan foreground_color=Color::DarkGrey>"Component unmounted. Cleanups executed."</TextSpan>

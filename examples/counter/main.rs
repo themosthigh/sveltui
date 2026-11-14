@@ -17,8 +17,8 @@ fn CounterApp() -> impl IntoNode {
 
     view! {
         <View
-            height=Dimension::Percent(1.0)
-            width=Dimension::Percent(1.0)
+            height={Dimension::Percent(1.0)}
+            width={Dimension::Percent(1.0)}
             align_items=AlignItems::Center
             justify_content=JustifyContent::Center
         >
@@ -28,16 +28,16 @@ fn CounterApp() -> impl IntoNode {
                 justify_content=JustifyContent::Center
                 border=BorderStyle::Double
                 border_color=Color::Red
-                padding=Padding::symmetric(6, 1)
+                padding={Padding::symmetric(6, 1)}
                 gap=4
             >
-                <Button on_click={move || count.set(count.get() - 1)} padding=Padding::symmetric(3, 0)>
+                <Button on_click={move || count.set(count.get() - 1)} padding={Padding::symmetric(3, 0)}>
                     "-"
                 </Button>
 
                 <TextSpan>{count.get().to_string()}</TextSpan>
 
-                <Button on_click={move || count.set(count.get() + 1)} padding=Padding::symmetric(3, 0)>
+                <Button on_click={move || count.set(count.get() + 1)} padding={Padding::symmetric(3, 0)}>
                     "+"
                 </Button>
             </View>

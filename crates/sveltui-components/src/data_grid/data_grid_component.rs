@@ -215,7 +215,9 @@ pub fn DataGrid<T: Clone + 'static>(props: DataGridProps<T>) -> VNode {
         ));
     }
     if matches!(rules, TableRules::Header | TableRules::Columns) {
-        cells.push(view! { <View separator=true grid_column=lines(1, -1) height=1 /> }.into_node());
+        cells.push(
+            view! { <View separator=true grid_column={lines(1, -1)} height=1 /> }.into_node(),
+        );
     }
     for (offset, (source, item)) in window.iter().enumerate() {
         let grid_row = first + offset + 1;
@@ -264,8 +266,8 @@ pub fn DataGrid<T: Clone + 'static>(props: DataGridProps<T>) -> VNode {
         let bar = crate::scrollbar::column(track, fit, len, first);
         let header_rows = 1 + u16::from(header_line);
         view! {
-            <View position=Position::Absolute inset=Inset::new().top(header_rows).right(0)>
-                <TextSpan foreground_color=props.border_color>{bar}</TextSpan>
+            <View position=Position::Absolute inset={Inset::new().top(header_rows).right(0)}>
+                <TextSpan foreground_color={props.border_color}>{bar}</TextSpan>
             </View>
         }
     });
@@ -365,8 +367,8 @@ pub fn DataGrid<T: Clone + 'static>(props: DataGridProps<T>) -> VNode {
     };
     view! {
         <Pressable focus_id=id tab_stop=true semantics=semantics on_key=on_key>
-            <View display=Display::Grid grid_template_columns=tracks grid_auto_rows=length(1)
-                height=props.height border=props.border title=props.title
+            <View display=Display::Grid grid_template_columns=tracks grid_auto_rows={length(1)}
+                height={props.height} border={props.border} title={props.title}
                 border_color={if focused { Color::White } else { props.border_color }}
                 grid_rules=rule_style grid_rule_axes=axes
                 column_gap={if padding == 1 { 1 } else { 2 }}
@@ -408,7 +410,7 @@ fn grid_cell(
         <Pressable semantics=semantics>
             // Clicks carry the grid's id, so they focus the grid.
             <Pressable focus_id=grid on_click=on_click>
-                <View align_items=align overflow_x=Overflow::Hidden padding=(padding, 0)
+                <View align_items=align overflow_x=Overflow::Hidden padding={(padding, 0)}
                     foreground_color=fg background_color=bg>
                     {content}
                 </View>

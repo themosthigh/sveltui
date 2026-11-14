@@ -28,12 +28,12 @@ fn ScrollDemo() -> impl IntoNode {
         .collect::<Vec<_>>();
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View
                 width=68
                 border=BorderStyle::Single
                 border_color=Color::DarkGrey
-                padding=Padding::all(1)
+                padding={Padding::all(1)}
                 gap=1
             >
                 <TextSpan foreground_color=Color::White bold=true>"component_scroll: Virtual Scrolling & Overflow"</TextSpan>
@@ -67,7 +67,7 @@ fn ScrollDemo() -> impl IntoNode {
                         border_color={if focus.is_active() { Color::White } else { Color::DarkGrey }}
                         width=62
                         height=10
-                        padding=Padding::symmetric(1, 0)
+                        padding={Padding::symmetric(1, 0)}
                         overflow=Overflow::Scroll
                         scrollbar_visibility=ScrollbarVisibility::Auto
                     >

@@ -43,13 +43,13 @@ pub fn Popover(props: PopoverProps) -> impl IntoNode {
             id=id
             open=open
             managed=managed
-            placement=props.placement
-            backdrop=props.backdrop
+            placement={props.placement}
+            backdrop={props.backdrop}
             modal=false
             on_close=on_close
             on_open=on_open
-            on_key=props.on_key
-            slot_trigger=props.trigger
+            on_key={props.on_key}
+            slot_trigger={props.trigger}
         >
             {#if props.children.is_some()}
                 {@render props.children}

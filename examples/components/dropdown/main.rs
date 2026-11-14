@@ -16,12 +16,12 @@ fn DropdownDemo() -> impl IntoNode {
     };
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View
                 width=68
                 border=BorderStyle::Single
                 border_color=Color::DarkGrey
-                padding=Padding::all(1)
+                padding={Padding::all(1)}
                 gap=1
             >
                 <TextSpan foreground_color=Color::White bold=true>"component_dropdown: Menus & Hierarchical Submenus"</TextSpan>
@@ -64,7 +64,7 @@ fn DropdownDemo() -> impl IntoNode {
                 <View height=1 />
                 <Divider />
 
-                <View border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1)>
+                <View border=BorderStyle::Single border_color=Color::DarkGrey padding={Padding::all(1)}>
                     <TextSpan foreground_color=Color::White>{format!("Selected Option: {}", selected_action.get())}</TextSpan>
                     <TextSpan foreground_color=Color::DarkGrey>"Esc / Tab: Close dropdown | Arrow keys: Navigate items"</TextSpan>
                 </View>

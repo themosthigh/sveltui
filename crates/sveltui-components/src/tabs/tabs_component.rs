@@ -127,7 +127,7 @@ pub fn Trigger(props: TriggerProps) -> VNode {
         <Pressable
             focus_id=id
             tab_stop=true
-            disabled=props.disabled
+            disabled={props.disabled}
             activation=Activation::Press
             semantics=semantics
             on_click=on_click

@@ -172,14 +172,14 @@ pub fn CodePreview(props: CodePreviewProps) -> impl IntoNode {
             focus_id=id
             tab_stop=true
             on_key=on_key
-            semantics=Semantics::new(Role::Generic, title_str)
+            semantics={Semantics::new(Role::Generic, title_str)}
         >
             <View
                 border=border_style
                 border_color=border_color
-                padding=Padding::symmetric(1, 0)
-                width=props.width
-                height=props.height
+                padding={Padding::symmetric(1, 0)}
+                width={props.width}
+                height={props.height}
                 flex_direction=FlexDirection::Column
                 align_items=AlignItems::FlexStart
                 justify_content=JustifyContent::FlexStart
@@ -187,7 +187,7 @@ pub fn CodePreview(props: CodePreviewProps) -> impl IntoNode {
                 overflow_y=Overflow::Scroll
                 scroll_id=id
                 on_scroll=on_scroll
-                title=props.title
+                title={props.title}
             >
                 {#each rendered_line_nodes as line_node}
                     {line_node}

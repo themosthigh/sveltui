@@ -23,7 +23,7 @@ fn auto_side_margins_center_horizontally() {
     let root = layout(
         view! {
             <View width=40 height=10>
-                <View width=10 height=2 margin=Margin::auto_x() />
+                <View width=10 height=2 margin={Margin::auto_x()} />
             </View>
         },
         40,
@@ -37,7 +37,7 @@ fn auto_margins_center_both_ways() {
     let root = layout(
         view! {
             <View width=40 height=10>
-                <View width=10 height=2 margin=Margin::auto() />
+                <View width=10 height=2 margin={Margin::auto()} />
             </View>
         },
         40,
@@ -51,7 +51,7 @@ fn absolute_views_are_placed_by_inset_and_leave_the_flow() {
     let root = layout(
         view! {
             <View width=40 height=10>
-                <View position=Position::Absolute inset=Inset::new().top(0).right(1) width=5 height=1 />
+                <View position=Position::Absolute inset={Inset::new().top(0).right(1)} width=5 height=1 />
                 <View height=1 />
             </View>
         },

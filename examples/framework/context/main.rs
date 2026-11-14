@@ -17,10 +17,10 @@ fn DeepThemedWidget() -> impl IntoNode {
     });
 
     view! {
-        <View border=theme.border_style border_color=theme.primary_color padding=Padding::all(1) gap=1>
+        <View border={theme.border_style} border_color={theme.primary_color} padding={Padding::all(1)} gap=1>
             <View flex_direction=FlexDirection::Row justify_content=JustifyContent::SpaceBetween>
-                <TextSpan foreground_color=theme.primary_color bold=true>"Themed Consumer Box"</TextSpan>
-                <Badge label=theme.badge_label />
+                <TextSpan foreground_color={theme.primary_color} bold=true>"Themed Consumer Box"</TextSpan>
+                <Badge label={theme.badge_label} />
             </View>
             <TextSpan foreground_color=Color::DarkGrey>"Reads theme values injected by ancestor <ContextProvider value=...>"</TextSpan>
         </View>
@@ -48,13 +48,13 @@ fn ContextDemo() -> impl IntoNode {
     });
 
     view! {
-        <ContextProvider value=current_theme.get()>
-            <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <ContextProvider value={current_theme.get()}>
+            <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
                 <View
                     width=66
                     border=BorderStyle::Single
                     border_color=Color::DarkGrey
-                    padding=Padding::all(1)
+                    padding={Padding::all(1)}
                     gap=1
                 >
                     <TextSpan foreground_color=Color::White bold=true>"framework_context: Context API with <ContextProvider>"</TextSpan>
@@ -74,7 +74,7 @@ fn ContextDemo() -> impl IntoNode {
                         border_style: BorderStyle::Double,
                         badge_label: "Local Override",
                     }}>
-                        <View padding=Padding::symmetric(0, 1)>
+                        <View padding={Padding::symmetric(0, 1)}>
                             <TextSpan foreground_color=Color::DarkGrey>"Below is an isolated sub-tree with an overridden Theme Provider:"</TextSpan>
                             <View height=1 />
                             <DeepThemedWidget />

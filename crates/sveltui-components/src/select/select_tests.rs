@@ -301,7 +301,7 @@ fn options_list_shortcut_renders_and_selects() {
         ListboxOption::new("lg", "Large").disabled(true),
     ];
     let build = move || {
-        view! { <Select id=TRIGGER options=options.clone() placeholder="Size" width=16 /> }
+        view! { <Select id=TRIGGER options={options.clone()} placeholder="Size" width=16 /> }
     };
     let mut manager = FocusManager::new();
     let (text, _) = render(&mut manager, &build);

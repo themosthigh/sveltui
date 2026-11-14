@@ -16,17 +16,17 @@ fn InteractiveShowcase() -> impl IntoNode {
     };
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View
                 width=72
                 border=BorderStyle::Double
                 border_color=Color::DarkGrey
-                padding=Padding::all(1)
+                padding={Padding::all(1)}
                 gap=1
             >
                 <View flex_direction=FlexDirection::Row justify_content=JustifyContent::SpaceBetween align_items=AlignItems::Center>
                     <TextSpan foreground_color=Color::White bold=true>"component_interactive: Full Widgets Dashboard"</TextSpan>
-                    <Badge label=status_tag.get() />
+                    <Badge label={status_tag.get()} />
                 </View>
                 <Divider />
 

@@ -7,7 +7,7 @@ use sveltui_components::*;
 #[component]
 fn Application() -> impl IntoNode {
     view! {
-        <View border=BorderStyle::Single padding=Padding::all(1)>
+        <View border=BorderStyle::Single padding={Padding::all(1)}>
             <TextSpan>"Hello, sveltui"</TextSpan>
         </View>
     }
@@ -217,7 +217,7 @@ fn Greetings() -> impl IntoNode {
     view! {
         <View>
             <Greeting name=name />
-            <Greeting name=name subtitle=Some(String::from("Welcome")) compact=true />
+            <Greeting name=name subtitle={Some(String::from("Welcome"))} compact=true />
         </View>
     }
 }
@@ -230,7 +230,7 @@ fn test_section_8_optional_default_props() {
     assert!(matches!(g1, VNode::View(_)));
 
     let g2 = view! {
-        <Greeting name=name subtitle=Some(String::from("Welcome")) compact=true />
+        <Greeting name=name subtitle={Some(String::from("Welcome"))} compact=true />
     };
     assert!(matches!(g2, VNode::View(_)));
 
@@ -252,7 +252,7 @@ struct DialogProps {
 #[component]
 fn Dialog(props: DialogProps) -> impl IntoNode {
     view! {
-        <View border=BorderStyle::Double padding=Padding::all(1)>
+        <View border=BorderStyle::Double padding={Padding::all(1)}>
             <View>{@render props.header}</View>
             <Divider />
             <View>{@render props.children}</View>
@@ -385,7 +385,7 @@ fn TaskList(props: TaskListProps) -> impl IntoNode {
         <View>
             {#each props.tasks.get() as task (task.id)}
                 <View flex_direction=FlexDirection::Row gap=1>
-                    <Checkbox bind:checked=task.done />
+                    <Checkbox bind:checked={task.done} />
                     <TextSpan>{task.title.clone()}</TextSpan>
                 </View>
             {:else}
@@ -473,7 +473,7 @@ fn SessionName() -> impl IntoNode {
     view! {
         <View>
             <TextSpan>{session.username.get()}</TextSpan>
-            <TextInput bind:value=session.username />
+            <TextInput bind:value={session.username} />
         </View>
     }
 }

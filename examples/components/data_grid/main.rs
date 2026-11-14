@@ -97,11 +97,11 @@ fn DataGridDemo() -> impl IntoNode {
     };
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) padding=1 gap=1>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} padding=1 gap=1>
             // The grid fills whatever height the terminal leaves it.
             <View flex_grow=1.0 flex_basis=0>
                 <DataGrid rows={GridRows::Shared(rows.clone())} columns={columns()}
-                    height=Dimension::Percent(1.0) title="Orders"
+                    height={Dimension::Percent(1.0)} title="Orders"
                     bind:selected={selected} bind:sort={sort} on_activate=open />
             </View>
             <TextSpan foreground_color=Color::DarkGrey>

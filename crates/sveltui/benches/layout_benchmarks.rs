@@ -74,8 +74,8 @@ fn bench_capped_fill_alignment(c: &mut Criterion) {
     ] {
         let tree = view! {
             <View width=160 height=60 align_items=alignment>
-                <View width=Dimension::Percent(1.0) max_width=100 height=Dimension::Percent(1.0) max_height=50 padding=1>
-                    <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) />
+                <View width={Dimension::Percent(1.0)} max_width=100 height={Dimension::Percent(1.0)} max_height=50 padding=1>
+                    <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} />
                 </View>
             </View>
         };

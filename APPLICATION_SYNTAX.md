@@ -146,6 +146,13 @@ fn CounterPanel() -> impl IntoNode {
 }
 ```
 
+A value can go without braces only when it is a literal (`width=40`,
+`gap=-1`, `bold=true`, `title="Name"`) or a plain or qualified path
+(`count=count`, `border=BorderStyle::Single`). Anything else, such as a
+call, a field, a method, a tuple, an array, a closure or an operator, needs
+braces: `padding={Padding::all(1)}`, `width={props.width}`,
+`disabled={a > b}`. The compiler message shows the braced form.
+
 ### Optional & Default Props
 
 ```rust
@@ -250,7 +257,7 @@ const ACCENT: Color = hex_color("#7aa2f7");
 fn Banner() -> impl IntoNode {
     view! {
         <View border=BorderStyle::Single border_color=ACCENT>
-            <TextSpan foreground_color=hex_color("#f80")>"Warm"</TextSpan>
+            <TextSpan foreground_color={hex_color("#f80")}>"Warm"</TextSpan>
             <TextSpan foreground_color=Color::DarkGrey>"Muted"</TextSpan>
         </View>
     }
@@ -271,14 +278,14 @@ them they fill the next free cell.
 fn Dashboard() -> impl IntoNode {
     view! {
         <View display=Display::Grid width=Dimension::Percent(1.0) height=Dimension::Percent(1.0)
-            grid_template_columns=[length(22), fr(1.0)]
-            grid_template_rows=[length(3), fr(1.0)]
+            grid_template_columns={[length(22), fr(1.0)]}
+            grid_template_rows={[length(3), fr(1.0)]}
             column_gap=1>
-            <View grid_column=span(2)><TextSpan>"Header"</TextSpan></View>
+            <View grid_column={span(2)}><TextSpan>"Header"</TextSpan></View>
             <View><TextSpan>"Sidebar"</TextSpan></View>
             // As many 18-cell columns as fit, sharing what's left.
             <View display=Display::Grid row_gap=1
-                grid_template_columns=[repeat(Repeat::AutoFill, [minmax(length(18), fr(1.0))])]>
+                grid_template_columns={[repeat(Repeat::AutoFill, [minmax(length(18), fr(1.0))])]}>
                 <TextSpan>"api"</TextSpan>
                 <TextSpan>"worker"</TextSpan>
             </View>
@@ -295,7 +302,7 @@ the grid, such as under a header.
 ```rust
 view! {
     <View display=Display::Grid border=BorderStyle::Rounded grid_rules=BorderStyle::Single
-        grid_template_columns=[auto(), fr(1.0)]>
+        grid_template_columns={[auto(), fr(1.0)]}>
         <TextSpan>"Name"</TextSpan><TextSpan>"Ada"</TextSpan>
         <TextSpan>"Language"</TextSpan><TextSpan>"Rust"</TextSpan>
     </View>
@@ -439,7 +446,7 @@ fn TaskList(props: TaskListProps) -> impl IntoNode {
         <View>
             {#each props.tasks.get() as task (task.id)}
                 <View flex_direction=FlexDirection::Row gap=1>
-                    <Checkbox bind:checked=task.done />
+                    <Checkbox bind:checked={task.done} />
                     <TextSpan>{task.title.clone()}</TextSpan>
                 </View>
             {:else}
@@ -525,7 +532,7 @@ fn SessionName() -> impl IntoNode {
     view! {
         <View>
             <TextSpan>{session.username.get()}</TextSpan>
-            <TextInput bind:value=session.username />
+            <TextInput bind:value={session.username} />
         </View>
     }
 }

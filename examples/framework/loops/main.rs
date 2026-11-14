@@ -52,12 +52,12 @@ fn LoopsDemo() -> impl IntoNode {
     };
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View
                 width=68
                 border=BorderStyle::Single
                 border_color=Color::DarkGrey
-                padding=Padding::all(1)
+                padding={Padding::all(1)}
                 gap=1
             >
                 <View flex_direction=FlexDirection::Row justify_content=JustifyContent::SpaceBetween>
@@ -81,7 +81,7 @@ fn LoopsDemo() -> impl IntoNode {
                 <View height=1 />
 
                 // Render tasks or show empty list fallback
-                <View gap=1 border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1)>
+                <View gap=1 border=BorderStyle::Single border_color=Color::DarkGrey padding={Padding::all(1)}>
                     {#each tasks.get() as task (task.id)}
                         <View flex_direction=FlexDirection::Row justify_content=JustifyContent::SpaceBetween align_items=AlignItems::Center>
                             <View flex_direction=FlexDirection::Row gap=1>
@@ -95,7 +95,7 @@ fn LoopsDemo() -> impl IntoNode {
                             <TextSpan foreground_color=Color::DarkGrey>{format!("id:{}", task.id)}</TextSpan>
                         </View>
                     {:else}
-                        <View align_items=AlignItems::Center padding=Padding::symmetric(0, 1)>
+                        <View align_items=AlignItems::Center padding={Padding::symmetric(0, 1)}>
                             <TextSpan foreground_color=Color::DarkGrey>"No tasks remaining. Click '+ Add Task' above!"</TextSpan>
                         </View>
                     {/each}

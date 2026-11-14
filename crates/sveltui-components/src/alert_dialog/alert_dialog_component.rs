@@ -98,12 +98,12 @@ pub fn Content(props: ContentProps) -> VNode {
         move || dialog.cancel()
     };
     view! {
-        <Overlay id=dialog.ids.layer open={dialog.open.get()} placement=props.placement
-            layer=layer backdrop=props.backdrop modal=true opener=dialog.ids.trigger
+        <Overlay id={dialog.ids.layer} open={dialog.open.get()} placement={props.placement}
+            layer=layer backdrop={props.backdrop} modal=true opener={dialog.ids.trigger}
             on_close=on_close on_key=on_key on_outside_press=on_outside_press
             semantics=semantics>
-            <View border=BorderStyle::Single border_color=Color::White width=props.width
-                padding=Padding::all(1) gap=1>
+            <View border=BorderStyle::Single border_color=Color::White width={props.width}
+                padding={Padding::all(1)} gap=1>
                 {body}
             </View>
         </Overlay>
@@ -116,7 +116,7 @@ pub fn Content(props: ContentProps) -> VNode {
 pub fn Title(props: TitleProps) -> VNode {
     let dialog = context("Title");
     view! {
-        <Pressable focus_id=dialog.ids.title semantics={Semantics::new(Role::Heading, "")}>
+        <Pressable focus_id={dialog.ids.title} semantics={Semantics::new(Role::Heading, "")}>
             <View>
                 <TextSpan bold=true>{props.children.render(())}</TextSpan>
             </View>
@@ -130,7 +130,7 @@ pub fn Title(props: TitleProps) -> VNode {
 pub fn Description(props: DescriptionProps) -> VNode {
     let dialog = context("Description");
     view! {
-        <Pressable focus_id=dialog.ids.description semantics={Semantics::new(Role::Generic, "")}>
+        <Pressable focus_id={dialog.ids.description} semantics={Semantics::new(Role::Generic, "")}>
             <View foreground_color=Color::DarkGrey>
                 {props.children.render(())}
             </View>

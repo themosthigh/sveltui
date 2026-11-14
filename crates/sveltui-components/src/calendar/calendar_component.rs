@@ -215,7 +215,7 @@ pub fn Calendar(props: CalendarProps) -> VNode {
             {header}
             <Pressable focus_id=id tab_stop=true semantics=grid_semantics on_key=on_key>
                 <View display=Display::Grid grid_template_columns={vec![length(2); 7]}
-                    grid_auto_rows=length(1) column_gap=1 padding={Padding::only(0, 1, 0, 1)}>
+                    grid_auto_rows={length(1)} column_gap=1 padding={Padding::only(0, 1, 0, 1)}>
                     {cells}
                 </View>
             </Pressable>

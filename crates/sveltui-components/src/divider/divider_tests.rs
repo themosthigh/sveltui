@@ -89,7 +89,7 @@ fn divider_fills_its_share_of_a_flex_row() {
 #[test]
 fn titled_dividers_clip_and_fill_after_resizing_the_same_tree() {
     let node = view! {
-        <View width=Dimension::Percent(1.0) height=2>
+        <View width={Dimension::Percent(1.0)} height=2>
             <Divider title="Settings" />
         </View>
     };

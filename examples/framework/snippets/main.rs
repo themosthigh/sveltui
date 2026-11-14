@@ -19,7 +19,7 @@ struct CardGridProps {
 #[component]
 fn CardGrid(props: CardGridProps) -> impl IntoNode {
     view! {
-        <View border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1) gap=1>
+        <View border=BorderStyle::Single border_color=Color::DarkGrey padding={Padding::all(1)} gap=1>
             <TextSpan foreground_color=Color::White bold=true>{props.title.clone()}</TextSpan>
             <Divider />
             <View flex_direction=FlexDirection::Row gap=2>
@@ -52,7 +52,7 @@ fn SnippetsDemo() -> impl IntoNode {
     ];
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View width=74 gap=1>
                 <CardGrid title="Featured Projects" items=projects>
                     {#snippet card(project: ProjectItem)}
@@ -60,7 +60,7 @@ fn SnippetsDemo() -> impl IntoNode {
                             width=22
                             border=BorderStyle::Double
                             border_color=Color::DarkGrey
-                            padding=Padding::all(1)
+                            padding={Padding::all(1)}
                             gap=1
                         >
                             <TextSpan foreground_color=Color::White bold=true>{project.name.clone()}</TextSpan>

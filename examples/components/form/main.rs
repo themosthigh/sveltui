@@ -166,8 +166,8 @@ fn FormDemo() -> impl IntoNode {
 
     view! {
         <View
-            width=Dimension::Percent(1.0)
-            height=Dimension::Percent(1.0)
+            width={Dimension::Percent(1.0)}
+            height={Dimension::Percent(1.0)}
             flex_direction=FlexDirection::Row
             align_items=AlignItems::Center
             justify_content=JustifyContent::Center
@@ -179,10 +179,10 @@ fn FormDemo() -> impl IntoNode {
                 border=BorderStyle::Single
                 border_color=Color::DarkGrey
                 title=" Registration Form "
-                padding=Padding::all(1)
+                padding={Padding::all(1)}
                 gap=1
                 width=FORM_WIDTH
-                height=Dimension::Percent(0.9)
+                height={Dimension::Percent(0.9)}
                 max_height=40
                 overflow_y=Overflow::Scroll
                 scrollbar_visibility=ScrollbarVisibility::Auto
@@ -226,10 +226,10 @@ fn FormDemo() -> impl IntoNode {
                     border=BorderStyle::Single
                     border_color={if preview_focus { Color::White } else { Color::DarkGrey }}
                     title=" Preview "
-                    padding=Padding::all(1)
+                    padding={Padding::all(1)}
                     gap=1
                     width=PREVIEW_WIDTH
-                    height=Dimension::Percent(0.9)
+                    height={Dimension::Percent(0.9)}
                     max_height=40
                     overflow_y=Overflow::Scroll
                     scrollbar_visibility=ScrollbarVisibility::Auto

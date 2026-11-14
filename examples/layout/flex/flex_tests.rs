@@ -34,7 +34,7 @@ fn actual_layout_footer_renders_white_foreground_on_white_background_after_resiz
                 begin_frame();
                 let node = manager.with_context(|| {
                     view! {
-                        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0)
+                        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)}
                             foreground_color=Color::White background_color=Color::White>
                             <LayoutDemo />
                         </View>

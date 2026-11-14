@@ -33,7 +33,7 @@ fn BindingDemo() -> impl IntoNode {
     let shout = state(String::new());
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0)
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)}
             align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View width=56 border=BorderStyle::Single border_color=Color::DarkGrey
                 title=" Two-way binding " padding=1 gap=1>

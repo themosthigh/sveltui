@@ -52,12 +52,12 @@ struct KeyboardInspectorProps {
 #[component]
 fn KeyboardInspector(props: KeyboardInspectorProps) -> impl IntoNode {
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View
                 width=68
                 border=BorderStyle::Double
                 border_color=Color::DarkGrey
-                padding=Padding::all(1)
+                padding={Padding::all(1)}
                 gap=1
             >
                 <View flex_direction=FlexDirection::Row justify_content=JustifyContent::SpaceBetween align_items=AlignItems::Center>
@@ -69,7 +69,7 @@ fn KeyboardInspector(props: KeyboardInspectorProps) -> impl IntoNode {
                 <TextSpan foreground_color=Color::DarkGrey>"Press any key combination to analyze code and active modifiers:"</TextSpan>
                 <View height=1 />
 
-                <View border=BorderStyle::Single border_color=Color::White padding=Padding::all(1) gap=1>
+                <View border=BorderStyle::Single border_color=Color::White padding={Padding::all(1)} gap=1>
                     <TextSpan foreground_color=Color::White bold=true>{format!("Key Code:  {}", props.last_key.get())}</TextSpan>
                     <TextSpan foreground_color=Color::DarkGrey>{format!("Modifiers: {}", props.last_mods.get())}</TextSpan>
                 </View>
@@ -77,7 +77,7 @@ fn KeyboardInspector(props: KeyboardInspectorProps) -> impl IntoNode {
                 <View height=1 />
                 <TextSpan foreground_color=Color::DarkGrey>"Recent Key History (last 5):"</TextSpan>
 
-                <View border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1) min_height=6>
+                <View border=BorderStyle::Single border_color=Color::DarkGrey padding={Padding::all(1)} min_height=6>
                     {#each props.history.get() as item}
                         <TextSpan foreground_color=Color::White>{item}</TextSpan>
                     {:else}

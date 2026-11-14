@@ -13,7 +13,7 @@ fn line(buffer: &Buffer, y: u16, start: u16, end: u16) -> String {
 
 fn assert_wrapping(paragraph: VNode) {
     let node = view! {
-        <View width=Dimension::Percent(1.0) border=BorderStyle::Single padding=1 gap=1>
+        <View width={Dimension::Percent(1.0)} border=BorderStyle::Single padding=1 gap=1>
             {paragraph}
             <TextSpan>"!"</TextSpan>
         </View>
@@ -152,7 +152,7 @@ fn max_lines_adds_ellipsis_only_when_text_is_hidden() {
         ("", 8, 1, vec![""]),
     ] {
         let node = view! {
-            <View width=Dimension::Percent(1.0)>
+            <View width={Dimension::Percent(1.0)}>
                 <Paragraph max_lines=max_lines content=text />
                 <TextSpan>"!"</TextSpan>
             </View>
@@ -175,7 +175,7 @@ fn max_lines_adds_ellipsis_only_when_text_is_hidden() {
 #[test]
 fn limited_paragraph_children_reflow_when_resized() {
     let node = view! {
-        <View width=Dimension::Percent(1.0)>
+        <View width={Dimension::Percent(1.0)}>
             <Paragraph max_lines=1>"alpha beta gamma"</Paragraph>
         </View>
     };

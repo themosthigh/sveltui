@@ -295,7 +295,7 @@ pub fn TreeView<T: Clone + 'static>(props: TreeViewProps<T>) -> VNode {
                 <Pressable semantics=semantics>
                     // Clicks carry the tree's id, so they focus the tree.
                     <Pressable focus_id=id on_click=on_row>
-                        <View flex_direction=FlexDirection::Row width=Dimension::Percent(1.0)
+                        <View flex_direction=FlexDirection::Row width={Dimension::Percent(1.0)}
                             overflow_x=Overflow::Hidden foreground_color=fg background_color=bg>
                             <TextSpan>{indent}</TextSpan>
                             <Pressable focus_id=id on_click=on_chevron>
@@ -313,8 +313,8 @@ pub fn TreeView<T: Clone + 'static>(props: TreeViewProps<T>) -> VNode {
     let scrollbar = (len > fit).then(|| {
         let bar = crate::scrollbar::column(fit, fit, len, first);
         view! {
-            <View position=Position::Absolute inset=Inset::new().top(0).right(0)>
-                <TextSpan foreground_color=props.border_color>{bar}</TextSpan>
+            <View position=Position::Absolute inset={Inset::new().top(0).right(0)}>
+                <TextSpan foreground_color={props.border_color}>{bar}</TextSpan>
             </View>
         }
     });
@@ -416,7 +416,7 @@ pub fn TreeView<T: Clone + 'static>(props: TreeViewProps<T>) -> VNode {
     view! {
         <Pressable focus_id=id tab_stop=true semantics={Semantics::new(Role::Tree, label)}
             on_key=on_key>
-            <View height=props.height width=props.width border=props.border title=props.title
+            <View height={props.height} width={props.width} border={props.border} title={props.title}
                 border_color={if focused { Color::White } else { props.border_color }}
                 padding={Padding::only(0, 1, 0, 0)}
                 overflow_y=Overflow::Scroll scrollbar_visibility=ScrollbarVisibility::Never

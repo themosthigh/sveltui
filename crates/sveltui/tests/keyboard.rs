@@ -37,7 +37,7 @@ fn core_only_custom_control_has_the_same_focus_and_activation_capabilities() {
     let action = count.clone();
     let build = || {
         view! {
-            <Pressable focus_id=FocusId(100001) tab_stop=true activation=Activation::Press
+            <Pressable focus_id={FocusId(100001)} tab_stop=true activation=Activation::Press
                 semantics={Semantics::new(Role::Button,"Core action")}
                 on_click={{let action=action.clone();move || action.set(action.get()+1)}}>
                 <View width=10 height=1>
@@ -66,7 +66,7 @@ fn on_focus_fires_once_when_input_moves_focus_and_never_from_render() {
     let item = |id: usize, log: &Rc<std::cell::RefCell<Vec<usize>>>| {
         let log = log.clone();
         view! {
-            <Pressable focus_id=FocusId(id) tab_stop=true
+            <Pressable focus_id={FocusId(id)} tab_stop=true
                 on_focus={move || log.borrow_mut().push(id)}>
                 <TextSpan>{format!("item {id}")}</TextSpan>
             </Pressable>

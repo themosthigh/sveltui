@@ -61,8 +61,8 @@ pub fn Root(props: RootProps) -> VNode {
 
     view! {
         <Pressable semantics={Semantics::new(Role::Table, label)}>
-            <View display=Display::Grid grid_template_columns=props.columns
-                border=props.border border_color=props.border_color title=props.title
+            <View display=Display::Grid grid_template_columns={props.columns}
+                border={props.border} border_color={props.border_color} title={props.title}
                 grid_rules=rule_style grid_rule_axes=axes column_gap=column_gap>
                 {cells}
             </View>
@@ -79,7 +79,7 @@ pub fn Header(props: HeaderProps) -> VNode {
     let rows = props.children.render(());
     table.in_header.set(false);
     let line = table.rules.header_line().then(|| {
-        view! { <View separator=true grid_column=lines(1, -1) height=1 /> }
+        view! { <View separator=true grid_column={lines(1, -1)} height=1 /> }
     });
     VNode::Fragment(vec![rows, line.into_node()])
 }
@@ -133,8 +133,8 @@ fn cell(props: CellProps, header: bool) -> VNode {
     };
     view! {
         <Pressable semantics=semantics>
-            <View grid_column=span(colspan) align_items=align overflow_x=Overflow::Hidden
-                padding=(table.cell_padding, 0)>
+            <View grid_column={span(colspan)} align_items=align overflow_x=Overflow::Hidden
+                padding={(table.cell_padding, 0)}>
                 {content}
             </View>
         </Pressable>

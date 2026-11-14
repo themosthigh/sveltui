@@ -29,11 +29,11 @@ pub fn ProgressBar(props: ProgressBarProps) -> impl IntoNode {
         <Pressable semantics=semantics>
             <View
                 border=BorderStyle::None
-                padding=Padding::zero()
+                padding={Padding::zero()}
                 justify_content=JustifyContent::Center
                 align_items=AlignItems::FlexStart
             >
-                <TextSpan foreground_color=props.fill_color bold=true>{bar_text}</TextSpan>
+                <TextSpan foreground_color={props.fill_color} bold=true>{bar_text}</TextSpan>
             </View>
         </Pressable>
     }

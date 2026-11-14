@@ -11,7 +11,7 @@ fn SizingDemo() -> impl IntoNode {
     let panel_width: u16 = if wide.get() { 70 } else { 30 };
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) padding=1 gap=1>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} padding=1 gap=1>
             <View flex_direction=FlexDirection::Row gap=1>
                 <Button on_click={move || sidebar.update(|s| *s = !*s)}>
                     {if sidebar.get() { "Hide sidebar" } else { "Show sidebar" }}
@@ -31,7 +31,7 @@ fn SizingDemo() -> impl IntoNode {
                 </View>
 
                 <View flex_grow=1.0 border=BorderStyle::Single border_color=Color::DarkGrey
-                    title="Content" padding=(1, 0) gap=1>
+                    title="Content" padding={(1, 0)} gap=1>
                     // Grows with the panel, but never past 30 or under 12.
                     <View min_width=12 max_width=30 height=1 background_color=Color::DarkGrey>
                         <TextSpan>"min 12, max 30"</TextSpan>

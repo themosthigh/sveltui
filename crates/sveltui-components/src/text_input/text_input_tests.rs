@@ -34,7 +34,7 @@ fn cursor_and_focus_ancestry_follow_nested_row_layout() {
             <Pressable focus_id=parent tab_stop=true>
                 <View flex_direction=FlexDirection::Row width=30 height=5 gap=1>
                     <View width=4 height=3 flex_shrink=0.0 />
-                    <TextInput value={value.get()} on_value_change={move |v: String| set_value.set(v)} width=Dimension::Percent(1.0) id=input />
+                    <TextInput value={value.get()} on_value_change={move |v: String| set_value.set(v)} width={Dimension::Percent(1.0)} id=input />
                 </View>
             </Pressable>
         }

@@ -204,7 +204,7 @@ fn tree(
     move || {
         view! {
             <TreeView roots={GridRows::Shared(roots.clone())} model={model()} title="Files"
-                height=Dimension::Length(f32::from(HEIGHT)) selection_mode=mode
+                height={Dimension::Length(f32::from(HEIGHT))} selection_mode=mode
                 bind:expanded={expanded} bind:selected={selected}
                 on_activate={move |key: String| activated.update(|a| a.push(key))} />
         }
@@ -404,7 +404,7 @@ fn a_huge_tree_builds_only_what_shows_and_reads_only_open_branches() {
     let mut t = Harness::new(move || {
         view! {
             <TreeView roots={GridRows::Shared(roots.clone())} model={model.clone()}
-                height=Dimension::Length(f32::from(HEIGHT)) />
+                height={Dimension::Length(f32::from(HEIGHT))} />
         }
         .into_node()
     });
@@ -424,7 +424,7 @@ fn parts_describe_the_same_tree() {
     let mut t = Harness::new(move || {
         view! {
             <Parts::Root title="Files" bind:selected={selected}
-                height=Dimension::Length(f32::from(HEIGHT))>
+                height={Dimension::Length(f32::from(HEIGHT))}>
                 <Parts::Branch value="src" label="src">
                     <Parts::Item value="src/lib.rs" label="lib.rs" />
                     <Parts::Branch value="src/tree" label="tree">

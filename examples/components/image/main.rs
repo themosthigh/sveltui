@@ -66,7 +66,7 @@ fn Gallery() -> impl IntoNode {
                         {#if let Some(path) = path.clone()}
                             <Image src=path alt="Your picture" width=24 height=8 fit=fit />
                         {:else}
-                            <Image bytes=bytes.clone() alt="A colour wheel" width=24 height=8 fit=fit />
+                            <Image bytes={bytes.clone()} alt="A colour wheel" width=24 height=8 fit=fit />
                         {/if}
                     </View>
                 {/each}
@@ -79,7 +79,7 @@ fn Gallery() -> impl IntoNode {
             // loaded. Set SVELTUI_EXAMPLE_IMAGE_URL to load a different one.
             <View flex_direction=FlexDirection::Row gap=2>
                 <NetworkImage::Root width=24 height=12 fit=ImageFit::Cover>
-                    <NetworkImage::Image src=avatar_url.clone() alt="Frida Kahlo" />
+                    <NetworkImage::Image src={avatar_url.clone()} alt="Frida Kahlo" />
                     <NetworkImage::Fallback delay_ms=200>
                         <TextSpan foreground_color=Color::DarkGrey>"FK"</TextSpan>
                     </NetworkImage::Fallback>

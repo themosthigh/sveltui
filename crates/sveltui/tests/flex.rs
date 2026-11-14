@@ -31,7 +31,7 @@ fn intrinsic_dimensions_follow_direction_with_gap_border_and_padding() {
         (FlexDirection::Column, (6, 9)),
     ] {
         let node = view! {
-            <View flex_direction=direction gap=2 border=BorderStyle::Single padding=Padding::all(1)>
+            <View flex_direction=direction gap=2 border=BorderStyle::Single padding={Padding::all(1)}>
                 <TextSpan>"ab"</TextSpan>
                 <TextSpan>"c\nd"</TextSpan>
             </View>
@@ -139,7 +139,7 @@ fn stretch_respects_explicit_sizes_and_maximums() {
         <View width=10 height=6 align_items=AlignItems::Stretch>
             <Pressable focus_id=a tab_stop=true><View height=1 max_width=6><TextSpan>"a"</TextSpan></View></Pressable>
             <Pressable focus_id=b tab_stop=true><View height=1 width=3 /></Pressable>
-            <Pressable focus_id=c tab_stop=true><View height=1 width=Dimension::Percent(1.0) max_width=5 /></Pressable>
+            <Pressable focus_id=c tab_stop=true><View height=1 width={Dimension::Percent(1.0)} max_width=5 /></Pressable>
         </View>
     };
     let (_, hits) = render(&node, 20, 10);
@@ -153,10 +153,10 @@ fn percentages_and_stretch_use_the_constrained_parent_content_box() {
     let parent = FocusId::new();
     let child = FocusId::new();
     let node = view! {
-        <View width=40 border=BorderStyle::Single padding=Padding::all(1)>
+        <View width=40 border=BorderStyle::Single padding={Padding::all(1)}>
             <Pressable focus_id=parent tab_stop=true>
-                <View width=Dimension::Percent(0.5) border=BorderStyle::Single>
-                    <Pressable focus_id=child tab_stop=true><View width=Dimension::Percent(1.0) height=1 /></Pressable>
+                <View width={Dimension::Percent(0.5)} border=BorderStyle::Single>
+                    <Pressable focus_id=child tab_stop=true><View width={Dimension::Percent(1.0)} height=1 /></Pressable>
                 </View>
             </Pressable>
         </View>
@@ -248,7 +248,7 @@ fn overlay_trigger_keeps_its_allocated_percentage_size_and_anchor() {
         <View width=40 height=4 flex_direction=FlexDirection::Row>
             <View width=10 height=2 />
             <Overlay open=true placement=Placement::BottomStart
-                trigger={view! { <Pressable focus_id=trigger tab_stop=true><View width=Dimension::Percent(0.5) height=2 /></Pressable> }}>
+                trigger={view! { <Pressable focus_id=trigger tab_stop=true><View width={Dimension::Percent(0.5)} height=2 /></Pressable> }}>
                 <Pressable focus_id=popup tab_stop=true><View width=5 height=1><TextSpan>"popup"</TextSpan></View></Pressable>
             </Overlay>
         </View>
@@ -333,7 +333,7 @@ fn percentage_full_width_is_distinct_from_sharing_remaining_space() {
     let fill = FocusId::new();
     let node = view! {
         <View flex_direction=FlexDirection::Row width=20 height=1>
-            <Pressable focus_id=percentage tab_stop=true><View width=Dimension::Percent(1.0) height=1 flex_shrink=0.0 /></Pressable>
+            <Pressable focus_id=percentage tab_stop=true><View width={Dimension::Percent(1.0)} height=1 flex_shrink=0.0 /></Pressable>
             <Pressable focus_id=fill tab_stop=true><View flex_grow=1.0 flex_basis=0 min_width=3 height=1 /></Pressable>
         </View>
     };

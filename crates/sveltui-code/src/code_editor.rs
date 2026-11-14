@@ -295,23 +295,23 @@ pub fn CodeEditor(props: CodeEditorProps) -> impl IntoNode {
             focus_id=id
             tab_stop=true
             focus_scope=focus_scope
-            semantics=Semantics::new(Role::Textbox, title_str)
+            semantics={Semantics::new(Role::Textbox, title_str)}
             on_click_at=on_click_at
             on_key=on_key
         >
             <View
                 border=border_style
                 border_color=border_color
-                padding=Padding::symmetric(1, 0)
-                width=props.width
-                height=props.height
+                padding={Padding::symmetric(1, 0)}
+                width={props.width}
+                height={props.height}
                 flex_direction=FlexDirection::Column
                 align_items=AlignItems::FlexStart
                 justify_content=JustifyContent::FlexStart
                 overflow_x=Overflow::Scroll
                 overflow_y=Overflow::Scroll
                 scroll_id=id
-                title=props.title
+                title={props.title}
                 cursor_offset=cursor_offset
                 cursor_style=cursor_style
             >

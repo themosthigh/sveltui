@@ -39,7 +39,7 @@ fn Workbench() -> impl IntoNode {
     };
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) gap=1>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} gap=1>
             <View flex_grow=1.0 border=BorderStyle::Single border_color=Color::DarkGrey>
                 <Resizable::PanelGroup bind:layout={sizes}>
                     <Resizable::Panel default_size=25.0 min_size=15.0 max_size=50.0

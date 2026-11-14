@@ -5,7 +5,7 @@ use sveltui_components::{Button, ButtonProps, MenuBar};
 fn MenuBarDemo() -> impl IntoNode {
     let selected = state(String::from("No action yet"));
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) padding=1 gap=1>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} padding=1 gap=1>
             <MenuBar::Root>
                 <MenuBar::Menu value="file">
                     <MenuBar::Trigger>"File"</MenuBar::Trigger>

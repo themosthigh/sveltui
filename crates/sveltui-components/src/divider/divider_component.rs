@@ -14,19 +14,19 @@ pub fn Divider(props: DividerProps) -> impl IntoNode {
     };
 
     view! {
-        <Pressable semantics=Semantics::new(Role::Separator, title)>
+        <Pressable semantics={Semantics::new(Role::Separator, title)}>
             <View
                 border=BorderStyle::None
-                padding=Padding::zero()
-                width=props.width
-                flex_grow=props.flex_grow
-                flex_shrink=props.flex_shrink
-                flex_basis=props.flex_basis
+                padding={Padding::zero()}
+                width={props.width}
+                flex_grow={props.flex_grow}
+                flex_shrink={props.flex_shrink}
+                flex_basis={props.flex_basis}
                 height=1
                 overflow=Overflow::Hidden
                 align_items=AlignItems::Stretch
-                min_width=props.min_width
-                max_width=props.max_width
+                min_width={props.min_width}
+                max_width={props.max_width}
             >
                 {#if props.children.is_some()}
                     {@render props.children}

@@ -10,11 +10,11 @@ fn test_code_preview_renders() {
 
     let node = view! {
         <CodePreview
-            code=code.to_string()
+            code={code.to_string()}
             language="rs"
             show_line_numbers=true
-            width=Dimension::Length(40.0)
-            height=Dimension::Length(6.0)
+            width={Dimension::Length(40.0)}
+            height={Dimension::Length(6.0)}
             title="test.rs"
         />
     };
@@ -42,8 +42,8 @@ fn test_code_editor_renders() {
             value={code_read.get()}
             language="rs"
             show_line_numbers=true
-            width=Dimension::Length(50.0)
-            height=Dimension::Length(10.0)
+            width={Dimension::Length(50.0)}
+            height={Dimension::Length(10.0)}
             title="Editor"
         />
     };

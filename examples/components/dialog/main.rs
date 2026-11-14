@@ -11,12 +11,12 @@ fn DialogDemo() -> impl IntoNode {
     let is_pop = popover_open.get();
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) align_items=AlignItems::Center justify_content=JustifyContent::Center>
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View
                 width=68
                 border=BorderStyle::Double
                 border_color=Color::DarkGrey
-                padding=Padding::all(1)
+                padding={Padding::all(1)}
             >
                 <Paragraph foreground_color=Color::White bold=true>"component_dialog: Modals, Popovers & Scoped Traps"</Paragraph>
                 <Divider />
@@ -44,7 +44,7 @@ fn DialogDemo() -> impl IntoNode {
                                 "Anchored Info Popover"
                             </Button>
                         {/snippet}
-                        <View border=BorderStyle::Single border_color=Color::White padding=Padding::all(1) gap=1>
+                        <View border=BorderStyle::Single border_color=Color::White padding={Padding::all(1)} gap=1>
                             <TextSpan foreground_color=Color::White bold=true>"Popover Details"</TextSpan>
                             <TextSpan foreground_color=Color::DarkGrey>"Anchored to trigger element."</TextSpan>
                             <Button
@@ -62,7 +62,7 @@ fn DialogDemo() -> impl IntoNode {
                 <View height=1 />
                 <Divider />
 
-                <View border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1)>
+                <View border=BorderStyle::Single border_color=Color::DarkGrey padding={Padding::all(1)}>
                     <TextSpan foreground_color=Color::White>{format!("Status: {}", action_log.get())}</TextSpan>
                     <TextSpan foreground_color=Color::DarkGrey>"Escape: Dismiss top-layer | Tab: Navigate inside trap"</TextSpan>
                 </View>
@@ -76,7 +76,7 @@ fn DialogDemo() -> impl IntoNode {
                     width=48
                     on_close={move || dialog_open.set(false)}
                 >
-                    <View padding=Padding::all(1) gap=1>
+                    <View padding={Padding::all(1)} gap=1>
                         <TextSpan foreground_color=Color::White>"Proceed with irreversible cluster deployment?"</TextSpan>
                         <TextSpan foreground_color=Color::DarkGrey>"This will overwrite current staging replicas."</TextSpan>
                         <View height=1 />

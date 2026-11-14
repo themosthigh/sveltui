@@ -37,9 +37,9 @@ pub(crate) fn popup(
         let rows = layout.max_height.saturating_sub(2).max(1);
         keep_highlight_visible(listbox, rows);
         overlay = overlay.child(view! {
-            <View width=layout.width max_height=layout.max_height
+            <View width={layout.width} max_height={layout.max_height}
                 border=BorderStyle::Single border_color=Color::DarkGrey
-                overflow_y=Overflow::Scroll scroll_id=listbox.scroll_id>
+                overflow_y=Overflow::Scroll scroll_id={listbox.scroll_id}>
                 {items}
             </View>
         });
@@ -103,10 +103,10 @@ pub(crate) fn option_row(
     });
     let semantics = Semantics::new(Role::Option, option.label.clone()).selected(selected);
     view! {
-        <Pressable focus_id=id disabled=option.disabled semantics=semantics
+        <Pressable focus_id=id disabled={option.disabled} semantics=semantics
             on_click=on_click on_pointer_enter=on_enter>
-            <View flex_direction=FlexDirection::Row width=Dimension::Percent(1.0)
-                background_color=bg padding=Padding::symmetric(1, 0)>
+            <View flex_direction=FlexDirection::Row width={Dimension::Percent(1.0)}
+                background_color=bg padding={Padding::symmetric(1, 0)}>
                 <TextSpan foreground_color=fg>{marker}</TextSpan>
                 {style_label(label, fg, highlighted)}
             </View>
@@ -160,7 +160,7 @@ pub struct GroupHeadingProps {
 pub fn GroupHeading(props: GroupHeadingProps) -> VNode {
     let label = props.children.render(());
     view! {
-        <View padding=Padding::symmetric(1, 0)>
+        <View padding={Padding::symmetric(1, 0)}>
             {style_label(label, Color::DarkGrey, true)}
         </View>
     }

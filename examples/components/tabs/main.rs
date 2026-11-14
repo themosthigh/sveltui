@@ -19,7 +19,7 @@ fn Stanzas(props: StanzasProps) -> impl IntoNode {
     view! {
         <Pressable focus_id=scroll tab_stop=true>
             <View height=14 scroll_id=scroll overflow_y=Overflow::Scroll
-                border=BorderStyle::Single border_color=Color::DarkGrey padding=Padding::all(1)>
+                border=BorderStyle::Single border_color=Color::DarkGrey padding={Padding::all(1)}>
                 <Paragraph foreground_color=Color::White content=text />
             </View>
         </Pressable>
@@ -34,9 +34,9 @@ fn RavenTabs() -> impl IntoNode {
     let part = state(String::from("part-1"));
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0)
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)}
             align_items=AlignItems::Center justify_content=JustifyContent::Center>
-            <View width=Dimension::Percent(1.0) max_width=76 border=BorderStyle::Single
+            <View width={Dimension::Percent(1.0)} max_width=76 border=BorderStyle::Single
                 title=" The Raven — Edgar Allan Poe " padding=1 gap=1>
 
                 // Automatic: arrows switch the panel immediately.

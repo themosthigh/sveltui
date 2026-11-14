@@ -61,7 +61,7 @@ pub fn Provider(props: ProviderProps) -> VNode {
     let children = provide_context(context, || props.children.render(()));
     view! {
         <Pressable focus_id=id on_key=on_key>
-            <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0)>
+            <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)}>
                 {children}
             </View>
         </Pressable>
@@ -110,7 +110,7 @@ pub fn Viewport(props: ViewportProps) -> VNode {
     view! {
         <Pressable focus_id=id on_hover=on_hover
             semantics={Semantics::new(Role::Region, props.label.clone())}>
-            <View position=Position::Absolute inset=inset width=props.width
+            <View position=Position::Absolute inset=inset width={props.width}
                 flex_direction=direction>
                 {props.children.render(())}
             </View>
@@ -178,7 +178,7 @@ pub fn Root(props: RootProps) -> VNode {
         (BorderStyle::Single, Color::DarkGrey)
     };
     view! {
-        <Pressable focus_id=toast.focus_id tab_stop=true semantics=semantics on_key=on_key>
+        <Pressable focus_id={toast.focus_id} tab_stop=true semantics=semantics on_key=on_key>
             <View border=border border_color=color padding={Padding::only(0, 1, 0, 1)}>
                 {body}
             </View>

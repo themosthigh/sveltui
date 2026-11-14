@@ -18,7 +18,7 @@ fn ComboboxDemo() -> impl IntoNode {
     ];
 
     view! {
-        <View width=Dimension::Percent(1.0) height=Dimension::Percent(1.0)
+        <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)}
             align_items=AlignItems::Center justify_content=JustifyContent::Center>
             <View width=52 border=BorderStyle::Single border_color=Color::DarkGrey
                 title=" Combobox " padding=1 gap=1>

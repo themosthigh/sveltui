@@ -22,7 +22,7 @@ fn equal_fractions_split_the_grid_into_quadrants() {
     let root = layout(
         view! {
             <View display=Display::Grid width=40 height=10
-                grid_template_columns=[fr(1.0), fr(1.0)] grid_template_rows=[fr(1.0), fr(1.0)]>
+                grid_template_columns={[fr(1.0), fr(1.0)]} grid_template_rows={[fr(1.0), fr(1.0)]}>
                 <View /><View /><View /><View />
             </View>
         },
@@ -40,7 +40,7 @@ fn a_fixed_sidebar_and_a_flexible_main_area() {
     let root = layout(
         view! {
             <View display=Display::Grid width=60 height=10 column_gap=1
-                grid_template_columns=[length(20), fr(1.0)]>
+                grid_template_columns={[length(20), fr(1.0)]}>
                 <View /><View />
             </View>
         },
@@ -55,11 +55,11 @@ fn spans_and_explicit_lines_place_children() {
     let root = layout(
         view! {
             <View display=Display::Grid width=30 height=9
-                grid_template_columns=[evenly(3)] grid_template_rows=[length(3), fr(1.0), length(1)]>
-                <View grid_column=span(3) />
-                <View grid_column=lines(1, 3) />
+                grid_template_columns={[evenly(3)]} grid_template_rows={[length(3), fr(1.0), length(1)]}>
+                <View grid_column={span(3)} />
+                <View grid_column={lines(1, 3)} />
                 <View />
-                <View grid_row=line(3) grid_column=lines(1, -1) />
+                <View grid_row={line(3)} grid_column={lines(1, -1)} />
             </View>
         },
         30,
@@ -76,7 +76,7 @@ fn extra_children_go_into_auto_rows() {
     let root = layout(
         view! {
             <View display=Display::Grid width=20 row_gap=1
-                grid_template_columns=[repeat(2, [fr(1.0)])] grid_auto_rows=length(2)>
+                grid_template_columns={[repeat(2, [fr(1.0)])]} grid_auto_rows={length(2)}>
                 <View /><View /><View /><View /><View />
             </View>
         },
@@ -97,7 +97,7 @@ fn auto_fill_fits_as_many_columns_as_there_is_room_for() {
     let root = layout(
         view! {
             <View display=Display::Grid width=35
-                grid_template_columns=[repeat(Repeat::AutoFill, [length(10)])]>
+                grid_template_columns={[repeat(Repeat::AutoFill, [length(10)])]}>
                 <View height=1 /><View height=1 /><View height=1 /><View height=1 />
             </View>
         },
@@ -113,7 +113,7 @@ fn column_flow_fills_columns_first() {
     let root = layout(
         view! {
             <View display=Display::Grid width=20 height=4 grid_auto_flow=GridAutoFlow::Column
-                grid_template_rows=[fr(1.0), fr(1.0)] grid_auto_columns=length(5)>
+                grid_template_rows={[fr(1.0), fr(1.0)]} grid_auto_columns={length(5)}>
                 <View /><View /><View />
             </View>
         },
@@ -127,7 +127,7 @@ fn column_flow_fills_columns_first() {
 #[test]
 fn text_in_a_content_sized_column_is_measured() {
     let node = view! {
-        <View display=Display::Grid width=20 grid_template_columns=[max_content(), fr(1.0)] column_gap=2>
+        <View display=Display::Grid width=20 grid_template_columns={[max_content(), fr(1.0)]} column_gap=2>
             <TextSpan>"Name"</TextSpan><TextSpan>"Ada"</TextSpan>
             <TextSpan>"Language"</TextSpan><TextSpan>"Rust"</TextSpan>
         </View>

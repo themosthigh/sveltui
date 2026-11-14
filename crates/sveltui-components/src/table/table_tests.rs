@@ -21,7 +21,7 @@ fn screen(node: VNode, width: u16, height: u16) -> Vec<String> {
 
 fn people(rules: TableRules, border: BorderStyle) -> VNode {
     view! {
-        <Table::Root columns=[auto(), auto()] rules=rules border=border>
+        <Table::Root columns={[auto(), auto()]} rules=rules border=border>
             <Table::Header>
                 <Table::Row>
                     <Table::Cell>"Name"</Table::Cell>
@@ -93,7 +93,7 @@ fn no_rules_just_spaces_the_columns() {
 #[test]
 fn short_rows_are_filled_out_and_spans_cover_columns() {
     let node = view! {
-        <Table::Root columns=[length(4), length(4), length(4)] rules=TableRules::None column_gap=1>
+        <Table::Root columns={[length(4), length(4), length(4)]} rules=TableRules::None column_gap=1>
             <Table::Body>
                 <Table::Row><Table::Cell colspan=2>"wide"</Table::Cell><Table::Cell>"c"</Table::Cell></Table::Row>
                 <Table::Row><Table::Cell>"a"</Table::Cell></Table::Row>

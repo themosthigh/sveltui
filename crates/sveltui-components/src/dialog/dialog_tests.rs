@@ -79,8 +79,8 @@ fn bind_open_is_cleared_when_the_dialog_is_dismissed() {
     let show = state(true);
     let build = move || {
         view! {
-            <Dialog id=FocusId(100_301) bind:open={show} title="Confirm">
-                <Button id=FocusId(100_302)>"OK"</Button>
+            <Dialog id={FocusId(100_301)} bind:open={show} title="Confirm">
+                <Button id={FocusId(100_302)}>"OK"</Button>
             </Dialog>
         }
     };

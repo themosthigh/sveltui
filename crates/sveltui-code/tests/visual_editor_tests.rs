@@ -114,7 +114,7 @@ fn test_live_preview_sync_per_keystroke() {
 
     let build = move || {
         view! {
-            <View flex_direction=FlexDirection::Row width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) gap=2>
+            <View flex_direction=FlexDirection::Row width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} gap=2>
                 <CodeEditor
                     value={code.get()} on_value_change={move |v: String| set_code.set(v)}
                     language="rs"
@@ -336,8 +336,8 @@ fn test_editor_height_fills_container() {
             <CodeEditor
                 value={code.get()} on_value_change={move |v: String| set_code.set(v)}
                 language="rs"
-                width=Dimension::Percent(1.0)
-                height=Dimension::Percent(1.0)
+                width={Dimension::Percent(1.0)}
+                height={Dimension::Percent(1.0)}
                 show_line_numbers=true
                 autofocus=true
             />
@@ -373,19 +373,19 @@ fn test_code_preview_focus_and_keyboard_scroll() {
 
     let build = move || {
         view! {
-            <View flex_direction=FlexDirection::Row width=Dimension::Percent(1.0) height=Dimension::Percent(1.0) gap=1>
+            <View flex_direction=FlexDirection::Row width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} gap=1>
                 <CodeEditor
                     id=editor_id
                     value={code.get()} on_value_change={move |v: String| set_code.set(v)}
-                    width=Dimension::Percent(0.5)
-                    height=Dimension::Percent(1.0)
+                    width={Dimension::Percent(0.5)}
+                    height={Dimension::Percent(1.0)}
                     autofocus=true
                 />
                 <CodePreview
                     id=preview_id
                     value={code.get()}
-                    width=Dimension::Percent(0.5)
-                    height=Dimension::Percent(1.0)
+                    width={Dimension::Percent(0.5)}
+                    height={Dimension::Percent(1.0)}
                 />
             </View>
         }
@@ -457,8 +457,8 @@ fn test_code_editor_cursor_goes_beyond_20_lines() {
             <CodeEditor
                 value={code.get()} on_value_change={move |v: String| set_code.set(v)}
                 language="rs"
-                width=Dimension::Percent(1.0)
-                height=Dimension::Percent(1.0)
+                width={Dimension::Percent(1.0)}
+                height={Dimension::Percent(1.0)}
                 show_line_numbers=true
                 autofocus=true
             />
@@ -519,7 +519,7 @@ fn test_code_editor_cursor_style_choice_block_and_line() {
                 language="rs"
                 width=50
                 height=15
-                cursor_style=style.get()
+                cursor_style={style.get()}
                 autofocus=true
             />
         }
@@ -568,8 +568,8 @@ fn test_code_editor_mouse_scrolling_and_cursor_movement() {
                 id=editor_id
                 value={code.get()} on_value_change={move |v: String| set_code.set(v)}
                 language="rs"
-                width=Dimension::Percent(1.0)
-                height=Dimension::Percent(1.0)
+                width={Dimension::Percent(1.0)}
+                height={Dimension::Percent(1.0)}
                 show_line_numbers=true
                 autofocus=true
             />
