@@ -65,9 +65,9 @@ pub use element::{
     ContextProvider, ContextProviderProps, ErrorBoundary, ErrorBoundaryProps, FocusHandle, FocusId,
     FocusState, HitMap, IntoClickHandler, IntoClickHandlerAt, IntoKeyHandler, IntoNode,
     IntoPropOption, IntoScrollHandler, OptionSnippetExt, Overlay, OverlayElement, OverlayProps,
-    Paragraph, ParagraphProps, Pressable, PressableElement, PressableProps, Snippet, TextElement,
-    TextSpan, TextSpanProps, VNode, View, ViewElement, ViewProps, is_focused, is_layer_open,
-    use_focus, use_layout,
+    Paragraph, ParagraphProps, Pressable, PressableElement, PressableProps, PropIsSet, PropSet,
+    Snippet, TextElement, TextSpan, TextSpanProps, VNode, View, ViewElement, ViewProps, is_focused,
+    is_layer_open, use_focus, use_layout,
 };
 pub use layout::{
     AlignContent, AlignItems, AlignSelf, Display, FlexWrap, JustifyContent, Point, Position,

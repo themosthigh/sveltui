@@ -125,6 +125,33 @@ impl<T> OptionSnippetExt<T> for Option<&Snippet<T>> {
     }
 }
 
+/// The builder state of a required prop that has been given a value.
+/// A derived `Props` builder only has `build()` once every required prop
+/// is in this state.
+pub struct PropSet;
+
+/// Marks a required prop as set, so `build()` can be called. A builder
+/// that is missing one doesn't compile:
+///
+/// ```compile_fail
+/// use sveltui::prelude::*;
+///
+/// #[derive(Props)]
+/// struct Card {
+///     title: String,
+/// }
+///
+/// let _ = Card::builder().build();
+/// ```
+#[diagnostic::on_unimplemented(
+    message = "a required prop is missing",
+    label = "this prop must be set before the component can be built",
+    note = "the type name `__<Props>_missing_<prop>` in this error says which prop"
+)]
+pub trait PropIsSet {}
+
+impl PropIsSet for PropSet {}
+
 pub trait IntoPropOption<T> {
     fn into_prop_option(self) -> Option<T>;
 }

@@ -129,6 +129,16 @@ fn is_snippet_type(ty: &syn::Type) -> bool {
     }
 }
 
+type SetterFn =
+    Box<dyn Fn(proc_macro2::TokenStream, proc_macro2::TokenStream) -> proc_macro2::TokenStream>;
+
+/// A required prop: its setters are written once we know the builder's
+/// full list of type parameters.
+struct Required {
+    name: syn::Ident,
+    make: SetterFn,
+}
+
 #[proc_macro_derive(Props, attributes(prop, snippet))]
 pub fn derive_props(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -156,13 +166,17 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
         }
     };
 
-    let generics = &input.generics;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let mut builder_fields = Vec::new();
+    let mut builder_names = Vec::new();
     let mut default_inits = Vec::new();
     let mut setters = Vec::new();
     let mut build_inits = Vec::new();
+    // Required props are tracked in the builder's type, so `build()` only
+    // exists once all of them are set. Their setters change the type, so
+    // we write them after the loop, when we know every required name.
+    let mut required: Vec<Required> = Vec::new();
 
     for field in fields {
         let field_name = field.ident.as_ref().unwrap();
@@ -238,6 +252,7 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
             builder_fields.push(quote! {
                 pub #field_name: Option<#field_ty>,
             });
+            builder_names.push(field_name.clone());
             default_inits.push(quote! {
                 #field_name: None,
             });
@@ -267,6 +282,7 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
         builder_fields.push(quote! {
             pub #field_name: Option<#field_ty>,
         });
+        builder_names.push(field_name.clone());
 
         default_inits.push(quote! {
             #field_name: None,
@@ -364,85 +380,202 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
                 #field_name: self.#field_name.flatten(),
             });
         } else {
-            if matches!(field_ty, syn::Type::Path(path) if path.path.segments.last().is_some_and(|segment| segment.ident == "Dimension"))
-            {
-                setters.push(quote! {
-                    pub fn #field_name(mut self, val: impl #root::IntoDimension) -> Self {
-                        self.#field_name = Some(val.into_dimension());
-                        self
+            let is_dimension = matches!(field_ty, syn::Type::Path(path) if path.path.segments.last().is_some_and(|segment| segment.ident == "Dimension"));
+            let is_children = field_name == "children";
+            let is_prim = is_primitive(field_ty);
+            let (root_c, name_c, ty_c) = (root.clone(), field_name.clone(), field_ty.clone());
+            // `ret` is the builder type a setter hands back and `fin` the
+            // expression that produces it from the updated `self`.
+            let make: SetterFn = Box::new(move |ret, fin| {
+                let (root, field_name, field_ty) = (&root_c, &name_c, &ty_c);
+                if is_dimension {
+                    quote! {
+                        pub fn #field_name(mut self, val: impl #root::IntoDimension) -> #ret {
+                            self.#field_name = Some(val.into_dimension());
+                            #fin
+                        }
                     }
-                });
-            } else if field_name == "children" {
-                setters.push(quote! {
-                    pub fn slot_children(mut self, val: impl Into<#field_ty>) -> Self {
-                        self.#field_name = Some(val.into());
-                        self
+                } else if is_children {
+                    quote! {
+                        pub fn slot_children(mut self, val: impl Into<#field_ty>) -> #ret {
+                            self.#field_name = Some(val.into());
+                            #fin
+                        }
+                        pub fn children(self, val: impl Into<#field_ty>) -> #ret {
+                            self.slot_children(val)
+                        }
                     }
-                    pub fn children(self, val: impl Into<#field_ty>) -> Self {
-                        self.slot_children(val)
+                } else if is_snippet {
+                    let slot_fn = quote::format_ident!("slot_{}", field_name);
+                    quote! {
+                        pub fn #slot_fn(mut self, val: impl Into<#field_ty>) -> #ret {
+                            self.#field_name = Some(val.into());
+                            #fin
+                        }
                     }
-                });
-            } else if is_snippet {
-                let slot_fn = quote::format_ident!("slot_{}", field_name);
-                setters.push(quote! {
-                    pub fn #slot_fn(mut self, val: impl Into<#field_ty>) -> Self {
-                        self.#field_name = Some(val.into());
-                        self
+                } else if is_prim {
+                    quote! {
+                        pub fn #field_name(mut self, val: #field_ty) -> #ret {
+                            self.#field_name = Some(val);
+                            #fin
+                        }
                     }
-                });
-            } else if is_primitive(field_ty) {
-                setters.push(quote! {
-                    pub fn #field_name(mut self, val: #field_ty) -> Self {
-                        self.#field_name = Some(val);
-                        self
+                } else {
+                    quote! {
+                        pub fn #field_name(mut self, val: impl Into<#field_ty>) -> #ret {
+                            self.#field_name = Some(val.into());
+                            #fin
+                        }
                     }
-                });
-            } else {
-                setters.push(quote! {
-                    pub fn #field_name(mut self, val: impl Into<#field_ty>) -> Self {
-                        self.#field_name = Some(val.into());
-                        self
-                    }
-                });
-            }
+                }
+            });
             if let Some(expr) = default_expr {
+                setters.push(make(quote!(Self), quote!(self)));
                 build_inits.push(quote! {
                     #field_name: self.#field_name.unwrap_or_else(|| #expr),
                 });
             } else if is_default {
+                setters.push(make(quote!(Self), quote!(self)));
                 build_inits.push(quote! {
                     #field_name: self.#field_name.unwrap_or_default(),
                 });
             } else {
-                let err_msg = format!(
-                    "Field '{}' is required for struct '{}'",
-                    field_name, struct_name
-                );
+                required.push(Required {
+                    name: field_name.clone(),
+                    make,
+                });
                 build_inits.push(quote! {
-                    #field_name: self.#field_name.expect(#err_msg),
+                    #field_name: self.#field_name.expect("a required prop is set by the builder's type"),
                 });
             }
         }
     }
 
+    // The builder gets one extra type parameter per required prop, `Missing`
+    // until its setter runs and `PropSet` after.
+    let plain_params: Vec<syn::GenericParam> = input
+        .generics
+        .params
+        .iter()
+        .cloned()
+        .map(|mut param| {
+            match &mut param {
+                syn::GenericParam::Type(t) => t.default = None,
+                syn::GenericParam::Const(c) => c.default = None,
+                syn::GenericParam::Lifetime(_) => {}
+            }
+            param
+        })
+        .collect();
+    let plain_args: Vec<proc_macro2::TokenStream> = input
+        .generics
+        .params
+        .iter()
+        .map(|param| match param {
+            syn::GenericParam::Lifetime(l) => {
+                let lifetime = &l.lifetime;
+                quote!(#lifetime)
+            }
+            syn::GenericParam::Type(t) => {
+                let ident = &t.ident;
+                quote!(#ident)
+            }
+            syn::GenericParam::Const(c) => {
+                let ident = &c.ident;
+                quote!(#ident)
+            }
+        })
+        .collect();
+    let state_params: Vec<syn::Ident> = (0..required.len())
+        .map(|i| quote::format_ident!("__R{}", i))
+        .collect();
+    let missing_types: Vec<syn::Ident> = required
+        .iter()
+        .map(|r| quote::format_ident!("__{}_missing_{}", struct_name, r.name))
+        .collect();
+    let args_with = |states: Vec<proc_macro2::TokenStream>| {
+        quote! { <#(#plain_args,)* #(#states),*> }
+    };
+    let own_states: Vec<proc_macro2::TokenStream> =
+        state_params.iter().map(|p| quote!(#p)).collect();
+    let missing_states: Vec<proc_macro2::TokenStream> =
+        missing_types.iter().map(|m| quote!(#m)).collect();
+    let own_args = args_with(own_states.clone());
+    let missing_args = args_with(missing_states.clone());
+    let decl_params: Vec<proc_macro2::TokenStream> = plain_params
+        .iter()
+        .map(|p| quote!(#p))
+        .chain(
+            state_params
+                .iter()
+                .zip(&missing_types)
+                .map(|(p, m)| quote!(#p = #m)),
+        )
+        .collect();
+    let impl_params: Vec<proc_macro2::TokenStream> = plain_params
+        .iter()
+        .map(|p| quote!(#p))
+        .chain(state_params.iter().map(|p| quote!(#p)))
+        .collect();
+    let plain_impl_params: Vec<proc_macro2::TokenStream> =
+        plain_params.iter().map(|p| quote!(#p)).collect();
+
+    let mut required_setters = Vec::new();
+    let mut mark_fns = Vec::new();
+    for (i, req) in required.iter().enumerate() {
+        let mut states = own_states.clone();
+        states[i] = quote!(#root::PropSet);
+        let ret_args = args_with(states);
+        let ret = quote!(#builder_name #ret_args);
+        let mark = quote::format_ident!("__mark_{}", req.name);
+        required_setters.push((req.make)(ret.clone(), quote!(self.#mark())));
+        let moves = builder_names.iter().map(|n| quote!(#n: self.#n,));
+        mark_fns.push(quote! {
+            fn #mark(self) -> #ret {
+                #builder_name {
+                    #(#moves)*
+                    __required: ::core::marker::PhantomData,
+                }
+            }
+        });
+    }
+    let build_bounds: Vec<proc_macro2::TokenStream> = state_params
+        .iter()
+        .map(|p| quote!(#p: #root::PropIsSet))
+        .collect();
+    let where_tokens = where_clause.map(|w| &w.predicates);
+    let build_where = quote! { where #(#build_bounds,)* #where_tokens };
+    let type_where = where_clause.map(|w| quote!(#w));
+
     let expanded = quote! {
+        #(
+            #[allow(non_camel_case_types)]
+            #[doc(hidden)]
+            pub struct #missing_types;
+        )*
+
         #[allow(non_snake_case)]
-        pub struct #builder_name #generics #where_clause {
+        pub struct #builder_name <#(#decl_params),*> #type_where {
             #(#builder_fields)*
+            #[doc(hidden)]
+            pub __required: ::core::marker::PhantomData<(#(#own_states,)*)>,
         }
 
-        impl #impl_generics Default for #builder_name #ty_generics #where_clause {
+        impl <#(#plain_impl_params),*> Default for #builder_name #missing_args #type_where {
             fn default() -> Self {
                 Self {
                     #(#default_inits)*
+                    __required: ::core::marker::PhantomData,
                 }
             }
         }
 
-        impl #impl_generics #builder_name #ty_generics #where_clause {
+        impl <#(#impl_params),*> #builder_name #own_args #type_where {
             #(#setters)*
+            #(#required_setters)*
+            #(#mark_fns)*
 
-            pub fn build(self) -> #struct_name #ty_generics {
+            pub fn build(self) -> #struct_name #ty_generics #build_where {
                 #struct_name {
                     #(#build_inits)*
                 }
@@ -450,7 +583,7 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
         }
 
         impl #impl_generics #struct_name #ty_generics #where_clause {
-            pub fn builder() -> #builder_name #ty_generics {
+            pub fn builder() -> #builder_name #missing_args {
                 #builder_name::default()
             }
         }
