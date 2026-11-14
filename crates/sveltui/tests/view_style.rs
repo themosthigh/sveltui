@@ -141,7 +141,7 @@ fn a_row_keeps_its_gaps_next_to_an_auto_margin() {
             <View width=30 flex_direction=FlexDirection::Row gap=2>
                 <View width=4 height=1 />
                 <View width=4 height=1 />
-                <View width=5 height=1 margin=Margin { left: MarginEdge::Auto, ..Margin::zero() } />
+                <View width=5 height=1 margin={Margin { left: MarginEdge::Auto, ..Margin::zero() }} />
             </View>
         },
         30,

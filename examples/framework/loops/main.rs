@@ -85,10 +85,10 @@ fn LoopsDemo() -> impl IntoNode {
                     {#each tasks.get() as task (task.id)}
                         <View flex_direction=FlexDirection::Row justify_content=JustifyContent::SpaceBetween align_items=AlignItems::Center>
                             <View flex_direction=FlexDirection::Row gap=1>
-                                <TextSpan foreground_color=if task.done { Color::DarkGrey } else { Color::White }>
+                                <TextSpan foreground_color={if task.done { Color::DarkGrey } else { Color::White }}>
                                     {if task.done { "[x]" } else { "[ ]" }}
                                 </TextSpan>
-                                <TextSpan foreground_color=if task.done { Color::DarkGrey } else { Color::White }>
+                                <TextSpan foreground_color={if task.done { Color::DarkGrey } else { Color::White }}>
                                     {task.title.clone()}
                                 </TextSpan>
                             </View>

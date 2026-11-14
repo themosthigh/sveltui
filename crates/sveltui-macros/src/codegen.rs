@@ -1,7 +1,7 @@
 use crate::ast::{
     AwaitNode, EachNode, Element, IfCondition, IfNode, Node, RenderNode, SnippetNode,
 };
-use quote::{quote, quote_spanned};
+use quote::{ToTokens, quote, quote_spanned};
 use syn::Expr;
 use syn::spanned::Spanned;
 
@@ -140,26 +140,40 @@ fn codegen_each(each_node: &EachNode) -> proc_macro2::TokenStream {
 fn codegen_render(render_node: &RenderNode) -> proc_macro2::TokenStream {
     let root = element_root();
     let target = &render_node.target;
-    match target {
+    // The snippet being rendered and the argument we hand it.
+    let (snippet, args) = match target {
         Expr::Call(call) => {
             let func = &call.func;
-            let args = &call.args;
-            quote! {
-                #root::IntoNode::into_node((#func).render(#args))
-            }
+            (quote! { (#func) }, call.args.to_token_stream())
         }
         Expr::MethodCall(m) => {
             let receiver = &m.receiver;
             let method = &m.method;
-            let args = &m.args;
-            quote! {
-                #root::IntoNode::into_node(((#receiver).#method).render(#args))
-            }
+            (quote! { ((#receiver).#method) }, m.args.to_token_stream())
         }
-        _ => {
-            quote! {
-                #root::IntoNode::into_node((#target).render(()))
-            }
+        _ => (quote! { (#target) }, quote! { () }),
+    };
+    // `x()` renders a snippet that takes no argument.
+    let args = if args.is_empty() {
+        quote! { () }
+    } else {
+        args
+    };
+    if render_node.optional {
+        // Checking first means the arguments aren't evaluated for a snippet
+        // that was never passed.
+        quote! {
+            #root::IntoNode::into_node(
+                if #snippet.is_snippet_present() {
+                    #root::IntoNode::into_node(#snippet.render(#args))
+                } else {
+                    #root::VNode::Empty
+                }
+            )
+        }
+    } else {
+        quote! {
+            #root::IntoNode::into_node(#snippet.render(#args))
         }
     }
 }

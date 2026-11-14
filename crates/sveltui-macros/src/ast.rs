@@ -63,6 +63,8 @@ pub struct SnippetNode {
 
 pub struct RenderNode {
     pub target: Expr,
+    /// Written as `{@render x?.(..)}`: render nothing when `x` isn't set.
+    pub optional: bool,
 }
 
 pub struct ViewTree {

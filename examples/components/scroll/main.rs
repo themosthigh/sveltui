@@ -64,7 +64,7 @@ fn ScrollDemo() -> impl IntoNode {
                     <View
                         scroll_id=scroll_id
                         border=border_style
-                        border_color=if focus.is_active() { Color::White } else { Color::DarkGrey }
+                        border_color={if focus.is_active() { Color::White } else { Color::DarkGrey }}
                         width=62
                         height=10
                         padding=Padding::symmetric(1, 0)

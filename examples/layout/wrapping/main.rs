@@ -37,7 +37,7 @@ fn WrappingDemo() -> impl IntoNode {
                 </Button>
             </View>
 
-            <View width=WIDTHS[width.get()] height=12 border=BorderStyle::Single
+            <View width={WIDTHS[width.get()]} height=12 border=BorderStyle::Single
                 border_color=Color::DarkGrey padding=(1, 0)
                 flex_direction=FlexDirection::Row flex_wrap=FlexWrap::Wrap
                 column_gap=2 row_gap=1 align_content=align_content>

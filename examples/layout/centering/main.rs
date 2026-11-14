@@ -47,7 +47,7 @@ fn CenteringDemo() -> impl IntoNode {
                 <TextSpan>"File"</TextSpan>
                 <TextSpan>"Edit"</TextSpan>
                 <TextSpan>"View"</TextSpan>
-                <View margin=Margin { left: MarginEdge::Auto, ..Margin::zero() }>
+                <View margin={Margin { left: MarginEdge::Auto, ..Margin::zero() }}>
                     <TextSpan foreground_color=Color::DarkGrey>"Esc: quit"</TextSpan>
                 </View>
             </View>

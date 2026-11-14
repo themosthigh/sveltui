@@ -527,11 +527,105 @@ mod tests {
         assert!(error.to_string().contains("Only `bind:` is supported"));
     }
 
-    #[test]
-    fn bind_without_a_value_is_rejected() {
-        let error = syn::parse2::<ViewTree>(quote! { <Checkbox bind:checked /> })
+    fn tokens(source: &str) -> proc_macro2::TokenStream {
+        source.parse().expect("valid tokens")
+    }
+
+    fn parse_error(tokens: proc_macro2::TokenStream) -> String {
+        syn::parse2::<ViewTree>(tokens)
             .err()
-            .expect("bind needs a value");
-        assert!(error.to_string().contains("needs something to bind to"));
+            .expect("view should not parse")
+            .to_string()
+    }
+
+    #[test]
+    fn bind_shorthand_binds_the_same_name() {
+        let code = generated(quote! { <TextInput bind:value /> });
+        assert!(code.contains(". bind_value (value)"));
+    }
+
+    #[test]
+    fn braced_names_are_shorthand_attributes() {
+        let code = generated(quote! { <TextInput {placeholder} bind:value {size} /> });
+        assert!(code.contains(". placeholder (placeholder)"));
+        assert!(code.contains(". bind_value (value)"));
+        assert!(code.contains(". size (size)"));
+    }
+
+    #[test]
+    fn shorthand_must_be_a_single_name() {
+        assert!(parse_error(quote! { <TextInput {a + b} /> }).contains("single name"));
+        assert!(parse_error(quote! { <TextInput {a b} /> }).contains("single name"));
+    }
+
+    #[test]
+    fn unbraced_values_are_literals_paths_and_fields() {
+        let code = generated(quote! {
+            <View width=40 gap=-1 color=Color::White fg=props.fg flag=true name="x"
+                padding=Padding::all(1) title=name.clone() pair=(a, 0) />
+        });
+        assert!(code.contains(". width (40)"));
+        assert!(code.contains(". gap (- 1)"));
+        assert!(code.contains(". color (Color :: White)"));
+        assert!(code.contains(". fg (props . fg)"));
+        assert!(code.contains(". flag (true)"));
+        assert!(code.contains(". padding (Padding :: all (1))"));
+        assert!(code.contains(". title (name . clone ())"));
+        assert!(code.contains(". pair ((a , 0))"));
+    }
+
+    #[test]
+    fn unbraced_expressions_point_at_the_braces_fix() {
+        for tokens in [
+            quote! { <View width=a / 2 /> },
+            quote! { <View width=a + 1 /> },
+            quote! { <View on_click=move || go() /> },
+            quote! { <View width= /> },
+            quote! { <View width=a.len() * 2 /> },
+        ] {
+            let message = parse_error(tokens);
+            assert!(
+                message.contains("Wrap anything else in braces"),
+                "{message}"
+            );
+        }
+    }
+
+    #[test]
+    fn braced_values_can_hold_any_expression() {
+        let code = generated(quote! { <View width={a / 2} disabled={a > b} /> });
+        assert!(code.contains(". width (a / 2)"));
+        assert!(code.contains(". disabled (a > b)"));
+    }
+
+    #[test]
+    fn repeated_else_is_rejected() {
+        let message = parse_error(tokens(r#"{#if a} "x" {:else} "y" {:else} "z" {/if}"#));
+        assert!(message.contains("can only appear once"), "{message}");
+        let message = parse_error(tokens(r#"{#if a} "x" {:else} "y" {:else if b} "z" {/if}"#));
+        assert!(message.contains("can only appear once"), "{message}");
+        let message = parse_error(tokens(
+            r#"{#each xs as x} "x" {:else} "y" {:else} "z" {/each}"#,
+        ));
+        assert!(message.contains("can only appear once"), "{message}");
+    }
+
+    #[test]
+    fn unknown_tags_list_the_valid_ones() {
+        let message = parse_error(tokens("{#foo a} {/foo}"));
+        assert!(message.contains("`{#if}`") && message.contains("`{#snippet}`"));
+        let message = parse_error(quote! { {@html x} });
+        assert!(message.contains("`{@render}`"));
+    }
+
+    #[test]
+    fn optional_render_checks_the_snippet_first() {
+        let code = generated(quote! { {@render props.footer?.(item)} });
+        assert!(code.contains("is_snippet_present"));
+        assert!(code.contains("((props) . footer) . render (item)"));
+        let code = generated(quote! { {@render footer?.()} });
+        assert!(code.contains("(footer) . is_snippet_present"));
+        let code = generated(quote! { {@render props.footer} });
+        assert!(!code.contains("is_snippet_present"));
     }
 }

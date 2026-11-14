@@ -6,31 +6,162 @@ use proc_macro2::TokenStream;
 use syn::ext::IdentExt;
 use syn::parse::{Parse, ParseStream, Parser};
 use syn::spanned::Spanned;
-use syn::{Expr, Ident, LitStr, Pat, Result, Token};
+use syn::{Expr, Ident, LitStr, Pat, Result, Token, UnOp};
 
+/// Parses an attribute value. Braces hold any expression. Without braces we
+/// accept a literal (`-1` included), a path, a tuple or an array,
+/// followed by any run of `.field`, `.method(..)` and `(..)` calls. Every
+/// part of that is either one token or a balanced group, so a bare `>` or
+/// `/` can never be mistaken for the end of the tag. Operators and closures
+/// are not accepted: the tag would end halfway through them.
 pub fn parse_attr_value(input: ParseStream) -> Result<Expr> {
     if input.peek(syn::token::Brace) {
         let content;
         syn::braced!(content in input);
         let expr: Expr = content.parse()?;
-        Ok(expr)
-    } else {
-        let mut tokens = TokenStream::new();
-        while !input.is_empty()
-            && !input.peek(Token![>])
-            && !input.peek(Token![/])
-            && !(input.peek(Ident) && input.peek2(Token![=]))
-            && !(input.peek(Ident) && input.peek2(Token![:]) && !input.peek2(Token![::]))
-        {
-            let tt: proc_macro2::TokenTree = input.parse()?;
-            tokens.extend(std::iter::once(tt));
-        }
-        syn::parse2::<Expr>(tokens)
+        return Ok(expr);
     }
+
+    let start = input.span();
+    let mut expr: Expr = if input.peek(syn::Lit) {
+        Expr::Lit(input.parse()?)
+    } else if input.peek(Token![-]) && input.peek2(syn::Lit) {
+        Expr::Unary(syn::ExprUnary {
+            attrs: Vec::new(),
+            op: UnOp::Neg(input.parse()?),
+            expr: Box::new(Expr::Lit(input.parse()?)),
+        })
+    } else if input.peek(syn::token::Paren) {
+        parse_paren_group(input)?
+    } else if input.peek(syn::token::Bracket) {
+        Expr::Array(input.parse()?)
+    } else if input.peek(Ident)
+        || input.peek(Token![::])
+        || input.peek(Token![self])
+        || input.peek(Token![Self])
+        || input.peek(Token![crate])
+        || input.peek(Token![super])
+    {
+        Expr::Path(input.parse()?)
+    } else {
+        return Err(unbraced_error(start));
+    };
+
+    loop {
+        if input.peek(Token![.]) && (input.peek2(Ident::peek_any) || input.peek2(syn::LitInt)) {
+            let dot = input.parse::<Token![.]>()?;
+            let member: syn::Member = input.parse()?;
+            if let (syn::Member::Named(method), true) = (&member, input.peek(syn::token::Paren)) {
+                let args = parse_call_args(input)?;
+                expr = Expr::MethodCall(syn::ExprMethodCall {
+                    attrs: Vec::new(),
+                    receiver: Box::new(expr),
+                    dot_token: dot,
+                    method: method.clone(),
+                    turbofish: None,
+                    paren_token: args.0,
+                    args: args.1,
+                });
+            } else {
+                expr = Expr::Field(syn::ExprField {
+                    attrs: Vec::new(),
+                    base: Box::new(expr),
+                    dot_token: dot,
+                    member,
+                });
+            }
+        } else if input.peek(syn::token::Paren) && matches!(expr, Expr::Path(_) | Expr::Call(_)) {
+            let args = parse_call_args(input)?;
+            expr = Expr::Call(syn::ExprCall {
+                attrs: Vec::new(),
+                func: Box::new(expr),
+                paren_token: args.0,
+                args: args.1,
+            });
+        } else {
+            break;
+        }
+    }
+
+    // Anything but the end of the tag or the next attribute means the value
+    // was a bigger expression than we accept without braces.
+    let ends_value = input.is_empty()
+        || input.peek(Token![>])
+        || (input.peek(Token![/]) && input.peek2(Token![>]))
+        || input.peek(Ident)
+        || input.peek(syn::token::Brace);
+    if !ends_value {
+        return Err(unbraced_error(start));
+    }
+    Ok(expr)
+}
+
+/// A `(a)` or `(a, b)` value, which is a parenthesised expression or a tuple.
+fn parse_paren_group(input: ParseStream) -> Result<Expr> {
+    let (paren_token, elems) = parse_call_args(input)?;
+    if elems.len() == 1 && !elems.trailing_punct() {
+        Ok(Expr::Paren(syn::ExprParen {
+            attrs: Vec::new(),
+            paren_token,
+            expr: Box::new(elems.into_iter().next().expect("one element")),
+        }))
+    } else {
+        Ok(Expr::Tuple(syn::ExprTuple {
+            attrs: Vec::new(),
+            paren_token,
+            elems,
+        }))
+    }
+}
+
+type CallArgs = (
+    syn::token::Paren,
+    syn::punctuated::Punctuated<Expr, Token![,]>,
+);
+
+fn parse_call_args(input: ParseStream) -> Result<CallArgs> {
+    let content;
+    let paren = syn::parenthesized!(content in input);
+    let args = content.parse_terminated(Expr::parse, Token![,])?;
+    Ok((paren, args))
+}
+
+fn unbraced_error(span: proc_macro2::Span) -> syn::Error {
+    syn::Error::new(
+        span,
+        "An attribute value without braces must be a single literal or path \
+         (like `width=40` or `color=Color::White`). Wrap anything else in \
+         braces, like `width={a / 2}` or `disabled={a > b}`.",
+    )
 }
 
 impl Parse for Attribute {
     fn parse(input: ParseStream) -> Result<Self> {
+        // `{name}` is shorthand for `name={name}`.
+        if input.peek(syn::token::Brace) {
+            let content;
+            syn::braced!(content in input);
+            let name: Ident = content.parse().map_err(|e| {
+                syn::Error::new(
+                    e.span(),
+                    "A shorthand attribute is a single name, like `{placeholder}`. \
+                     Use `name={expr}` for anything else.",
+                )
+            })?;
+            if !content.is_empty() {
+                return Err(content.error(
+                    "A shorthand attribute is a single name, like `{placeholder}`. \
+                     Use `name={expr}` for anything else.",
+                ));
+            }
+            let value = path_expr(&name);
+            return Ok(Attribute {
+                name,
+                value,
+                bind: false,
+            });
+        }
+
         let first: Ident = input.parse()?;
         // `prefix:name` is only valid as `bind:name`. A `::` is a path, not
         // a prefix, so it's left alone.
@@ -39,7 +170,10 @@ impl Parse for Attribute {
             if first != "bind" {
                 return Err(syn::Error::new(
                     first.span(),
-                    format!("Unknown attribute prefix `{first}:`. Only `bind:` is supported."),
+                    format!(
+                        "Unknown attribute prefix `{first}:`. Only `bind:` is supported, \
+                         as in `bind:value={{state}}`."
+                    ),
                 ));
             }
             (input.parse::<Ident>()?, true)
@@ -50,15 +184,21 @@ impl Parse for Attribute {
             input.parse::<Token![=]>()?;
             parse_attr_value(input)?
         } else if bind {
-            return Err(syn::Error::new(
-                name.span(),
-                format!("`bind:{name}` needs something to bind to, like `bind:{name}={{state}}`."),
-            ));
+            // `bind:name` is shorthand for `bind:name={name}`.
+            path_expr(&name)
         } else {
             syn::parse_quote_spanned!(name.span() => true)
         };
         Ok(Attribute { name, value, bind })
     }
+}
+
+fn path_expr(name: &Ident) -> Expr {
+    Expr::Path(syn::ExprPath {
+        attrs: Vec::new(),
+        qself: None,
+        path: name.clone().into(),
+    })
 }
 
 fn is_closing_element_tag(input: ParseStream) -> bool {
@@ -167,6 +307,12 @@ fn parse_if_node(input: ParseStream, first_content: ParseStream) -> Result<IfNod
                 let tag = real_content.call(Ident::parse_any)?;
 
                 if tag == "else" {
+                    if else_branch.is_some() {
+                        return Err(syn::Error::new(
+                            tag.span(),
+                            "`{:else}` must be the last branch of `{#if}`, and can only appear once",
+                        ));
+                    }
                     if real_content.peek(Token![if]) {
                         real_content.parse::<Token![if]>()?;
                         let cond = parse_if_condition(&real_content)?;
@@ -278,6 +424,12 @@ fn parse_each_node(input: ParseStream, first_content: ParseStream) -> Result<Eac
                     format!("Expected `else`, found `{}`", tag),
                 ));
             }
+            if else_branch.is_some() {
+                return Err(syn::Error::new(
+                    tag.span(),
+                    "`{:else}` can only appear once in an `{#each}` block",
+                ));
+            }
             else_branch = Some(parse_nodes_until(input, is_control_boundary)?);
         } else {
             return Err(input.error("Expected `{:else}` or `{/each}`"));
@@ -321,6 +473,14 @@ fn parse_await_node(input: ParseStream, first_content: ParseStream) -> Result<Aw
         } else if real_content.peek(Token![:]) {
             real_content.parse::<Token![:]>()?;
             let tag = real_content.call(Ident::parse_any)?;
+            if (tag == "then" && then_branch.is_some())
+                || (tag == "catch" && catch_branch.is_some())
+            {
+                return Err(syn::Error::new(
+                    tag.span(),
+                    format!("`{{:{tag}}}` can only appear once in an `{{#await}}` block"),
+                ));
+            }
             if tag == "then" {
                 let pat = real_content.call(Pat::parse_single)?;
                 let body = parse_nodes_until(input, is_control_boundary)?;
@@ -396,6 +556,38 @@ fn parse_snippet_node(input: ParseStream, first_content: ParseStream) -> Result<
     Ok(SnippetNode { name, args, body })
 }
 
+/// Parses what follows `{@render`. `x?.(args)` isn't valid Rust, so we spot
+/// the trailing `?.(..)` ourselves and parse the call without the `?.`.
+fn parse_render_target(content: ParseStream) -> Result<RenderNode> {
+    use proc_macro2::TokenTree;
+    let tokens: Vec<TokenTree> = std::iter::from_fn(|| content.parse().ok()).collect();
+    let optional = match tokens.as_slice() {
+        [
+            ..,
+            TokenTree::Punct(q),
+            TokenTree::Punct(dot),
+            TokenTree::Group(g),
+        ] => {
+            q.as_char() == '?'
+                && dot.as_char() == '.'
+                && g.delimiter() == proc_macro2::Delimiter::Parenthesis
+        }
+        _ => false,
+    };
+    let stream: TokenStream = if optional {
+        let split = tokens.len() - 3;
+        tokens[..split]
+            .iter()
+            .chain(&tokens[split + 2..])
+            .cloned()
+            .collect()
+    } else {
+        tokens.into_iter().collect()
+    };
+    let target: Expr = syn::parse2(stream)?;
+    Ok(RenderNode { target, optional })
+}
+
 fn parse_brace_node(input: ParseStream) -> Result<Node> {
     let content;
     syn::braced!(content in input);
@@ -414,19 +606,21 @@ fn parse_brace_node(input: ParseStream) -> Result<Node> {
         } else {
             Err(syn::Error::new(
                 tag.span(),
-                format!("Unknown block directive `#{}`", tag),
+                format!(
+                    "Unknown block directive `#{tag}`. Valid blocks are `{{#if}}`, \
+                     `{{#each}}`, `{{#await}}` and `{{#snippet}}`."
+                ),
             ))
         }
     } else if content.peek(Token![@]) {
         content.parse::<Token![@]>()?;
         let tag = content.call(Ident::parse_any)?;
         if tag == "render" {
-            let target: Expr = content.parse()?;
-            Ok(Node::Render(RenderNode { target }))
+            Ok(Node::Render(parse_render_target(&content)?))
         } else {
             Err(syn::Error::new(
                 tag.span(),
-                format!("Unknown directive `@{}`", tag),
+                format!("Unknown directive `@{tag}`. The only valid directive is `{{@render}}`."),
             ))
         }
     } else {

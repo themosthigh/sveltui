@@ -69,11 +69,11 @@ fn ContextDemo() -> impl IntoNode {
                     <DeepThemedWidget />
 
                     // Local Override with a nested Provider
-                    <ContextProvider value=Theme {
+                    <ContextProvider value={Theme {
                         primary_color: Color::White,
                         border_style: BorderStyle::Double,
                         badge_label: "Local Override",
-                    }>
+                    }}>
                         <View padding=Padding::symmetric(0, 1)>
                             <TextSpan foreground_color=Color::DarkGrey>"Below is an isolated sub-tree with an overridden Theme Provider:"</TextSpan>
                             <View height=1 />
