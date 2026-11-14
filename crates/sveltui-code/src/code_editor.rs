@@ -73,6 +73,7 @@ pub fn CodeEditor(props: CodeEditorProps) -> impl IntoNode {
     // The parent's code, if it owns it. Without an owner, the buffer keeps
     // the code itself after starting from `default_value`.
     let owned = bound
+        .as_ref()
         .map(|state| state.get())
         .or_else(|| props.value.value());
 
@@ -247,7 +248,7 @@ pub fn CodeEditor(props: CodeEditorProps) -> impl IntoNode {
         });
         // Report after the buffer is released, so callbacks can read it.
         if let Some(text) = edited {
-            if let Some(state) = bound {
+            if let Some(state) = &bound {
                 state.set(text.clone());
             }
             if let Some(callback) = &on_value_change {

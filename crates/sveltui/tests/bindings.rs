@@ -14,7 +14,7 @@ fn passed_on(props: FieldProps) -> Bindable<String> {
 fn a_state_binds() {
     let name = state(String::from("a"));
     let field = FieldProps::builder().bind_value(name).build();
-    assert_eq!(field.value.bound(), Some(name));
+    assert_eq!(field.value.bound(), Some(Binding::State(name)));
     assert!(field.value.value().is_none());
 }
 
@@ -29,7 +29,7 @@ fn an_optional_state_binds_or_leaves_it_unbound() {
 fn a_bindable_passes_its_state_on() {
     let name = state(String::from("a"));
     let parent = FieldProps::builder().bind_value(name).build();
-    assert_eq!(passed_on(parent).bound(), Some(name));
+    assert_eq!(passed_on(parent).bound(), Some(Binding::State(name)));
 }
 
 #[test]
@@ -48,19 +48,18 @@ fn a_borrowed_bindable_is_cloned() {
     assert_eq!(parent.value.value().as_deref(), Some("fixed"));
 }
 
+/// A component whose only way out is the binding: it has no change
+/// callback at all, so a function binding can't lean on a naming convention.
 #[derive(Props)]
 struct EchoProps {
     #[prop(bindable)]
     value: Bindable<String>,
-    #[prop(optional)]
-    on_value_change: Option<std::rc::Rc<dyn Fn(String)>>,
 }
 
 #[component]
 fn Echo(props: EchoProps) -> impl IntoNode {
-    if let Some(on_change) = &props.on_value_change {
-        on_change(format!("{}!", props.value.value().unwrap_or_default()));
-    }
+    let binding = props.value.bound().expect("bound by the parent");
+    binding.set(format!("{}!", binding.get()));
     view! { <TextSpan>"echo"</TextSpan> }
 }
 
@@ -76,10 +75,38 @@ fn FunctionBound() -> impl IntoNode {
 }
 
 #[test]
-fn function_bindings_read_and_report_through_callbacks() {
+fn function_bindings_read_and_write_through_the_pair() {
     begin_frame();
     let _ = FunctionBound(FunctionBoundProps::builder().build());
     end_frame();
+}
+
+#[test]
+fn a_function_binding_passes_on_like_any_binding() {
+    let log = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+    let sink = log.clone();
+    let parent = FieldProps::builder()
+        .bind_value((
+            || String::from("now"),
+            move |next: String| sink.borrow_mut().push(next),
+        ))
+        .build();
+    let binding = passed_on(parent).bound().expect("binding");
+    assert_eq!(binding.get(), "now");
+    binding.set(String::from("later"));
+    assert_eq!(*log.borrow(), vec![String::from("later")]);
+}
+
+#[test]
+fn the_binding_wins_over_a_read_only_value() {
+    let name = state(String::from("bound"));
+    let field = FieldProps::builder()
+        .value("fixed")
+        .bind_value(name)
+        .build();
+    let (value, binding) = field.value.into_parts();
+    assert_eq!(value.as_deref(), Some("fixed"));
+    assert_eq!(binding.expect("binding").get(), "bound");
 }
 
 #[derive(Props, Clone)]

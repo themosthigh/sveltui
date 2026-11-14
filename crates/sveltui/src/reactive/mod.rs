@@ -6,7 +6,7 @@ pub mod runtime;
 pub mod signal;
 pub mod tasks;
 
-pub use bindable::{Bindable, IntoBinding};
+pub use bindable::{Bindable, Binding, IntoBinding};
 pub use context::{provide_context, use_context};
 pub use effect::{batch, create_effect, effect};
 pub use lifecycle::{

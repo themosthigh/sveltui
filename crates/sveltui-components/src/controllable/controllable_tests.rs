@@ -33,7 +33,12 @@ fn controlled_only_reports() {
 fn bound_state_is_written_and_reported() {
     let (log, on_change) = recorder();
     let bound = state(3);
-    let model = use_controllable(Some(bound), Some(100), || 0, Some(on_change));
+    let model = use_controllable(
+        Some(Binding::State(bound)),
+        Some(100),
+        || 0,
+        Some(on_change),
+    );
     assert_eq!(model.get(), 3, "the bound state wins over a plain value");
     model.set(4);
     assert_eq!(bound.get(), 4);

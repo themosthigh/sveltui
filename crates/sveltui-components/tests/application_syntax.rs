@@ -802,13 +802,14 @@ mod two_way {
         // Count in the parent's state when it's bound; otherwise count locally,
         // starting from `count={..}` if one was passed.
         let local = state(props.count.value().unwrap_or(0));
-        let count = props.count.bound().unwrap_or(local);
+        let count = props.count.bound().unwrap_or(Binding::State(local));
+        let (down, up) = (count.clone(), count.clone());
 
         view! {
             <View flex_direction=FlexDirection::Row gap=1>
-                <Button on_click={move || count.update(|n| *n -= 1)}>"-"</Button>
+                <Button on_click={move || down.update(|n| *n -= 1)}>"-"</Button>
                 <TextSpan>{count.get().to_string()}</TextSpan>
-                <Button on_click={move || count.update(|n| *n += 1)}>"+"</Button>
+                <Button on_click={move || up.update(|n| *n += 1)}>"+"</Button>
             </View>
         }
     }

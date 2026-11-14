@@ -387,21 +387,6 @@ fn codegen_custom_component(
             prop_setters.push(quote! { .id((#attr_val).id()) });
             continue;
         }
-        // `bind:x={(get, set)}` is a read-only value plus a change callback,
-        // so it calls `x(get())` and `on_x_change(set)`.
-        if attr.bind
-            && let Expr::Tuple(pair) = attr_val
-            && pair.elems.len() == 2
-        {
-            let (get, set) = (&pair.elems[0], &pair.elems[1]);
-            let on_change =
-                quote::format_ident!("on_{}_change", attr_name, span = attr_name.span());
-            prop_setters.push(quote! {
-                .#attr_name((#get)())
-                .#on_change(#set)
-            });
-            continue;
-        }
         let setter = if attr.bind {
             quote::format_ident!("bind_{}", attr_name, span = attr_name.span())
         } else {

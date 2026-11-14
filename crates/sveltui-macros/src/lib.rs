@@ -896,13 +896,13 @@ mod tests {
     }
 
     #[test]
-    fn function_bindings_are_a_value_and_a_change_callback() {
+    fn function_bindings_take_the_same_path_as_any_binding() {
         let code = generated(quote! {
             <TextInput bind:value={(|| name.get(), |next| name.set(next))} />
         });
-        assert!(code.contains(". value ((| | name . get ()) ())"));
-        assert!(code.contains(". on_value_change (| next | name . set (next))"));
-        assert!(!code.contains("bind_value"));
+        assert!(code.contains(". bind_value ((| | name . get () , | next | name . set (next)))"));
+        assert!(!code.contains("on_value_change"));
+        assert!(!code.contains(". value ("));
     }
 
     #[test]
