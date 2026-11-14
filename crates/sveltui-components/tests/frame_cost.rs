@@ -14,16 +14,17 @@ use sveltui_components::*;
 
 thread_local! {
     static ROWS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    /// How many characters have been typed into the field.
+    static TYPED: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
 #[component]
 fn Screen() -> impl IntoNode {
     let rows = ROWS.with(|r| r.get());
-    let query = state(String::new());
     let items: Vec<usize> = (0..rows).collect();
     view! {
         <View>
-            <TextInput bind:value=query placeholder="Type..." />
+            <TextInput value={"x".repeat(TYPED.with(|t| t.get()))} placeholder="Type..." />
             <View overflow_y=Overflow::Scroll height=20>
                 {#each items as n (n)}
                     <Button>{format!("Row {n}")}</Button>
@@ -101,6 +102,30 @@ fn where_the_frame_goes() {
             lay / runs,
             col / runs,
             full / runs
+        );
+    }
+}
+
+/// One keystroke per frame: the field's text changes, every row stays put.
+#[test]
+#[ignore = "measurement, not a check"]
+fn typing_frame_cost_by_list_size() {
+    for rows in [10, 200, 2000] {
+        let mut manager = FocusManager::new();
+        TYPED.with(|t| t.set(0));
+        frame(&mut manager, rows);
+        let runs = 20;
+        let (mut built, mut painted) = (0, 0);
+        for _ in 0..runs {
+            TYPED.with(|t| t.set(t.get() + 1));
+            let (b, p) = frame(&mut manager, rows);
+            built += b;
+            painted += p;
+        }
+        println!(
+            "typing rows={rows:5}  build={:7}us  layout+paint={:7}us per frame",
+            built / runs,
+            painted / runs
         );
     }
 }

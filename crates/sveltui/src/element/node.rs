@@ -20,7 +20,7 @@ use std::fmt;
 use std::rc::Rc;
 use taffy::style::{Display, FlexWrap, Position};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct TextElement {
     pub content: String,
     /// Wrap paragraphs at word boundaries within their allocated width.

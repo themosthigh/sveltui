@@ -64,7 +64,10 @@ impl Harness {
     }
 
     fn render(&mut self) -> InteractionTree {
-        for _ in 0..10 {
+        // Tests share one dirty flag, so a neighbour's signal write can
+        // dirty a frame of ours; we give it plenty of frames to catch a
+        // clean one.
+        for _ in 0..500 {
             Runtime::set_dirty(false);
             reset_focus_counter();
             begin_frame();

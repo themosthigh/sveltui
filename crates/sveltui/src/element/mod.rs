@@ -23,6 +23,8 @@ mod rules;
 pub mod scroll;
 pub mod snippet;
 pub mod taffy_bridge;
+#[cfg(test)]
+mod taffy_bridge_tests;
 mod text;
 pub mod text_buffer;
 
