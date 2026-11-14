@@ -70,3 +70,37 @@ fn per_frame_cost_by_list_size() {
         );
     }
 }
+
+#[test]
+#[ignore = "measurement, not a check"]
+fn where_the_frame_goes() {
+    use sveltui::element::taffy_bridge::layout;
+    for rows in [200, 2000] {
+        let manager = FocusManager::new();
+        ROWS.with(|r| r.set(rows));
+        begin_frame();
+        let tree = manager.with_context(|| Screen(ScreenProps::builder().build()).into_node());
+        end_frame();
+        let runs = 10u128;
+        let (mut lay, mut col, mut full) = (0, 0, 0);
+        for _ in 0..runs {
+            let t = Instant::now();
+            let _ = layout(&tree, 80, 24);
+            lay += t.elapsed().as_micros();
+            let t = Instant::now();
+            HitMap::new().collect_interactions(&tree);
+            col += t.elapsed().as_micros();
+            let mut buffer = Buffer::new(80, 24);
+            let mut hits = HitMap::new();
+            let t = Instant::now();
+            render_node_interactive(&tree, Rect::new(0, 0, 80, 24), &mut buffer, &mut hits);
+            full += t.elapsed().as_micros();
+        }
+        println!(
+            "rows={rows:5}  layout={}us  collect={}us  render_total={}us",
+            lay / runs,
+            col / runs,
+            full / runs
+        );
+    }
+}

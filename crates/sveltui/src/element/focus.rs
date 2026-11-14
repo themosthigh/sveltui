@@ -34,7 +34,22 @@ impl From<usize> for FocusId {
 pub fn reset_focus_counter() {
     RENDER_FOCUS_COUNTER.with(|counter| counter.set(0));
 }
+
+/// Ids made inside a scope sit between the explicit ones (low) and the
+/// allocated ones (top bit): this bit, the scope's id, then the position
+/// among that scope's own ids.
+const SCOPED_FLAG: usize = 1 << (usize::BITS - 2);
+const SCOPED_SLOTS: usize = 1 << 16;
+
+/// An id for a view that did not name one. Inside a scope it follows the
+/// scope and the view's place within it, so it stays the same when the
+/// views around it come, go or are skipped. Outside any scope there is
+/// nothing to hang it on, and it comes from a counter that
+/// `reset_focus_counter` restarts.
 pub fn next_render_focus_id() -> FocusId {
+    if let Some((scope, n)) = crate::reactive::lifecycle::next_scope_focus_slot() {
+        return FocusId(SCOPED_FLAG | (scope * SCOPED_SLOTS) | (n % SCOPED_SLOTS));
+    }
     RENDER_FOCUS_COUNTER.with(|counter| {
         let id = counter.get();
         counter.set(id + 1);

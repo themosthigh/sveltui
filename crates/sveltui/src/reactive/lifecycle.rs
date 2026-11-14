@@ -18,6 +18,8 @@ pub struct ScopeNode {
     pub name: &'static str,
     pub slots: Vec<Box<dyn Any>>,
     pub slot_cursor: usize,
+    /// How many focus ids the scope has handed out this run.
+    pub focus_cursor: usize,
     pub children: Vec<ScopeId>,
     pub child_cursor: usize,
     /// Children found by key rather than by position, so a row keeps its
@@ -48,6 +50,7 @@ impl ScopeManager {
             name: "root",
             slots: Vec::new(),
             slot_cursor: 0,
+            focus_cursor: 0,
             children: Vec::new(),
             child_cursor: 0,
             keyed: HashMap::new(),
@@ -65,6 +68,7 @@ impl ScopeManager {
     pub fn begin_frame(&mut self) {
         for scope in self.scopes.iter_mut().flatten() {
             scope.slot_cursor = 0;
+            scope.focus_cursor = 0;
             scope.child_cursor = 0;
             scope.keyed_used.clear();
         }
@@ -103,6 +107,7 @@ impl ScopeManager {
             {
                 if let Some(ref mut child) = self.scopes[existing_id] {
                     child.slot_cursor = 0;
+                    child.focus_cursor = 0;
                     child.child_cursor = 0;
                     child.keyed_used.clear();
                 }
@@ -158,6 +163,7 @@ impl ScopeManager {
             Some(id) if self.scopes[id].is_some() => {
                 if let Some(child) = self.scopes[id].as_mut() {
                     child.slot_cursor = 0;
+                    child.focus_cursor = 0;
                     child.child_cursor = 0;
                     child.keyed_used.clear();
                 }
@@ -189,6 +195,7 @@ impl ScopeManager {
             Some(id) if self.scopes.get(id).is_some_and(|s| s.is_some()) => {
                 if let Some(scope) = self.scopes[id].as_mut() {
                     scope.slot_cursor = 0;
+                    scope.focus_cursor = 0;
                     scope.child_cursor = 0;
                     scope.keyed_used.clear();
                 }
@@ -260,6 +267,7 @@ impl ScopeManager {
             name,
             slots: Vec::new(),
             slot_cursor: 0,
+            focus_cursor: 0,
             children: Vec::new(),
             child_cursor: 0,
             keyed: HashMap::new(),
@@ -294,6 +302,19 @@ impl Drop for ScopeGuard {
             sm.borrow_mut().exit_scope(self.scope_id, self.pushed_root);
         });
     }
+}
+
+/// The next focus slot of the scope we are running in: the scope's id and
+/// how many ids it has handed out before. `None` outside any scope.
+pub(crate) fn next_scope_focus_slot() -> Option<(ScopeId, usize)> {
+    SCOPE_MANAGER.with(|sm| {
+        let mut mgr = sm.borrow_mut();
+        let id = *mgr.scope_stack.last()?;
+        let scope = mgr.scopes.get_mut(id)?.as_mut()?;
+        let n = scope.focus_cursor;
+        scope.focus_cursor += 1;
+        Some((id, n))
+    })
 }
 
 pub fn begin_frame() {
