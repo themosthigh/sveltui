@@ -170,6 +170,7 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
 
     let mut builder_fields = Vec::new();
     let mut builder_names = Vec::new();
+    let mut spread_stmts = Vec::new();
     let mut default_inits = Vec::new();
     let mut setters = Vec::new();
     let mut build_inits = Vec::new();
@@ -253,6 +254,7 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
                 pub #field_name: Option<#field_ty>,
             });
             builder_names.push(field_name.clone());
+            spread_stmts.push(quote! { self.#field_name = Some(__props.#field_name); });
             default_inits.push(quote! {
                 #field_name: None,
             });
@@ -263,12 +265,15 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
                     self.#field_name = Some(bindable);
                     self
                 }
-                pub fn #bind_fn(
-                    mut self,
-                    val: impl #root::IntoPropOption<#root::State<#inner_ty>>,
-                ) -> Self {
+                pub fn #bind_fn(mut self, val: impl #root::IntoBinding<#inner_ty>) -> Self {
+                    // Passing a parent's `Bindable` on carries its read-only
+                    // value too, but a bare state leaves a value set earlier.
+                    let (value, bound) = val.into_binding().into_parts();
                     let mut bindable = self.#field_name.take().unwrap_or_default();
-                    bindable.set_bound(val.into_prop_option());
+                    if value.is_some() {
+                        bindable.set_value(value);
+                    }
+                    bindable.set_bound(bound);
                     self.#field_name = Some(bindable);
                     self
                 }
@@ -283,6 +288,17 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
             pub #field_name: Option<#field_ty>,
         });
         builder_names.push(field_name.clone());
+        // An optional prop that is `None` in the spread leaves what was
+        // set before it alone. Everything else takes the spread's value.
+        if is_optional && extract_option_inner(field_ty).is_some() {
+            spread_stmts.push(quote! {
+                if __props.#field_name.is_some() {
+                    self.#field_name = Some(__props.#field_name);
+                }
+            });
+        } else {
+            spread_stmts.push(quote! { self.#field_name = Some(__props.#field_name); });
+        }
 
         default_inits.push(quote! {
             #field_name: None,
@@ -539,6 +555,13 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
             }
         });
     }
+    let all_set = args_with(
+        state_params
+            .iter()
+            .map(|_| quote!(#root::PropSet))
+            .collect(),
+    );
+    let spread_moves = builder_names.iter().map(|n| quote!(#n: self.#n,));
     let build_bounds: Vec<proc_macro2::TokenStream> = state_params
         .iter()
         .map(|p| quote!(#p: #root::PropIsSet))
@@ -574,6 +597,18 @@ pub fn derive_props(input: TokenStream) -> TokenStream {
             #(#setters)*
             #(#required_setters)*
             #(#mark_fns)*
+
+            /// Merges a whole props value in, as `<Comp {..props} />` does.
+            /// A complete props value has every required prop, so the
+            /// builder it returns is ready to build. Props set after the
+            /// spread win over it.
+            pub fn spread(mut self, __props: #struct_name #ty_generics) -> #builder_name #all_set {
+                #(#spread_stmts)*
+                #builder_name {
+                    #(#spread_moves)*
+                    __required: ::core::marker::PhantomData,
+                }
+            }
 
             pub fn build(self) -> #struct_name #ty_generics #build_where {
                 #struct_name {
@@ -858,5 +893,28 @@ mod tests {
         assert!(parse_error(tokens(r#"$"a {b""#)).contains("Unclosed"));
         assert!(parse_error(tokens(r#"$"a } b""#)).contains("Unmatched"));
         assert!(parse_error(tokens(r#"$"a {1 +} b""#)).contains("not a Rust expression"));
+    }
+
+    #[test]
+    fn function_bindings_are_a_value_and_a_change_callback() {
+        let code = generated(quote! {
+            <TextInput bind:value={(|| name.get(), |next| name.set(next))} />
+        });
+        assert!(code.contains(". value ((| | name . get ()) ())"));
+        assert!(code.contains(". on_value_change (| next | name . set (next))"));
+        assert!(!code.contains("bind_value"));
+    }
+
+    #[test]
+    fn spread_attributes_merge_a_props_value() {
+        let code = generated(quote! { <Button {..base} label="Go" /> });
+        assert!(code.contains(". spread (base) . label (\"Go\")"));
+    }
+
+    #[test]
+    fn bind_this_passes_the_refs_focus_id() {
+        let code = generated(quote! { <TextInput bind:this={field} /> });
+        assert!(code.contains(". id ((field) . id ())"));
+        assert!(!code.contains("bind_this"));
     }
 }

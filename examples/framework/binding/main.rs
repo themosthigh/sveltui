@@ -12,14 +12,15 @@ struct NameFieldProps {
     label: String,
 }
 
-/// A labelled text input that can itself be bound. It hands whatever it was
-/// given (a read-only value or a bound state) straight to the `TextInput`.
+/// A labelled text input that can itself be bound. It hands its prop on as
+/// it is, so the `TextInput` gets the bound state or the read-only value,
+/// whichever the parent gave.
 #[component]
 fn NameField(props: NameFieldProps) -> impl IntoNode {
     view! {
         <View flex_direction=FlexDirection::Row align_items=AlignItems::Center gap=1>
             <TextSpan foreground_color=Color::DarkGrey>{format!("{:>8}", props.label)}</TextSpan>
-            <TextInput value={props.value.value()} bind:value={props.value.bound()}
+            <TextInput bind:value={props.value}
                 placeholder="Type here..." width=28 />
         </View>
     }

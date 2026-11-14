@@ -18,6 +18,9 @@ pub struct Attribute {
     pub value: Expr,
     /// Written as `bind:name`, so it calls the component's `bind_name` prop.
     pub bind: bool,
+    /// Written as `{..expr}`: the props `expr` holds are merged into the
+    /// builder. `name` is a placeholder in that case.
+    pub spread: bool,
 }
 
 pub struct Element {

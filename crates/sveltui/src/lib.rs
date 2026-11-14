@@ -64,10 +64,10 @@ pub use element::text_buffer::*;
 pub use element::{
     ContextProvider, ContextProviderProps, ErrorBoundary, ErrorBoundaryProps, FocusHandle, FocusId,
     FocusState, HitMap, IntoClickHandler, IntoClickHandlerAt, IntoKeyHandler, IntoNode,
-    IntoPropOption, IntoScrollHandler, OptionSnippetExt, Overlay, OverlayElement, OverlayProps,
-    Paragraph, ParagraphProps, Pressable, PressableElement, PressableProps, PropIsSet, PropSet,
-    Snippet, TextElement, TextSpan, TextSpanProps, VNode, View, ViewElement, ViewProps, is_focused,
-    is_layer_open, use_focus, use_layout,
+    IntoPropOption, IntoScrollHandler, NodeRef, OptionSnippetExt, Overlay, OverlayElement,
+    OverlayProps, Paragraph, ParagraphProps, Pressable, PressableElement, PressableProps,
+    PropIsSet, PropSet, Snippet, TextElement, TextSpan, TextSpanProps, VNode, View, ViewElement,
+    ViewProps, is_focused, is_layer_open, node_ref, use_focus, use_layout,
 };
 pub use layout::{
     AlignContent, AlignItems, AlignSelf, Display, FlexWrap, JustifyContent, Point, Position,
@@ -77,10 +77,10 @@ pub use layout::{
     OverflowExt, Padding, Placement, ScrollbarChars, ScrollbarStyle, ScrollbarVisibility,
 };
 pub use reactive::{
-    AsyncState, Bindable, BlockingFuture, ComponentScope, Derived, ReadSignal, Runtime, State,
-    TaskHandle, WriteSignal, batch, begin_frame, create_effect, create_signal, derived, effect,
-    end_frame, on_destroy, on_mount, provide_context, reset_hook_counter, spawn_blocking,
-    spawn_task, state, state_with, use_async_state, use_context, use_hook,
+    AsyncState, Bindable, BlockingFuture, ComponentScope, Derived, IntoBinding, ReadSignal,
+    Runtime, State, TaskHandle, WriteSignal, batch, begin_frame, create_effect, create_signal,
+    derived, effect, end_frame, on_destroy, on_mount, provide_context, reset_hook_counter,
+    spawn_blocking, spawn_task, state, state_with, use_async_state, use_context, use_hook,
 };
 pub use terminal::{
     Buffer, Cell, CursorStyle, PointerShape, Terminal, TerminalColor as Color, hex_color,
@@ -94,10 +94,10 @@ pub mod prelude {
     pub use crate::element::{
         ContextProvider, ContextProviderProps, ErrorBoundary, ErrorBoundaryProps, FocusHandle,
         FocusId, FocusState, HitMap, IntoClickHandler, IntoClickHandlerAt, IntoKeyHandler,
-        IntoNode, IntoPropOption, IntoScrollHandler, OptionSnippetExt, Overlay, OverlayElement,
-        OverlayProps, Paragraph, ParagraphProps, Pressable, PressableElement, PressableProps,
-        Snippet, TextElement, TextSpan, TextSpanProps, VNode, View, ViewElement, ViewProps,
-        is_focused, is_layer_open, use_focus, use_layout,
+        IntoNode, IntoPropOption, IntoScrollHandler, NodeRef, OptionSnippetExt, Overlay,
+        OverlayElement, OverlayProps, Paragraph, ParagraphProps, Pressable, PressableElement,
+        PressableProps, Snippet, TextElement, TextSpan, TextSpanProps, VNode, View, ViewElement,
+        ViewProps, is_focused, is_layer_open, node_ref, use_focus, use_layout,
     };
     pub use crate::layout::{
         AlignContent, AlignItems, AlignSelf, BorderStyle, Dimension, Display, FlexDirection,
@@ -111,10 +111,10 @@ pub mod prelude {
         span,
     };
     pub use crate::reactive::{
-        AsyncState, Bindable, BlockingFuture, ComponentScope, Derived, ReadSignal, State,
-        TaskHandle, WriteSignal, batch, begin_frame, create_effect, create_signal, derived, effect,
-        end_frame, on_destroy, on_mount, provide_context, reset_hook_counter, spawn_blocking,
-        spawn_task, state, state_with, use_async_state, use_context, use_hook,
+        AsyncState, Bindable, BlockingFuture, ComponentScope, Derived, IntoBinding, ReadSignal,
+        State, TaskHandle, WriteSignal, batch, begin_frame, create_effect, create_signal, derived,
+        effect, end_frame, on_destroy, on_mount, provide_context, reset_hook_counter,
+        spawn_blocking, spawn_task, state, state_with, use_async_state, use_context, use_hook,
     };
     pub use crate::terminal::{
         CursorStyle, PointerDialect, PointerShape, TerminalColor as Color, hex_color,

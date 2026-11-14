@@ -29,6 +29,11 @@ impl<T: 'static> Bindable<T> {
         self.value.is_some() || self.bound.is_some()
     }
 
+    /// Splits into the read-only value and the bound state.
+    pub fn into_parts(self) -> (Option<T>, Option<State<T>>) {
+        (self.value, self.bound)
+    }
+
     /// Replaces the read-only value. Used by the generated `x(..)` setter.
     pub fn set_value(&mut self, value: Option<T>) {
         self.value = value;
@@ -64,5 +69,44 @@ impl<T: std::fmt::Debug + 'static> std::fmt::Debug for Bindable<T> {
             .field("value", &self.value)
             .field("bound", &self.bound)
             .finish()
+    }
+}
+
+/// What `bind:x={..}` accepts. A `State<T>` binds the prop. A `Bindable<T>`
+/// (usually a parent's own `props.x`, passed on as it is) carries over
+/// whatever it holds: the bound state, the read-only value, or both. This
+/// way a component hands its prop to a child without checking which kind
+/// the parent gave.
+pub trait IntoBinding<T: 'static> {
+    fn into_binding(self) -> Bindable<T>;
+}
+
+impl<T: 'static> IntoBinding<T> for State<T> {
+    fn into_binding(self) -> Bindable<T> {
+        Bindable {
+            value: None,
+            bound: Some(self),
+        }
+    }
+}
+
+impl<T: 'static> IntoBinding<T> for Option<State<T>> {
+    fn into_binding(self) -> Bindable<T> {
+        Bindable {
+            value: None,
+            bound: self,
+        }
+    }
+}
+
+impl<T: 'static> IntoBinding<T> for Bindable<T> {
+    fn into_binding(self) -> Bindable<T> {
+        self
+    }
+}
+
+impl<T: Clone + 'static> IntoBinding<T> for &Bindable<T> {
+    fn into_binding(self) -> Bindable<T> {
+        self.clone()
     }
 }

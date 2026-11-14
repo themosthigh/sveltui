@@ -183,6 +183,41 @@ impl Default for FocusHandle {
     }
 }
 
+/// A reference to a view, for `<TextInput bind:this={field} />`. It holds the
+/// view's focus id, which stays the same from frame to frame, so the
+/// handlers and the render code can ask about the view or move focus to it.
+/// Make one in a component with `node_ref()`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct NodeRef {
+    id: crate::reactive::State<FocusId>,
+}
+impl NodeRef {
+    pub fn id(&self) -> FocusId {
+        self.id.get()
+    }
+    pub fn state(&self) -> FocusState {
+        use_focus(self.id())
+    }
+    pub fn is_focused(&self) -> bool {
+        self.state().is_focused()
+    }
+    pub fn has_focus_within(&self) -> bool {
+        self.state().has_focus_within()
+    }
+    /// Moves focus to the view once the handler returns. Nothing happens
+    /// if the view isn't on screen or can't take focus.
+    pub fn focus(&self, ctx: &mut crate::element::interaction::EventContext) {
+        ctx.focus(self.id());
+    }
+}
+
+/// A reference that lives as long as the component, for `bind:this`.
+pub fn node_ref() -> NodeRef {
+    NodeRef {
+        id: crate::reactive::state_with(FocusId::new),
+    }
+}
+
 /// Where the view with this identity landed in the last frame, in screen
 /// cells. `None` before its first paint or outside a bound App.
 pub fn use_layout(id: FocusId) -> Option<Rect> {

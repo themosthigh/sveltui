@@ -145,6 +145,17 @@ impl Parse for Attribute {
         if input.peek(syn::token::Brace) {
             let content;
             syn::braced!(content in input);
+            // `{..props}` merges a whole props value in.
+            if content.peek(Token![..]) {
+                let dots = content.parse::<Token![..]>()?;
+                let value: Expr = content.parse()?;
+                return Ok(Attribute {
+                    name: Ident::new("spread", dots.spans[0]),
+                    value,
+                    bind: false,
+                    spread: true,
+                });
+            }
             let name: Ident = content.parse().map_err(|e| {
                 syn::Error::new(
                     e.span(),
@@ -163,6 +174,7 @@ impl Parse for Attribute {
                 name,
                 value,
                 bind: false,
+                spread: false,
             });
         }
 
@@ -193,7 +205,12 @@ impl Parse for Attribute {
         } else {
             syn::parse_quote_spanned!(name.span() => true)
         };
-        Ok(Attribute { name, value, bind })
+        Ok(Attribute {
+            name,
+            value,
+            bind,
+            spread: false,
+        })
     }
 }
 

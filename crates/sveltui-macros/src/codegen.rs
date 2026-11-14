@@ -365,6 +365,11 @@ fn codegen_custom_component(
 
     for attr in &el.attributes {
         let attr_name = &attr.name;
+        if attr.spread {
+            let value = &attr.value;
+            prop_setters.push(quote! { .spread(#value) });
+            continue;
+        }
         if attr_name == "children" {
             return syn::Error::new(
                 attr_name.span(),
@@ -377,6 +382,26 @@ fn codegen_custom_component(
         }
         attr_names.insert(attr_name);
         let attr_val = &attr.value;
+        // `bind:this={node_ref}` hands the view the ref's focus id.
+        if attr.bind && attr_name == "this" {
+            prop_setters.push(quote! { .id((#attr_val).id()) });
+            continue;
+        }
+        // `bind:x={(get, set)}` is a read-only value plus a change callback,
+        // so it calls `x(get())` and `on_x_change(set)`.
+        if attr.bind
+            && let Expr::Tuple(pair) = attr_val
+            && pair.elems.len() == 2
+        {
+            let (get, set) = (&pair.elems[0], &pair.elems[1]);
+            let on_change =
+                quote::format_ident!("on_{}_change", attr_name, span = attr_name.span());
+            prop_setters.push(quote! {
+                .#attr_name((#get)())
+                .#on_change(#set)
+            });
+            continue;
+        }
         let setter = if attr.bind {
             quote::format_ident!("bind_{}", attr_name, span = attr_name.span())
         } else {

@@ -31,8 +31,8 @@ pub mod text_buffer;
 pub use boundary::{ErrorBoundary, ErrorBoundaryProps, ErrorBoundaryPropsBuilder};
 pub use events::{HitMap, HitTarget, HoverHandler, PointerEvent, PointerHandler, PointerPhase};
 pub use focus::{
-    FocusHandle, FocusId, FocusState, is_focused, is_layer_open, layer_anchor,
-    next_render_focus_id, reset_focus_counter, use_focus, use_layout,
+    FocusHandle, FocusId, FocusState, NodeRef, is_focused, is_layer_open, layer_anchor,
+    next_render_focus_id, node_ref, reset_focus_counter, use_focus, use_layout,
 };
 pub use interaction::*;
 pub use measure::measure_node;
