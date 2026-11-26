@@ -13,7 +13,7 @@ I therefore believe that some amount of performance can be sacrificed for the _"
 ## Installation
 
 ```sh
-cargo add sveltui@0.1.0-alpha.4 sveltui-components@0.1.0-alpha.4
+cargo add sveltui@0.1.0-alpha.5 sveltui-components@0.1.0-alpha.5
 ```
 
 > Pre-release versions must be requested explicitly until a stable release exists.

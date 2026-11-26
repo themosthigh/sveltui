@@ -970,7 +970,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "sveltui"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "criterion",
  "crossterm",
@@ -981,7 +981,7 @@ dependencies = [
 
 [[package]]
 name = "sveltui-code"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "crossterm",
  "sveltui",
@@ -991,7 +991,7 @@ dependencies = [
 
 [[package]]
 name = "sveltui-components"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "criterion",
  "crossterm",
@@ -1002,7 +1002,7 @@ dependencies = [
 
 [[package]]
 name = "sveltui-examples"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "crossterm",
  "image",
@@ -1014,7 +1014,7 @@ dependencies = [
 
 [[package]]
 name = "sveltui-image"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "crossterm",
  "image",
@@ -1026,7 +1026,7 @@ dependencies = [
 
 [[package]]
 name = "sveltui-macros"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "proc-macro2",
  "quote",

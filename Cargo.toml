@@ -11,7 +11,7 @@ members = [
 default-members = ["crates/sveltui", "examples"]
 
 [workspace.package]
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 edition = "2024"
 rust-version = "1.85"
 authors = ["themosthigh"]
@@ -22,11 +22,11 @@ keywords = ["tui", "terminal", "reactive", "svelte", "ui"]
 categories = ["command-line-interface", "gui"]
 
 [workspace.dependencies]
-sveltui = { path = "crates/sveltui", version = "0.1.0-alpha.4" }
-sveltui-code = { path = "crates/sveltui-code", version = "0.1.0-alpha.4" }
-sveltui-components = { path = "crates/sveltui-components", version = "0.1.0-alpha.4" }
-sveltui-image = { path = "crates/sveltui-image", version = "0.1.0-alpha.4" }
-sveltui-macros = { path = "crates/sveltui-macros", version = "0.1.0-alpha.4" }
+sveltui = { path = "crates/sveltui", version = "0.1.0-alpha.5" }
+sveltui-code = { path = "crates/sveltui-code", version = "0.1.0-alpha.5" }
+sveltui-components = { path = "crates/sveltui-components", version = "0.1.0-alpha.5" }
+sveltui-image = { path = "crates/sveltui-image", version = "0.1.0-alpha.5" }
+sveltui-macros = { path = "crates/sveltui-macros", version = "0.1.0-alpha.5" }
 crossterm = "0.28"
 taffy = { version = "0.13", default-features = false, features = ["std", "alloc", "flexbox", "grid", "content_size", "detailed_layout_info", "taffy_tree"] }
 criterion = { version = "0.5", default-features = false }
