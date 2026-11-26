@@ -21,6 +21,7 @@ fn CounterApp() -> impl IntoNode {
             width={Dimension::Percent(1.0)}
             align_items=AlignItems::Center
             justify_content=JustifyContent::Center
+            background_color=Color::DarkBlue
         >
             <View
                 flex_direction=FlexDirection::Row
@@ -30,6 +31,7 @@ fn CounterApp() -> impl IntoNode {
                 border_color=Color::Red
                 padding={Padding::symmetric(6, 1)}
                 gap=4
+                background_color=Color::Green
             >
                 <Button on_click={move || count.set(count.get() - 1)} padding={Padding::symmetric(3, 0)}>
                     "-"

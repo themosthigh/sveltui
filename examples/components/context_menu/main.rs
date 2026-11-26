@@ -6,7 +6,7 @@ fn ContextMenuDemo() -> impl IntoNode {
     let selected = state(String::from("No action yet"));
     view! {
         <View width={Dimension::Percent(1.0)} height={Dimension::Percent(1.0)} padding=2 gap=1>
-            <TextSpan>"Right-click the area below, or focus it and press Shift+F10."</TextSpan>
+            <Paragraph>"Right-click the area below, or focus it and press Shift+F10."</Paragraph>
             <ContextMenu::Root>
                 <ContextMenu::Trigger>"Document actions"</ContextMenu::Trigger>
                 <ContextMenu::Content>

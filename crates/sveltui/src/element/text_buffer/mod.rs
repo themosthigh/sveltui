@@ -435,6 +435,15 @@ impl TextBuffer {
             } else if self.cursor_col >= self.scroll_col + visible_width {
                 self.scroll_col = self.cursor_col.saturating_sub(visible_width) + 1;
             }
+            // A viewport that grew (the field got wider) must not stay
+            // scrolled past text that now fits; keep one cell for the cursor.
+            let line_len = self
+                .lines
+                .get(self.cursor_row)
+                .map_or(0, |line| line.chars().count());
+            self.scroll_col = self
+                .scroll_col
+                .min((line_len + 1).saturating_sub(visible_width));
         }
     }
 

@@ -5,6 +5,7 @@ use sveltui::prelude::*;
 
 use super::text_input_types::*;
 use crate::controllable::use_controllable;
+use crate::field_width::text_columns;
 
 pub fn get_cursor(id: FocusId, text_len: usize) -> usize {
     with_buffer_mut(id, |buf| {
@@ -38,10 +39,7 @@ pub fn TextInput(props: TextInputProps) -> impl IntoNode {
         Color::DarkGrey
     };
 
-    let visible_width = match props.width {
-        Dimension::Length(w) => ((w.round() as u16).saturating_sub(4)).max(1) as usize,
-        _ => 20,
-    };
+    let visible_width = text_columns(id, props.width, 4, 20);
 
     let owns_buffer = props.buffer.is_set();
     let text = use_controllable(

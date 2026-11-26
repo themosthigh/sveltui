@@ -197,3 +197,65 @@ mod bindings {
         assert!(type_char(&mut manager, &build, '!').contains("hi!"));
     }
 }
+
+/// Paints two frames, so the second one sees where the first one landed.
+fn paint_twice(manager: &mut FocusManager, width: u16, build: impl Fn() -> VNode) -> Buffer {
+    let mut painted = None;
+    for _ in 0..2 {
+        reset_focus_counter();
+        let node = manager.with_context(&build);
+        let mut buffer = Buffer::new(width, 3);
+        let mut hits = HitMap::new();
+        manager.with_context(|| {
+            render_node_interactive(&node, Rect::new(0, 0, width, 3), &mut buffer, &mut hits);
+        });
+        manager.reconcile(hits.interactions.clone());
+        painted = Some(buffer);
+    }
+    painted.unwrap()
+}
+
+fn row_text(buffer: &Buffer, y: u16) -> String {
+    (0..buffer.width)
+        .map(|x| buffer.get(x, y).unwrap().ch)
+        .collect()
+}
+
+/// A field wider than its default must show text up to its own edge, not
+/// stop at a fixed number of characters.
+#[test]
+fn text_fills_a_field_whose_width_is_not_a_fixed_length() {
+    let text = "abcdefghijklmnopqrstuvwxyz0123456789";
+    for width in [Dimension::Percent(1.0), Dimension::Auto] {
+        let id = FocusId(4242);
+        let mut manager = FocusManager::new();
+        let buffer = paint_twice(&mut manager, 60, || {
+            view! {
+                <View width=60>
+                    <TextInput value={String::from(text)} width=width id=id />
+                </View>
+            }
+        });
+        let shown = row_text(&buffer, 1);
+        assert!(
+            shown.contains(text),
+            "{width:?} field cut the text short: {shown:?}"
+        );
+    }
+}
+
+/// The text follows the width the field is given when its container shrinks.
+#[test]
+fn text_follows_the_container_width() {
+    let text = "abcdefghijklmnopqrstuvwxyz";
+    let id = FocusId(4243);
+    let mut manager = FocusManager::new();
+    let buffer = paint_twice(&mut manager, 40, || {
+        view! {
+            <View width=40>
+                <TextInput value={String::from(text)} width={Dimension::Percent(1.0)} id=id />
+            </View>
+        }
+    });
+    assert!(row_text(&buffer, 1).contains(text));
+}

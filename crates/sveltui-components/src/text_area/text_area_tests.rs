@@ -215,3 +215,32 @@ fn textarea_key_repeat_inserts_and_key_release_is_ignored() {
     }
     assert_eq!(value.get(), "xx");
 }
+
+#[test]
+fn text_fills_an_area_whose_width_is_a_percentage() {
+    let text = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEF";
+    let id = FocusId(4244);
+    let mut manager = FocusManager::new();
+    render(&mut manager, || {
+        view! {
+            <View width=60>
+                <TextArea value={String::from(text)} width={Dimension::Percent(1.0)} id=id />
+            </View>
+        }
+    });
+    let (buffer, _) = render(&mut manager, || {
+        view! {
+            <View width=60>
+                <TextArea value={String::from(text)} width={Dimension::Percent(1.0)} id=id />
+            </View>
+        }
+    });
+    let shown: String = (0..20)
+        .map(|y| row(&buffer, y))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        shown.contains(text),
+        "text area cut the text short:\n{shown}"
+    );
+}

@@ -13,6 +13,7 @@ pub mod date_field;
 pub mod date_picker;
 pub mod dialog;
 pub mod divider;
+mod field_width;
 pub mod hover_card;
 mod hover_popup;
 mod inline_button;

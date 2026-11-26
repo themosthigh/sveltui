@@ -5,6 +5,7 @@ use sveltui::prelude::*;
 
 use super::text_area_types::*;
 use crate::controllable::use_controllable;
+use crate::field_width::text_columns;
 
 #[component]
 pub fn TextArea(props: TextAreaProps) -> impl IntoNode {
@@ -68,12 +69,7 @@ pub fn TextArea(props: TextAreaProps) -> impl IntoNode {
         0
     };
 
-    let visible_width = match props.width {
-        Dimension::Length(w) => {
-            ((w.round() as u16).saturating_sub(4 + gutter_width as u16)).max(1) as usize
-        }
-        _ => 30,
-    };
+    let visible_width = text_columns(id, props.width, 4 + gutter_width as u16, 30);
 
     let (lines, cursor_x, cursor_y, is_empty, scroll_row) = with_buffer_mut(id, |buf| {
         buf.update_viewport(visible_width, visible_height);
