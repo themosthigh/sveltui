@@ -16,8 +16,8 @@ edition = "2024"
 rust-version = "1.85"
 authors = ["themosthigh"]
 license = "AGPL-3.0-or-later"
-repository = "https://github.com/themosthigh/sveltui"
-homepage = "https://github.com/themosthigh/sveltui"
+repository = "https://github.com/sveltui/sveltui"
+homepage = "https://github.com/sveltui/sveltui"
 keywords = ["tui", "terminal", "reactive", "svelte", "ui"]
 categories = ["command-line-interface", "gui"]
 

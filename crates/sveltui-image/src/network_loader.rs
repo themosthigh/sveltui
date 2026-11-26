@@ -77,7 +77,7 @@ fn fetch(src: &str, timeout: Duration, max_bytes: usize) -> Result<Vec<u8>, Stri
         .user_agent(concat!(
             "sveltui-image/",
             env!("CARGO_PKG_VERSION"),
-            " (https://github.com/themosthigh/sveltui)"
+            " (https://github.com/sveltui/sveltui)"
         ))
         .build()
         .into();
