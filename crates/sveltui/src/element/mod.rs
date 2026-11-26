@@ -32,7 +32,7 @@ pub use boundary::{ErrorBoundary, ErrorBoundaryProps, ErrorBoundaryPropsBuilder}
 pub use events::{HitMap, HitTarget, HoverHandler, PointerEvent, PointerHandler, PointerPhase};
 pub use focus::{
     FocusHandle, FocusId, FocusState, NodeRef, is_focused, is_layer_open, layer_anchor,
-    next_render_focus_id, node_ref, reset_focus_counter, use_focus, use_layout,
+    next_render_focus_id, node_ref, reset_focus_counter, use_focus, use_layout, use_layout_width,
 };
 pub use interaction::*;
 pub use measure::measure_node;

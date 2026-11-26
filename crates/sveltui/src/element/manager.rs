@@ -369,7 +369,9 @@ impl FocusManager {
             self.focused = self.modal();
         }
         self.remember_group();
-        before != self.focused
+        // Drain the widths read this frame whatever else changed.
+        let resized = crate::element::focus::layout_widths_changed(&self.tree.layouts);
+        before != self.focused || resized
     }
     fn owning_layers(&self) -> Vec<FocusId> {
         let Some(focused) = self.focused else {

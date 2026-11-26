@@ -6,7 +6,7 @@ use sveltui::prelude::*;
 /// Before the first paint it falls back to the `width` prop, then to
 /// `fallback` when that isn't a fixed length either.
 pub(crate) fn text_columns(id: FocusId, width: Dimension, chrome: u16, fallback: usize) -> usize {
-    let outer = use_layout(id).map(|rect| rect.width).or(match width {
+    let outer = use_layout_width(id).or(match width {
         Dimension::Length(w) => Some(w.round() as u16),
         _ => None,
     });

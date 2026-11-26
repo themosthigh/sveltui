@@ -12,6 +12,9 @@ static USER_FOCUS_COUNTER: AtomicUsize = AtomicUsize::new(1 << (usize::BITS - 1)
 thread_local! {
     static VIEW_CONTEXT: RefCell<Option<ViewContext>> = const { RefCell::new(None) };
     static RENDER_FOCUS_COUNTER: Cell<usize> = const { Cell::new(0) };
+    // The width each `use_layout_width` caller was given this frame, so the
+    // frame can be repainted when layout then gives it another one.
+    static LAYOUT_WIDTH_READS: RefCell<HashMap<FocusId, Option<u16>>> = RefCell::new(HashMap::new());
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -226,6 +229,28 @@ pub fn use_layout(id: FocusId) -> Option<Rect> {
             .borrow()
             .as_ref()
             .and_then(|view| view.layouts.get(&id).copied())
+    })
+}
+
+/// The width of the view with this identity in the last frame, like
+/// `use_layout`, but the frame is painted again when the width comes out
+/// different this time. Use it to size content by the room it has, which
+/// is only known once layout has run: on the first paint and after a resize
+/// that would otherwise leave a frame sized for the old width.
+pub fn use_layout_width(id: FocusId) -> Option<u16> {
+    let width = use_layout(id).map(|rect| rect.width);
+    LAYOUT_WIDTH_READS.with(|reads| reads.borrow_mut().insert(id, width));
+    width
+}
+
+/// Whether any width handed out by `use_layout_width` since the last call
+/// is not the one layout has now.
+pub(crate) fn layout_widths_changed(layouts: &HashMap<FocusId, Rect>) -> bool {
+    LAYOUT_WIDTH_READS.with(|reads| {
+        reads
+            .borrow_mut()
+            .drain()
+            .any(|(id, used)| used != layouts.get(&id).map(|rect| rect.width))
     })
 }
 

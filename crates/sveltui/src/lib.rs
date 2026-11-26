@@ -67,7 +67,7 @@ pub use element::{
     IntoPropOption, IntoScrollHandler, NodeRef, OptionSnippetExt, Overlay, OverlayElement,
     OverlayProps, Paragraph, ParagraphProps, Pressable, PressableElement, PressableProps,
     PropIsSet, PropSet, Snippet, TextElement, TextSpan, TextSpanProps, VNode, View, ViewElement,
-    ViewProps, is_focused, is_layer_open, node_ref, use_focus, use_layout,
+    ViewProps, is_focused, is_layer_open, node_ref, use_focus, use_layout, use_layout_width,
 };
 pub use layout::{
     AlignContent, AlignItems, AlignSelf, Display, FlexWrap, JustifyContent, Point, Position,
@@ -98,7 +98,7 @@ pub mod prelude {
         IntoNode, IntoPropOption, IntoScrollHandler, NodeRef, OptionSnippetExt, Overlay,
         OverlayElement, OverlayProps, Paragraph, ParagraphProps, Pressable, PressableElement,
         PressableProps, Snippet, TextElement, TextSpan, TextSpanProps, VNode, View, ViewElement,
-        ViewProps, is_focused, is_layer_open, node_ref, use_focus, use_layout,
+        ViewProps, is_focused, is_layer_open, node_ref, use_focus, use_layout, use_layout_width,
     };
     pub use crate::layout::{
         AlignContent, AlignItems, AlignSelf, BorderStyle, Dimension, Display, FlexDirection,

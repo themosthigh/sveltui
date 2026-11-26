@@ -259,3 +259,56 @@ fn text_follows_the_container_width() {
     });
     assert!(row_text(&buffer, 1).contains(text));
 }
+
+/// Paints the way the app does: again while focus or layout reports a
+/// change. Returns the last frame and how many it took.
+fn settle(manager: &mut FocusManager, width: u16, build: impl Fn() -> VNode) -> (Buffer, usize) {
+    for frames in 1..=5 {
+        reset_focus_counter();
+        let node = manager.with_context(&build);
+        let mut buffer = Buffer::new(width, 3);
+        let mut hits = HitMap::new();
+        manager.with_context(|| {
+            render_node_interactive(&node, Rect::new(0, 0, width, 3), &mut buffer, &mut hits);
+        });
+        if !manager.reconcile(hits.interactions.clone()) {
+            return (buffer, frames);
+        }
+    }
+    panic!("layout did not settle");
+}
+
+/// The field only learns its width after its first paint, and again after a
+/// resize. The app must paint once more so the text isn't left sized for the
+/// guess or for the old width.
+#[test]
+fn the_app_repaints_when_the_field_width_becomes_known_or_changes() {
+    let text = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let id = FocusId(4245);
+    let build = || {
+        view! {
+            <TextInput value={String::from(text)} width={Dimension::Percent(1.0)} id=id />
+        }
+    };
+    let mut manager = FocusManager::new();
+
+    let (buffer, frames) = settle(&mut manager, 60, build);
+    assert!(
+        row_text(&buffer, 1).contains(text),
+        "first paint cut the text short"
+    );
+    assert_eq!(frames, 2, "first paint, then once more with the width");
+
+    let (buffer, frames) = settle(&mut manager, 60, build);
+    assert_eq!(frames, 1, "nothing changed, so nothing repaints");
+    assert!(row_text(&buffer, 1).contains(text));
+
+    // Narrower: the text must fit the new width, not spill past it.
+    let (buffer, _) = settle(&mut manager, 20, build);
+    let row = row_text(&buffer, 1);
+    assert!(row.ends_with('│'), "text spilled over the border: {row:?}");
+
+    // Wider again: all of it shows.
+    let (buffer, _) = settle(&mut manager, 60, build);
+    assert!(row_text(&buffer, 1).contains(text));
+}
