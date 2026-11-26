@@ -12,6 +12,10 @@ pub struct ComputedLayoutNode {
     /// the padding, the way a browser draws them.
     pub border_inset: Padding,
     pub viewport_size: (u16, u16),
+    /// Whether layout set aside room for a scrollbar on the right and at the
+    /// bottom. It does so only for views whose size is bounded; a view sized
+    /// by flex gets no room, so the renderer takes the bars' cells itself.
+    pub scrollbar_reserved: (bool, bool),
     pub content_size: (u16, u16),
     pub scroll_size: (u16, u16),
     /// Where a grid's rules go, when it draws them (see `grid_rules`).
@@ -598,6 +602,7 @@ impl LayoutEngine {
             border_inset,
             rules,
             viewport_size: (viewport_w, viewport_h),
+            scrollbar_reserved: (l.scrollbar_size.width > 0.0, l.scrollbar_size.height > 0.0),
             content_size: (content_w, content_h),
             scroll_size: (scroll_w, scroll_h),
             children: computed_children,

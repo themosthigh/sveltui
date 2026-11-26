@@ -693,14 +693,56 @@ fn render_node_offset_internal(
                 let is_scrollable = is_scroll_x || is_scroll_y;
                 // A fixed-size overlay may be allocated less than its requested
                 // size. Keep its content clip and scroll range inside that allocation.
-                let viewport_w = computed
+                let full_w = computed
                     .viewport_size
                     .0
                     .saturating_sub(computed.rect.width.saturating_sub(width));
-                let viewport_h = computed
+                let full_h = computed
                     .viewport_size
                     .1
                     .saturating_sub(computed.rect.height.saturating_sub(height));
+                let sb_vis = v
+                    .scroll
+                    .as_ref()
+                    .map_or(crate::layout::ScrollbarVisibility::Auto, |s| {
+                        s.scrollbar_visibility
+                    });
+                // Layout leaves no room for the bars of a view that flex
+                // sizes, so they would cover its last column and row. Take
+                // their cells off the viewport here; one bar can make the
+                // other one necessary, so each is checked against the room
+                // the other leaves.
+                let (viewport_w, viewport_h) = if computed.scrollbar_reserved == (true, true) {
+                    (full_w, full_h)
+                } else {
+                    let wants = |scrolls: bool, content: u16, room: u16| {
+                        scrolls
+                            && match sb_vis {
+                                crate::layout::ScrollbarVisibility::Always => true,
+                                crate::layout::ScrollbarVisibility::Never => false,
+                                crate::layout::ScrollbarVisibility::Auto => content > room,
+                            }
+                    };
+                    let (content_w, content_h) = computed.content_size;
+                    let horizontal = wants(is_scroll_x, content_w, full_w);
+                    let vertical = wants(
+                        is_scroll_y,
+                        content_h,
+                        full_h.saturating_sub(u16::from(horizontal)),
+                    );
+                    let horizontal = wants(
+                        is_scroll_x,
+                        content_w,
+                        full_w.saturating_sub(u16::from(vertical)),
+                    );
+                    (
+                        full_w
+                            .saturating_sub(u16::from(vertical && !computed.scrollbar_reserved.0)),
+                        full_h.saturating_sub(u16::from(
+                            horizontal && !computed.scrollbar_reserved.1,
+                        )),
+                    )
+                };
 
                 let max_scroll_x = if is_scroll_x {
                     computed.content_size.0.saturating_sub(viewport_w)
@@ -868,12 +910,6 @@ fn render_node_offset_internal(
                 let v_track_fg = sb_style.track_color.or(border_color);
                 let v_thumb_fg = sb_style.thumb_color.or(border_color);
 
-                let sb_vis = v
-                    .scroll
-                    .as_ref()
-                    .map_or(crate::layout::ScrollbarVisibility::Auto, |s| {
-                        s.scrollbar_visibility
-                    });
                 let show_v_sb = is_scroll_y
                     && match sb_vis {
                         crate::layout::ScrollbarVisibility::Always => true,

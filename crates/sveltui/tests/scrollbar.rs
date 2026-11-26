@@ -248,3 +248,85 @@ fn the_wheel_over_the_bar_still_scrolls() {
     target.on_scroll.as_ref().unwrap()(0, 3);
     assert_eq!(get_scroll(id), (0, 3));
 }
+
+/// A scroll view sized by flex has no size of its own, but its scrollbars
+/// still take cells, so the last row and column must stay reachable.
+#[test]
+fn flex_sized_scroll_view_reaches_the_end_of_its_content() {
+    let id = FocusId::new();
+    let lines = (0..20).map(|i| format!("{i:02}{}", "x".repeat(21)) + "z");
+    let node = view! {
+        <View width=12 height=8 flex_direction=FlexDirection::Column>
+            <View
+                flex_grow=1.0
+                border=BorderStyle::Single
+                overflow=Overflow::Scroll
+                scroll_id=id
+            >
+                {#each lines as line}<TextSpan>{line}</TextSpan>{/each}
+            </View>
+        </View>
+    };
+    let (_, hits) = render(&node, 12, 8);
+    let target = hits.targets.iter().find(|t| t.on_scroll.is_some()).unwrap();
+    target.on_scroll.as_ref().unwrap()(i16::MAX, i16::MAX);
+    // 24 columns and 20 rows in a view with a border and two bars: the
+    // viewport is 9x6, so the furthest offset is (24 - 9, 20 - 6) plus the
+    // cell the bars take from each axis.
+    assert_eq!(get_scroll(id), (15, 15));
+    let (buffer, _) = render(&node, 12, 8);
+    let shown: String = (0..8)
+        .flat_map(|y| (0..12).map(move |x| (x, y)))
+        .map(|(x, y)| buffer.get(x, y).unwrap().ch)
+        .collect();
+    assert!(
+        shown.contains('z'),
+        "the last column is hidden under the scrollbar: {shown:?}"
+    );
+}
+
+/// Padding insets the content only. The bars of a flex-sized view sit just
+/// inside the border like those of a fixed one, and the content still ends
+/// at the same place.
+#[test]
+fn padding_does_not_move_the_bars_of_a_flex_sized_view() {
+    let id = FocusId::new();
+    let node = view! {
+        <View width=12 height=7 flex_direction=FlexDirection::Column>
+            <View
+                flex_grow=1.0
+                border=BorderStyle::Single
+                padding=1
+                overflow=Overflow::Scroll
+                scroll_id=id
+            >
+                {#each (0..6) as i}<TextSpan>{format!("{i}abcdefghijkZ")}</TextSpan>{/each}
+            </View>
+        </View>
+    };
+    let (_, hits) = render(&node, 12, 7);
+    let target = hits.targets.iter().find(|t| t.on_scroll.is_some()).unwrap();
+    target.on_scroll.as_ref().unwrap()(i16::MAX, i16::MAX);
+    let (buffer, _) = render(&node, 12, 7);
+    // The same numbers as the fixed-size view with this border and padding.
+    assert_eq!(get_scroll(id), (6, 4));
+    assert_eq!(buffer.get(8, 3).unwrap().ch, 'Z');
+    let chars = ScrollbarChars::default();
+    // The vertical bar fills the column inside the right border, and the
+    // horizontal one the row inside the bottom border, padding or not.
+    assert_eq!(buffer.get(10, 5).unwrap().ch, chars.corner);
+    for y in 1..5 {
+        let ch = buffer.get(10, y).unwrap().ch;
+        assert!(
+            ch == chars.vertical_thumb || ch == chars.vertical_track,
+            "no vertical bar at row {y}: {ch:?}"
+        );
+    }
+    for x in 1..10 {
+        let ch = buffer.get(x, 5).unwrap().ch;
+        assert!(
+            ch == chars.horizontal_thumb || ch == chars.horizontal_track,
+            "no horizontal bar at column {x}: {ch:?}"
+        );
+    }
+}

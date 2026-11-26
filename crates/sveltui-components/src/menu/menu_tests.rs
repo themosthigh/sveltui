@@ -535,9 +535,16 @@ fn grouped_menu_rows_fill_the_content_viewport_for_every_menu_kind() {
             let node = manager.with_context(build);
             end_frame();
             let (buffer, hits) = manager.with_context(|| render_layout(&node, screen_width, 24));
-            let expected_width = menu_width.min(screen_width) - 4; // Border + content padding.
+            // Border + content padding. A menu wider than the screen scrolls
+            // sideways, and its two bars each take a cell from the rows.
+            let bars = u16::from(menu_width > screen_width);
+            let expected_width = menu_width.min(screen_width) - 4 - bars;
             for id in [11, 12, 13, 14, 15] {
                 let row = rect(&hits, FocusId(id));
+                if bars > 0 && row.height == 0 {
+                    // The sideways bar took the bottom row; scroll to reach it.
+                    continue;
+                }
                 assert_eq!(row.x, 2, "kind {kind}, item {id}");
                 assert_eq!(row.width, expected_width, "kind {kind}, item {id}");
                 assert_eq!(row.height, 1);
